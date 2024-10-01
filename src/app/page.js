@@ -9,7 +9,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-const categories = [
+export const categories = [
   { id: "spring", name: "Spring" },
   { id: "summer", name: "Summer" },
   { id: "autumn", name: "Autumn" },

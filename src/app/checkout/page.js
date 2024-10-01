@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BillingDetailsForm from "@/components/BillingDetailsForm";
 import OrderSummary from "@/components/OrderSummary";
 import PaymentButton from "@/components/PaymentButton";
@@ -9,11 +9,21 @@ const CheckoutForm = () => {
   const [isShippingDifferent, setIsShippingDifferent] = useState(false);
   const [billingDetails, setBillingDetails] = useState({});
   const [shippingDetails, setShippingDetails] = useState({});
+  const [cartItems, setCartItems] = useState([]);
 
-  const { cartItems, calculateSubtotal, shippingCost } = MobxStore;
+  const { calculateSubtotal, shopConfig } = MobxStore;
+  const shippingCost = shopConfig?.shippingRate;
   const taxRate = 0.1; // Example tax rate of 10%
 
-  console.log({ cartItems, shippingCost, taxRate, billingDetails });
+  // Fetch cart products from MobX
+  useEffect(() => {
+    const fetchCartProducts = async () => {
+      const products = await MobxStore.getCartProducts();
+      setCartItems(products);
+    };
+
+    fetchCartProducts();
+  }, []); // Fetch once when component mounts
 
   return (
     <div className="bg-black text-white p-8 min-h-screen">
@@ -49,8 +59,8 @@ const CheckoutForm = () => {
       {/* Order Summary */}
       <div className="mt-8">
         <OrderSummary
-          cartItems={cartItems}
-          subtotal={calculateSubtotal()}
+          cartItems={cartItems} // Ensure this includes size and quantity
+          subtotal={calculateSubtotal()} // Updated to reflect changes in MobX
           shippingCost={shippingCost}
           taxRate={taxRate}
         />
@@ -59,8 +69,8 @@ const CheckoutForm = () => {
       {/* Payment Button */}
       <div className="mt-8">
         <PaymentButton
-          cartItems={cartItems}
-          subtotal={calculateSubtotal()}
+          cartItems={cartItems} // Ensure this includes size and quantity
+          subtotal={calculateSubtotal()} // Updated to reflect changes in MobX
           shippingCost={shippingCost}
           tax={calculateSubtotal() * taxRate}
           billingDetails={billingDetails}

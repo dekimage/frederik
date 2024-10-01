@@ -7,28 +7,63 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.NEXT_STRIPE_SECRET_KEY);
 
 export async function POST(req) {
-  const { cartItems, shippingCost, taxRate, billingDetails } = await req.json();
+  const { cartItems, shippingCost, taxRate, billingDetails, shippingDetails } =
+    await req.json();
 
-  console.log({ cartItems, shippingCost, taxRate, billingDetails });
+  console.log({
+    cartItems,
+    shippingCost,
+    taxRate,
+    billingDetails,
+    shippingDetails,
+  });
 
   try {
     const validatedItems = [];
     let subtotal = 0;
 
+    // Fetch the shop configuration
+    const shopConfigRef = firestore
+      .collection("shopConfig")
+      .doc("productSpecifications");
+    const shopConfigDoc = await shopConfigRef.get();
+    const shopConfig = shopConfigDoc.exists ? shopConfigDoc.data() : null;
+
+    if (!shopConfig) {
+      return NextResponse.json(
+        { error: "Shop configuration not found." },
+        { status: 400 }
+      );
+    }
+
     for (const cartItem of cartItems) {
-      const productRef = firestore.collection("products").doc(cartItem.id);
+      const { productId, quantity, size } = cartItem; // Get size from cartItem
+
+      // Fetch the product details
+      const productRef = firestore.collection("products").doc(productId);
       const productDoc = await productRef.get();
 
       if (!productDoc.exists) {
         return NextResponse.json(
-          { error: `Product ${cartItem.id} does not exist.` },
+          { error: `Product ${productId} does not exist.` },
           { status: 400 }
         );
       }
 
       const productData = productDoc.data();
-      const itemTotal = productData.price * cartItem.quantity;
-      subtotal += itemTotal;
+
+      // Find the size and corresponding price in shopConfig
+      const sizeConfig = shopConfig.sizes.find((s) => s.size === size);
+      if (!sizeConfig) {
+        return NextResponse.json(
+          { error: `Size ${size} not found for product ${productId}.` },
+          { status: 400 }
+        );
+      }
+
+      // Calculate total for the line item based on size price
+      const itemTotal = parseFloat(sizeConfig.price) * quantity; // Use the price from sizeConfig
+      subtotal += itemTotal; // Accumulate subtotal
 
       validatedItems.push({
         price_data: {
@@ -37,9 +72,9 @@ export async function POST(req) {
             name: productData.name,
             images: [productData.image],
           },
-          unit_amount: Math.round(productData.price * 100), // Stripe needs amount in cents
+          unit_amount: Math.round(parseFloat(sizeConfig.price) * 100), // Each item's price in cents
         },
-        quantity: cartItem.quantity,
+        quantity: quantity, // Use quantity specified in cart
       });
     }
 
@@ -55,6 +90,8 @@ export async function POST(req) {
       customer_email: billingDetails.email,
       metadata: {
         billingDetails: JSON.stringify(billingDetails),
+        cartItems: JSON.stringify(cartItems), // Add cart items to metadata
+        shippingDetails: JSON.stringify(shippingDetails),
       },
     });
 

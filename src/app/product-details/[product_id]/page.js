@@ -1,39 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { doc, getDoc } from "firebase/firestore";
 import MobxStore from "@/mobx"; // MobX store for cart operations
-import { db } from "@/firebase"; // Firebase config
 
 const ProductDetailsPage = ({ params }) => {
   const { product_id } = params;
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState(""); // For size selection
 
   useEffect(() => {
-    const fetchProductDetails = async () => {
-      const productRef = doc(db, "products", product_id);
-      const productSnap = await getDoc(productRef);
-
-      if (productSnap.exists()) {
-        setProduct(productSnap.data());
-      } else {
-        console.error("Product not found");
+    const fetchProduct = async () => {
+      const productData = await MobxStore.getProductById(product_id);
+      if (productData) {
+        setProduct(productData);
+        if (MobxStore.shopConfig?.sizes) {
+          setSelectedSize(MobxStore.shopConfig.sizes[0]?.size || ""); // Set default size
+        }
       }
     };
-
-    fetchProductDetails();
+    fetchProduct();
   }, [product_id]);
 
-  // Function to add the product to the cart
+  // Function to add the product with the selected size to the cart
   const addToCart = () => {
-    if (product) {
+    if (product && selectedSize) {
+      const selectedSizeObj = MobxStore.shopConfig.sizes.find(
+        (sizeObj) => sizeObj.size === selectedSize
+      );
+      const price = selectedSizeObj ? parseFloat(selectedSizeObj.price) : 0;
       MobxStore.addToCart({
         productId: product_id,
         quantity,
+        size: selectedSize,
+        price,
       });
-      alert(`${quantity} x ${product.name} added to cart!`);
+      alert(`${quantity} x ${product.name} (${selectedSize}) added to cart!`);
     }
   };
 
@@ -50,8 +52,26 @@ const ProductDetailsPage = ({ params }) => {
           className="w-full h-96 object-cover mb-8"
         />
         <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
-        <p className="text-xl mb-4">€{product.price}</p>
         <p className="text-lg mb-8">{product.description}</p>
+
+        {/* Size Selection */}
+        <div className="mb-4">
+          <label htmlFor="size" className="mr-4">
+            Size:
+          </label>
+          <select
+            id="size"
+            value={selectedSize}
+            onChange={(e) => setSelectedSize(e.target.value)}
+            className="bg-gray-800 text-white p-2 rounded"
+          >
+            {MobxStore.shopConfig?.sizes.map((sizeObj) => (
+              <option key={sizeObj.size} value={sizeObj.size}>
+                {sizeObj.size} (€{sizeObj.price})
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Quantity Selection */}
         <div className="flex items-center mb-4">
@@ -79,6 +99,7 @@ const ProductDetailsPage = ({ params }) => {
           </button>
         </div>
 
+        {/* Add to Cart Button */}
         <button
           onClick={addToCart}
           className="bg-blue-500 text-white py-2 px-4 rounded"

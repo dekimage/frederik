@@ -1,16 +1,22 @@
+"use client";
 const OrderSummary = ({ cartItems, subtotal, shippingCost, taxRate }) => {
   const calculateTax = () => (subtotal * taxRate).toFixed(2);
   const calculateTotal = () =>
-    (subtotal + shippingCost + parseFloat(calculateTax())).toFixed(2);
+    (subtotal + parseFloat(shippingCost) + parseFloat(calculateTax())).toFixed(
+      2
+    );
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg text-white">
       <h2 className="text-2xl font-bold mb-4">Order Summary</h2>
       <div className="space-y-4">
         {cartItems.map((item) => (
-          <div key={item.id} className="flex justify-between">
+          <div
+            key={`${item.productId}-${item.size}`}
+            className="flex justify-between"
+          >
             <span>
-              {item.name} x {item.quantity}
+              {item.name} ({item.size}) x {item.quantity}
             </span>
             <span>€{(item.price * item.quantity).toFixed(2)}</span>
           </div>
@@ -22,7 +28,7 @@ const OrderSummary = ({ cartItems, subtotal, shippingCost, taxRate }) => {
         </div>
         <div className="flex justify-between">
           <span>Shipping</span>
-          <span>€{shippingCost.toFixed(2)}</span>
+          <span>€{shippingCost}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax</span>

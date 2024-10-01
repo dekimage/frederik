@@ -19,7 +19,6 @@ const PaymentButton = ({
       },
       body: JSON.stringify({
         cartItems,
-        subtotal,
         shippingCost,
         tax,
         billingDetails,
@@ -27,7 +26,16 @@ const PaymentButton = ({
       }),
     });
 
+    // Check if the response is OK (status in the range 200-299)
+    if (!response.ok) {
+      const errorMessage = await response.text(); // Get the error message from the response
+      console.error("Error creating checkout session:", errorMessage);
+      return; // Exit if there's an error
+    }
+
+    // Parse the response as JSON
     const session = await response.json();
+
     const result = await stripe.redirectToCheckout({
       sessionId: session.id,
     });

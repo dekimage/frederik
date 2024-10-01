@@ -5,6 +5,7 @@ import Image from "next/image";
 import { LargeTitle } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
+import Link from "next/link";
 
 const images = [
   {
@@ -97,10 +98,11 @@ const CategoryPage = ({ params }) => {
       <div className="flex flex-col justify-center items-center px-4 sm:px-8">
         {/* Category Title */}
         <LargeTitle title={category?.toUpperCase()} />
-
-        <Button className="my-8 h-[55px] w-[200px] text-lg bg-white text-black hover:bg-gray-400">
-          BUY IMAGES <ShoppingBag size={24} className="ml-2" />
-        </Button>
+        <Link href="/shop">
+          <Button className="my-8 h-[55px] w-[200px] text-lg bg-white text-black hover:bg-gray-400">
+            BUY IMAGES <ShoppingBag size={24} className="ml-2" />
+          </Button>
+        </Link>
 
         {/* Image Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

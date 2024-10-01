@@ -35,14 +35,17 @@ export async function POST(req) {
 
     try {
       const billingDetails = JSON.parse(session.metadata.billingDetails);
-
+      const cartItems = JSON.parse(session.metadata.cartItems);
+      const shippingDetails = JSON.parse(session.metadata.shippingDetails);
       // Store the order in Firestore using the Firebase Admin SDK from the utility file
       await firestore.collection("orders").add({
         billingDetails,
+        shippingDetails,
         paymentStatus: session.payment_status,
         amountTotal: session.amount_total / 100, // Stripe sends amount in cents, convert to euros
         stripeSessionId: session.id,
         createdAt: new Date(),
+        cartItems,
       });
 
       return NextResponse.json({ success: true });
