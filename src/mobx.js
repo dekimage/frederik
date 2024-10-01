@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { auth, db } from "./firebase";
+import { db } from "./firebase";
 
 import {
   doc,
@@ -19,32 +19,8 @@ import {
 
 class Store {
   // App Data
-  cartItems = [
-    {
-      id: 1,
-      name: "Canvas Print",
-      price: 50,
-      quantity: 1,
-      image: "https://picsum.photos/100/100?random=1",
-      variation: "24x36 Canvas",
-    },
-    {
-      id: 2,
-      name: "Framed Art",
-      price: 80,
-      quantity: 2,
-      image: "https://picsum.photos/100/100?random=2",
-      variation: "18x24 Framed",
-    },
-    {
-      id: 3,
-      name: "Digital Art",
-      price: 30,
-      quantity: 1,
-      image: "https://picsum.photos/100/100?random=3",
-      variation: "Digital Download",
-    },
-  ];
+  cartItems = [];
+  products = {};
   shippingCost = 25;
   loading = true;
 
@@ -58,6 +34,7 @@ class Store {
     this.updateQuantity = this.updateQuantity.bind(this);
     this.calculateSubtotal = this.calculateSubtotal.bind(this);
     this.calculateTotal = this.calculateTotal.bind(this);
+    this.getCartProducts = this.getCartProducts.bind(this);
 
     this.loadCartFromLocalStorage();
     // if (this.cartItems.length === 0) {
@@ -74,28 +51,38 @@ class Store {
   // Add item to cart
   addToCart(item) {
     const existingItem = this.cartItems.find(
-      (cartItem) =>
-        cartItem.id === item.id && cartItem.variation === item.variation
+      (cartItem) => cartItem.productId === item.productId
     );
     if (existingItem) {
       existingItem.quantity += item.quantity;
     } else {
-      this.cartItems.push(item);
+      this.cartItems.push({
+        productId: item.productId,
+        quantity: item.quantity,
+      });
     }
     this.saveCartToLocalStorage();
+    this.fetchProductDetails(item.productId);
   }
 
   // Remove item from cart
-  removeFromCart(id) {
-    this.cartItems = this.cartItems.filter((item) => item.id !== id);
+  removeFromCart(productId) {
+    this.cartItems = this.cartItems.filter(
+      (item) => item.productId !== productId
+    );
+    delete this.products[productId]; // Remove cached product details
     this.saveCartToLocalStorage();
   }
 
   // Update quantity of an item in the cart
-  updateQuantity(id, newQuantity) {
-    const item = this.cartItems.find((cartItem) => cartItem.id === id);
+  updateQuantity(productId, newQuantity) {
+    const item = this.cartItems.find(
+      (cartItem) => cartItem.productId === productId
+    );
     if (item) {
-      item.quantity = newQuantity;
+      runInAction(() => {
+        item.quantity = newQuantity;
+      });
     }
     this.saveCartToLocalStorage();
   }
@@ -104,7 +91,13 @@ class Store {
   loadCartFromLocalStorage() {
     const cartData = localStorage.getItem("cart");
     if (cartData) {
-      this.cartItems = JSON.parse(cartData);
+      runInAction(() => {
+        this.cartItems = JSON.parse(cartData);
+        this.cartItems.forEach((item) =>
+          this.fetchProductDetails(item.productId)
+        );
+        this.loading = false;
+      });
     }
   }
 
@@ -113,17 +106,41 @@ class Store {
     localStorage.setItem("cart", JSON.stringify(this.cartItems));
   }
 
+  // Fetch product details from Firestore and store in MobX
+  async fetchProductDetails(productId) {
+    if (this.products[productId]) return; // If already fetched, return early
+    try {
+      const productRef = doc(db, "products", productId);
+      const productSnap = await getDoc(productRef);
+      if (productSnap.exists()) {
+        runInAction(() => {
+          this.products[productId] = productSnap.data();
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching product details:", error);
+    }
+  }
+
   // Calculate subtotal
   calculateSubtotal() {
-    return this.cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
+    return this.cartItems.reduce((acc, item) => {
+      const product = this.products[item.productId];
+      return product ? acc + product.price * item.quantity : acc;
+    }, 0);
   }
 
   // Calculate total
   calculateTotal() {
     return this.calculateSubtotal() + this.shippingCost;
+  }
+
+  // Get product details for rendering
+  getCartProducts() {
+    return this.cartItems.map((item) => ({
+      ...this.products[item.productId],
+      quantity: item.quantity,
+    }));
   }
 
   // GLOBAL MOBX STATE

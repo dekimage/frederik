@@ -1,19 +1,22 @@
 "use client";
 import { observer } from "mobx-react";
 import MobxStore from "@/mobx";
+import Link from "next/link";
 
 const CartPage = observer(() => {
-  const { cartItems, calculateSubtotal, calculateTotal, shippingCost } =
+  const { getCartProducts, calculateSubtotal, calculateTotal, shippingCost } =
     MobxStore;
 
+  const cartItems = getCartProducts();
+
   // Handle quantity change
-  const handleQuantityChange = (id, newQuantity) => {
-    MobxStore.updateQuantity(id, newQuantity);
+  const handleQuantityChange = (productId, newQuantity) => {
+    MobxStore.updateQuantity(productId, newQuantity);
   };
 
   // Remove item from cart
-  const removeFromCart = (id) => {
-    MobxStore.removeFromCart(id);
+  const removeFromCart = (productId) => {
+    MobxStore.removeFromCart(productId);
   };
 
   return (
@@ -107,69 +110,6 @@ const CartPage = observer(() => {
             </table>
           </div>
 
-          {/* Responsive Cart Items for Mobile */}
-          <div className="md:hidden space-y-4">
-            {cartItems.map((item) => (
-              <div key={item.id} className="border-b border-white py-4">
-                {/* Product Details */}
-                <div className="flex items-center space-x-4 mb-4">
-                  <button
-                    className="text-red-500"
-                    onClick={() => removeFromCart(item.id)}
-                  >
-                    ×
-                  </button>
-                  <img src={item.image} alt={item.name} className="w-16 h-16" />
-                  <div>
-                    <p className="font-bold">{item.name}</p>
-                    <p className="text-sm text-gray-400">{item.variation}</p>
-                  </div>
-                </div>
-
-                {/* Price */}
-                <div className="mb-2">
-                  <span className="font-bold">Price: </span>€{item.price}
-                </div>
-
-                {/* Quantity */}
-                <div className="mb-2 flex items-center">
-                  <span className="font-bold">Quantity: </span>
-                  <button
-                    className="bg-gray-700 px-2 mx-2"
-                    onClick={() =>
-                      handleQuantityChange(
-                        item.id,
-                        Math.max(1, item.quantity - 1)
-                      )
-                    }
-                  >
-                    -
-                  </button>
-                  <input
-                    type="text"
-                    readOnly
-                    value={item.quantity}
-                    className="w-12 text-center bg-gray-800"
-                  />
-                  <button
-                    className="bg-gray-700 px-2 mx-2"
-                    onClick={() =>
-                      handleQuantityChange(item.id, item.quantity + 1)
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Subtotal */}
-                <div>
-                  <span className="font-bold">Subtotal: </span>€
-                  {item.price * item.quantity}
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Summary Table */}
           <div className="w-full max-w-md ml-auto">
             <table className="w-full text-left">
@@ -194,9 +134,11 @@ const CartPage = observer(() => {
 
           {/* Checkout Button */}
           <div className="text-right">
-            <button className="bg-white text-black py-2 px-6 rounded">
-              Proceed to Checkout
-            </button>
+            <Link href="/checkout">
+              <button className="bg-white text-black py-2 px-6 rounded">
+                Proceed to Checkout
+              </button>
+            </Link>
           </div>
         </div>
       )}
