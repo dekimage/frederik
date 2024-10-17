@@ -34,25 +34,35 @@ export async function POST(req) {
     const session = event.data.object;
 
     try {
-      const billingDetails = JSON.parse(session.metadata.billingDetails);
-      const cartItems = JSON.parse(session.metadata.cartItems);
-      const shippingDetails = JSON.parse(session.metadata.shippingDetails);
-      // Store the order in Firestore using the Firebase Admin SDK from the utility file
+      // Retrieve the pending order from Firestore
+      const orderRef = firestore
+        .collection("pendingOrders")
+        .doc(session.metadata.orderRef);
+      const orderDoc = await orderRef.get();
+
+      if (!orderDoc.exists) {
+        throw new Error("Pending order not found");
+      }
+
+      const orderData = orderDoc.data();
+
+      // Create the final order
       await firestore.collection("orders").add({
-        billingDetails,
-        shippingDetails,
+        ...orderData,
         paymentStatus: session.payment_status,
-        amountTotal: session.amount_total / 100, // Stripe sends amount in cents, convert to euros
+        amountTotal: session.amount_total / 100,
         stripeSessionId: session.id,
-        createdAt: new Date(),
-        cartItems,
+        paidAt: new Date(),
       });
+
+      // Optionally, delete the pending order
+      await orderRef.delete();
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error("Error saving order to Firestore:", error);
+      console.error("Error processing order:", error);
       return NextResponse.json(
-        { error: "Error saving order" },
+        { error: "Error processing order" },
         { status: 500 }
       );
     }

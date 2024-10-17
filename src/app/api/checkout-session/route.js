@@ -81,6 +81,14 @@ export async function POST(req) {
     const tax = subtotal * taxRate;
     const total = subtotal + shippingCost + tax;
 
+    // Store order details in Firestore first
+    const orderRef = await firestore.collection("pendingOrders").add({
+      billingDetails,
+      cartItems,
+      shippingDetails,
+      createdAt: new Date(),
+    });
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: validatedItems,
@@ -89,9 +97,7 @@ export async function POST(req) {
       cancel_url: `${process.env.NEXT_PUBLIC_URL}/cancel`,
       customer_email: billingDetails.email,
       metadata: {
-        billingDetails: JSON.stringify(billingDetails),
-        cartItems: JSON.stringify(cartItems), // Add cart items to metadata
-        shippingDetails: JSON.stringify(shippingDetails),
+        orderRef: orderRef.id, // Pass only the reference ID
       },
     });
 
