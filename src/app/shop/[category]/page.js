@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import MobxStore from "@/mobx";
+import ProductCard from "@/components/ProductCard"; // Make sure to import ProductCard
 
 const CategoryPage = ({ params }) => {
   const { category } = params;
@@ -24,18 +25,7 @@ const CategoryPage = ({ params }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {products.map((product) => (
-          <div
-            key={product.id}
-            className="border border-gray-500 p-4 rounded-lg"
-          >
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-48 object-cover mb-4"
-            />
-            <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
-            <p className="text-lg mb-4">€{product.price}</p>
-          </div>
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>

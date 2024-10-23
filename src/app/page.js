@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import springImage from "../../assets/spring.png";
+import summerImage from "../../assets/summer.png";
+import autumnImage from "../../assets/autumn.png";
+import winterImage from "../../assets/winter.png";
 
-import { observer } from "mobx-react";
+import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 
 import { ChevronRight } from "lucide-react";
@@ -70,6 +74,21 @@ export const AboutSection = () => {
   );
 };
 
+const getImageByCategory = (category) => {
+  switch (category) {
+    case "Spring":
+      return springImage;
+    case "Summer":
+      return summerImage;
+    case "Autumn":
+      return autumnImage;
+    case "Winter":
+      return winterImage;
+    default:
+      return null;
+  }
+};
+
 const CategoriesSection = ({ categories }) => {
   const categoryRefs = useRef([]);
 
@@ -112,12 +131,14 @@ const CategoriesSection = ({ categories }) => {
                 className="relative group h-64 rounded-lg overflow-hidden opacity-0 transform translate-y-8 transition-all duration-500"
               >
                 {/* Category Image with Hover Scale */}
-                <div
-                  className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-150"
-                  style={{
-                    backgroundImage: `url("https://picsum.photos/600/600")`,
-                  }}
-                ></div>
+                <div className="w-full h-full transition-transform duration-500 group-hover:scale-150">
+                  <Image
+                    src={category.image || getImageByCategory(category.name)}
+                    alt={category.name}
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                </div>
 
                 {/* Overlay and Text */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-transform duration-500">
@@ -135,14 +156,14 @@ const CategoriesSection = ({ categories }) => {
 };
 
 export const ReelsSection = () => {
-  const [playing, setPlaying] = useState({}); // Track which video is playing
+  const [playing, setPlaying] = useState({});
   const reels = [
-    { id: "1", videoId: "J3LGBM7hMc0" },
-    { id: "2", videoId: "FIZ5881GNAc" },
-    { id: "3", videoId: "FIZ5881GNAc" },
-    { id: "4", videoId: "FIZ5881GNAc" },
-    { id: "5", videoId: "J3LGBM7hMc0" },
-    { id: "6", videoId: "J3LGBM7hMc0" },
+    { id: "1", videoId: "KIzAhyvvlkA" },
+    { id: "2", videoId: "hXVGP0yP194" },
+    { id: "3", videoId: "R9RePuPo9iA" },
+    { id: "4", videoId: "KIzAhyvvlkA" },
+    { id: "5", videoId: "hXVGP0yP194" },
+    { id: "6", videoId: "R9RePuPo9iA" },
   ];
 
   const handlePlay = (id) => {
@@ -209,6 +230,11 @@ export const LargeTitle = ({ title }) => {
 };
 
 const HomePage = observer(() => {
+  useEffect(() => {
+    MobxStore.fetchCategories();
+    // ... other fetch calls if needed
+  }, []);
+
   return (
     <div className="bg-black text-white  min-h-[1000px] pt-16 flex flex-col justify-center items-center">
       <Image
@@ -219,8 +245,11 @@ const HomePage = observer(() => {
       />
       <div className="flex flex-col justify-center items-center px-4 sm:px-8">
         <AboutSection />
-        <CategoriesSection categories={categories} />
-
+        {MobxStore.categoriesLoading ? (
+          <p>Loading categories...</p>
+        ) : (
+          <CategoriesSection categories={MobxStore.categories} />
+        )}
         <ReelsSection />
       </div>
     </div>

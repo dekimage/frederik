@@ -25,6 +25,13 @@ class Store {
   shopConfig = null;
 
   loading = true;
+  categories = [];
+  categoriesLoading = true;
+
+  canProceedToPayment = false;
+  shippingDetailsCompleted = false;
+  billingDetailsCompleted = false;
+  isShippingDifferent = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -45,11 +52,42 @@ class Store {
     this.fetchLimitedProducts = this.fetchLimitedProducts.bind(this);
     this.fetchProductById = this.fetchProductById.bind(this);
     this.fetchBestSellers = this.fetchBestSellers.bind(this);
+    this.setCanProceedToPayment = this.setCanProceedToPayment.bind(this);
+    this.setShippingDetailsCompleted =
+      this.setShippingDetailsCompleted.bind(this);
+    this.setBillingDetailsCompleted =
+      this.setBillingDetailsCompleted.bind(this);
+    this.updateCanProceedToPayment = this.updateCanProceedToPayment.bind(this);
+    this.setIsShippingDifferent = this.setIsShippingDifferent.bind(this);
+    this.fetchCategories = this.fetchCategories.bind(this);
 
     if (typeof window !== "undefined") {
       this.loadCartFromLocalStorage(); // Load cart only when in the browser
     }
     this.initializeShopConfig();
+    this.fetchCategories();
+  }
+
+  async fetchCategories() {
+    if (this.categories.length > 0) return; // Don't fetch if we already have categories
+
+    this.categoriesLoading = true;
+    try {
+      const categoriesCollection = collection(db, "categories");
+      const categoriesSnapshot = await getDocs(categoriesCollection);
+      runInAction(() => {
+        this.categories = categoriesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        this.categoriesLoading = false;
+      });
+    } catch (error) {
+      console.log("Error fetching categories:", error);
+      runInAction(() => {
+        this.categoriesLoading = false;
+      });
+    }
   }
 
   async getProductById(productId) {
@@ -301,7 +339,7 @@ class Store {
     const subtotal = this.calculateSubtotal() || 0; // Default to 0 if undefined
     const shipping = parseFloat(this.shopConfig?.shippingRate) || 0; // Ensure shippingRate is a number
     const total = subtotal + shipping;
-    console.log("Subtotal:", subtotal, "Shipping:", shipping, "Total:", total); // Debugging line
+
     return total; // Return total as a number
   }
   async fetchProductDetails() {
@@ -336,6 +374,48 @@ class Store {
   setIsMobileOpen(isMobileOpen) {
     runInAction(() => {
       this.isMobileOpen = isMobileOpen;
+    });
+  }
+
+  clearCart() {
+    runInAction(() => {
+      this.cartItems = [];
+      this.saveCartToLocalStorage();
+    });
+  }
+
+  setCanProceedToPayment(value) {
+    runInAction(() => {
+      this.canProceedToPayment = value;
+    });
+  }
+
+  setShippingDetailsCompleted(value) {
+    runInAction(() => {
+      this.shippingDetailsCompleted = value;
+      this.updateCanProceedToPayment();
+    });
+  }
+
+  setBillingDetailsCompleted(value) {
+    runInAction(() => {
+      this.billingDetailsCompleted = value;
+      this.updateCanProceedToPayment();
+    });
+  }
+
+  updateCanProceedToPayment() {
+    runInAction(() => {
+      this.canProceedToPayment =
+        this.shippingDetailsCompleted &&
+        (this.billingDetailsCompleted || !this.isShippingDifferent);
+    });
+  }
+
+  setIsShippingDifferent(value) {
+    runInAction(() => {
+      this.isShippingDifferent = value;
+      this.updateCanProceedToPayment();
     });
   }
 }

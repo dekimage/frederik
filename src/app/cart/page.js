@@ -33,7 +33,6 @@ const CartPage = observer(() => {
   };
 
   const total = MobxStore.calculateTotal();
-  console.log("Total before toFixed:", total); // Debugging line
 
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8">

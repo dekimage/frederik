@@ -1,4 +1,5 @@
 import { loadStripe } from "@stripe/stripe-js";
+import { Button } from "./ui/button";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
 
@@ -45,14 +46,7 @@ const PaymentButton = ({
     }
   };
 
-  return (
-    <button
-      onClick={handlePayment}
-      className="bg-blue-500 text-white p-4 rounded-lg"
-    >
-      Proceed to Payment
-    </button>
-  );
+  return <Button onClick={handlePayment}>Proceed to Payment</Button>;
 };
 
 export default PaymentButton;

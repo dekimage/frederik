@@ -1,10 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaBars, FaTimes } from "react-icons/fa";
+import Image from "next/image";
+import { observer } from "mobx-react-lite";
+import MobxStore from "../mobx";
 
-const Header = ({ categories }) => {
+const Header = observer(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    MobxStore.fetchCategories();
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -13,9 +20,17 @@ const Header = ({ categories }) => {
   return (
     <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-16 flex items-center justify-between px-6 z-50">
       {/* Logo Placeholder */}
-      <div className="flex items-center">
-        <img src="/logo-placeholder.png" alt="Logo" className="w-10 h-10" />
-      </div>
+      <Link href="/">
+        <div className="flex items-center">
+          <Image
+            width={40}
+            height={40}
+            src="/logo-placeholder.png"
+            alt="Logo"
+            className="w-10 h-10"
+          />
+        </div>
+      </Link>
 
       {/* Hamburger Menu */}
       <div className="text-2xl cursor-pointer" onClick={toggleMenu}>
@@ -47,17 +62,21 @@ const Header = ({ categories }) => {
           <hr className="border-t border-white my-2" />
 
           {/* Categories */}
-          {categories.map((category) => (
-            <li
-              key={category.id}
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href={`/category/${category.name.toLowerCase()}`}>
-                {category.name}
-              </Link>
-            </li>
-          ))}
+          {MobxStore.categoriesLoading ? (
+            <li>Loading categories...</li>
+          ) : (
+            MobxStore.categories.map((category) => (
+              <li
+                key={category.id}
+                onClick={toggleMenu}
+                className="uppercase hover:text-gray-400 transition-colors duration-300"
+              >
+                <Link href={`/category/${category.name.toLowerCase()}`}>
+                  {category.name}
+                </Link>
+              </li>
+            ))
+          )}
 
           {/* Separator Line */}
           <hr className="border-t border-white my-2" />
@@ -96,6 +115,6 @@ const Header = ({ categories }) => {
       </div>
     </header>
   );
-};
+});
 
 export default Header;

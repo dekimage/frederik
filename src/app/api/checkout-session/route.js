@@ -3,22 +3,28 @@
 import { firestore } from "@/app/firebaseAdmin";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { sendEmails } from "./email";
 
 const stripe = new Stripe(process.env.NEXT_STRIPE_SECRET_KEY);
 
 export async function POST(req) {
-  const { cartItems, shippingCost, taxRate, billingDetails, shippingDetails } =
-    await req.json();
-
-  console.log({
-    cartItems,
-    shippingCost,
-    taxRate,
-    billingDetails,
-    shippingDetails,
-  });
-
   try {
+    const {
+      cartItems,
+      shippingCost,
+      taxRate,
+      billingDetails,
+      shippingDetails,
+    } = await req.json();
+
+    console.log("Received data:", {
+      cartItems,
+      shippingCost,
+      taxRate,
+      billingDetails,
+      shippingDetails,
+    });
+
     const validatedItems = [];
     let subtotal = 0;
 
@@ -30,6 +36,7 @@ export async function POST(req) {
     const shopConfig = shopConfigDoc.exists ? shopConfigDoc.data() : null;
 
     if (!shopConfig) {
+      console.error("Shop configuration not found");
       return NextResponse.json(
         { error: "Shop configuration not found." },
         { status: 400 }
@@ -37,13 +44,14 @@ export async function POST(req) {
     }
 
     for (const cartItem of cartItems) {
-      const { productId, quantity, size } = cartItem; // Get size from cartItem
+      const { productId, quantity, size } = cartItem;
 
       // Fetch the product details
       const productRef = firestore.collection("products").doc(productId);
       const productDoc = await productRef.get();
 
       if (!productDoc.exists) {
+        console.error(`Product ${productId} does not exist`);
         return NextResponse.json(
           { error: `Product ${productId} does not exist.` },
           { status: 400 }
@@ -55,6 +63,7 @@ export async function POST(req) {
       // Find the size and corresponding price in shopConfig
       const sizeConfig = shopConfig.sizes.find((s) => s.size === size);
       if (!sizeConfig) {
+        console.error(`Size ${size} not found for product ${productId}`);
         return NextResponse.json(
           { error: `Size ${size} not found for product ${productId}.` },
           { status: 400 }
@@ -62,8 +71,8 @@ export async function POST(req) {
       }
 
       // Calculate total for the line item based on size price
-      const itemTotal = parseFloat(sizeConfig.price) * quantity; // Use the price from sizeConfig
-      subtotal += itemTotal; // Accumulate subtotal
+      const itemTotal = parseFloat(sizeConfig.price) * quantity;
+      subtotal += itemTotal;
 
       validatedItems.push({
         price_data: {
@@ -72,11 +81,13 @@ export async function POST(req) {
             name: productData.name,
             images: [productData.image],
           },
-          unit_amount: Math.round(parseFloat(sizeConfig.price) * 100), // Each item's price in cents
+          unit_amount: Math.round(parseFloat(sizeConfig.price) * 100),
         },
-        quantity: quantity, // Use quantity specified in cart
+        quantity: quantity,
       });
     }
+
+    console.log("Validated items:", validatedItems);
 
     const tax = subtotal * taxRate;
     const total = subtotal + shippingCost + tax;
@@ -86,26 +97,42 @@ export async function POST(req) {
       billingDetails,
       cartItems,
       shippingDetails,
+      total, // Make sure to include the total in the Firestore document
       createdAt: new Date(),
     });
+
+    console.log("Order stored in Firestore, ID:", orderRef.id);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: validatedItems,
       mode: "payment",
       success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/cancel`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/cart`,
       customer_email: billingDetails.email,
       metadata: {
-        orderRef: orderRef.id, // Pass only the reference ID
+        orderRef: orderRef.id,
       },
     });
+
+    console.log("Stripe session created:", session.id);
+
+    // Send emails after successful checkout session creation
+    await sendEmails(
+      orderRef.id,
+      billingDetails,
+      shippingDetails,
+      cartItems,
+      total
+    );
+
+    console.log("Emails sent successfully");
 
     return NextResponse.json({ id: session.id });
   } catch (error) {
     console.error("Error creating checkout session", error);
     return NextResponse.json(
-      { error: "Failed to create checkout session" },
+      { error: "Failed to create checkout session", details: error.message },
       { status: 500 }
     );
   }
