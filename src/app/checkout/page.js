@@ -57,7 +57,7 @@ const CheckoutForm = observer(() => {
 
   return (
     <div className="bg-black text-white mt-16 p-8 min-h-screen">
-      <div className="flex gap-8 flex-col sm:flex-row mx-auto max-w-[1200px]">
+      <div className="flex gap-8 flex-col sm:flex-row mx-auto max-w-[1200px] mt-16">
         <BillingDetailsForm
           formTitle="Shipping Details"
           isShipping={true}
@@ -65,7 +65,7 @@ const CheckoutForm = observer(() => {
         />
 
         <div className="w-full">
-          <label className="flex items-center">
+          <label className="flex items-center cursor-pointer">
             <input
               type="checkbox"
               className="mr-2"

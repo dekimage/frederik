@@ -95,7 +95,7 @@ const CategoryPage = ({ params }) => {
 
   return (
     <div className="bg-black text-white  min-h-[1000px] pt-16 flex flex-col justify-center items-center">
-      <div className="flex flex-col justify-center items-center px-4 sm:px-8">
+      <div className="flex flex-col justify-center items-center px-4 sm:px-8 mt-16">
         {/* Category Title */}
         <LargeTitle title={category?.toUpperCase()} />
         <Link href="/shop">

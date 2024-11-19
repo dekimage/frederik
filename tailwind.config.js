@@ -17,6 +17,10 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        ethnocentric: ["Ethnocentric", "sans-serif"],
+        second: ["SecondFont", "sans-serif"],
+      },
       ...colors,
       colors: {
         border: "hsl(var(--border))",

@@ -22,7 +22,7 @@ import { observer } from "mobx-react";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { UserNav } from "./ReusableProfileMenu";
 import Image from "next/image";
-import logoImg from "../assets/1000todoslogo.png";
+import logoImg from "../../public/logo.png";
 
 import MobileHeader from "./MobileHeader";
 import {

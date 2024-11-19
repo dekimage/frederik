@@ -69,7 +69,7 @@ const ProductDetailsPage = observer(({ params }) => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 mt-16">
+    <div className="min-h-screen bg-black text-white p-8 mt-24">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row gap-12">
           <div className="md:w-1/2">

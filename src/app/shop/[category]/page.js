@@ -18,7 +18,7 @@ const CategoryPage = ({ params }) => {
   }, [category]);
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 mt-16">
+    <div className="min-h-screen bg-black text-white p-8 mt-24">
       <h1 className="text-4xl font-bold mb-8 text-center">
         {category.charAt(0).toUpperCase() + category.slice(1)} Collection
       </h1>

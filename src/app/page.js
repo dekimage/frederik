@@ -12,6 +12,8 @@ import { ChevronRight } from "lucide-react";
 
 import Link from "next/link";
 import Image from "next/image";
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export const categories = [
   { id: "spring", name: "Spring" },
@@ -47,15 +49,15 @@ export const AboutSection = () => {
         <h2 className="text-4xl font-bold text-center md:text-left">
           About Me
         </h2>
-        <p className="text-lg">
+        <p className="text-lg font-second">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent
           viverra nisl ut justo pharetra, ut pharetra lacus ultricies.
         </p>
-        <p className="text-lg">
+        <p className="text-lg font-second ">
           Curabitur malesuada felis non purus blandit, vitae interdum urna
           condimentum. Vivamus placerat ipsum et urna consequat venenatis.
         </p>
-        <p className="text-lg">
+        <p className="text-lg font-second ">
           Nullam dictum magna nec urna malesuada, ac auctor nisi interdum. Etiam
           at nunc ut enim posuere bibendum ut vitae felis.
         </p>
@@ -89,7 +91,7 @@ const getImageByCategory = (category) => {
   }
 };
 
-const CategoriesSection = ({ categories }) => {
+export const CategoriesSection = ({ categories, isFromShop = false }) => {
   const categoryRefs = useRef([]);
 
   useEffect(() => {
@@ -115,16 +117,20 @@ const CategoriesSection = ({ categories }) => {
     };
   }, []);
   return (
-    <section className="w-full min-h-screen">
+    <section className="w-full">
       {/* Content */}
-      <div className="relative z-10 bg-black bg-opacity-50 py-16">
-        <LargeTitle title="Categories" />
+      <div className="relative z-10 bg-black bg-opacity-50 py-8">
+        <LargeTitle title={isFromShop ? "Shop by Category" : "Categories"} />
 
         <div className="grid grid-cols-2 gap-4 p-8">
           {categories.map((category, index) => (
             <Link
               key={category.id}
-              href={`/category/${category.name.toLowerCase()}`}
+              href={
+                isFromShop
+                  ? `/shop/${category.id}`
+                  : `/category/${category.name.toLowerCase()}`
+              }
             >
               <div
                 ref={(el) => (categoryRefs.current[index] = el)}
@@ -157,18 +163,69 @@ const CategoriesSection = ({ categories }) => {
 
 export const ReelsSection = () => {
   const [playing, setPlaying] = useState({});
-  const reels = [
-    { id: "1", videoId: "KIzAhyvvlkA" },
-    { id: "2", videoId: "hXVGP0yP194" },
-    { id: "3", videoId: "R9RePuPo9iA" },
-    { id: "4", videoId: "KIzAhyvvlkA" },
-    { id: "5", videoId: "hXVGP0yP194" },
-    { id: "6", videoId: "R9RePuPo9iA" },
-  ];
+  const [reels, setReels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReels = async () => {
+      try {
+        const reelsRef = collection(db, "reels");
+        const q = query(reelsRef, orderBy("index", "asc"));
+        const querySnapshot = await getDocs(q);
+
+        const reelsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setReels(reelsData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReels();
+  }, []);
 
   const handlePlay = (id) => {
     setPlaying((prev) => ({ ...prev, [id]: true }));
   };
+
+  if (error) {
+    return (
+      <section className="relative min-h-screen w-full">
+        <div className="relative z-10 bg-black bg-opacity-50 py-16">
+          <div className="text-4xl font-bold text-center my-8">Reels</div>
+          <div className="text-center text-red-500">Error: {error}</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (loading) {
+    return (
+      <section className="relative min-h-screen w-full">
+        <div className="relative z-10 bg-black bg-opacity-50 py-16">
+          <div className="text-4xl font-bold text-center my-8">Reels</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
+            {[1, 2, 3, 4, 5, 6].map((skeleton) => (
+              <div
+                key={skeleton}
+                className="relative h-64 bg-gray-800 rounded-lg animate-pulse"
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative min-h-screen w-full">
