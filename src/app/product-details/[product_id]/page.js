@@ -13,7 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, ShoppingCart, X, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ShoppingCart,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -71,6 +78,12 @@ const ProductDetailsPage = observer(({ params }) => {
   return (
     <div className="min-h-screen bg-black text-white p-8 mt-24">
       <div className="max-w-6xl mx-auto">
+        <div
+          onClick={() => router.back()}
+          className="cursor-pointer flex items-center mb-8"
+        >
+          <ChevronLeft size={32} /> BACK
+        </div>
         <div className="flex flex-col md:flex-row gap-12">
           <div className="md:w-1/2">
             <Image

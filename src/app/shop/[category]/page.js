@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import MobxStore from "@/mobx";
 import ProductCard from "@/components/ProductCard"; // Make sure to import ProductCard
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 const CategoryPage = ({ params }) => {
   const { category } = params;
@@ -19,6 +21,9 @@ const CategoryPage = ({ params }) => {
 
   return (
     <div className="min-h-screen bg-black text-white p-8 mt-24">
+      <Link href={`/shop`} className="flex items-center mb-8">
+        <ChevronLeft size={32} /> BACK
+      </Link>
       <h1 className="text-4xl font-bold mb-8 text-center">
         {category.charAt(0).toUpperCase() + category.slice(1)} Collection
       </h1>

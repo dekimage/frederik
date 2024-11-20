@@ -8,11 +8,18 @@ import winterImage from "../../assets/winter.png";
 import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import Link from "next/link";
 import Image from "next/image";
-import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "@/firebase";
 
 export const categories = [
@@ -41,11 +48,46 @@ export const TitleDescription = ({ title, description, seeMore, button }) => {
   );
 };
 
-export const AboutSection = () => {
+const ImageSkeleton = ({ className }) => (
+  <div className={`bg-gray-800 animate-pulse rounded-lg ${className}`}>
+    <div className="h-full w-full flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-gray-600 border-t-gray-400 rounded-full animate-spin" />
+    </div>
+  </div>
+);
+
+export const AboutSection = ({ showBack = true }) => {
+  const [aboutImage, setAboutImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAboutImage = async () => {
+      try {
+        const docRef = doc(db, "images", "about");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setAboutImage(docSnap.data().url);
+        }
+      } catch (error) {
+        console.error("Error fetching about image:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAboutImage();
+  }, []);
+
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8 items-center">
       {/* Left Side - About Text */}
       <div className="space-y-4">
+        {showBack && (
+          <Link href={`/`} className="flex items-center mb-8">
+            <ChevronLeft size={32} /> Back
+          </Link>
+        )}
         <h2 className="text-4xl font-bold text-center md:text-left">
           About Me
         </h2>
@@ -53,24 +95,28 @@ export const AboutSection = () => {
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent
           viverra nisl ut justo pharetra, ut pharetra lacus ultricies.
         </p>
-        <p className="text-lg font-second ">
+        <p className="text-lg font-second">
           Curabitur malesuada felis non purus blandit, vitae interdum urna
           condimentum. Vivamus placerat ipsum et urna consequat venenatis.
         </p>
-        <p className="text-lg font-second ">
+        <p className="text-lg font-second">
           Nullam dictum magna nec urna malesuada, ac auctor nisi interdum. Etiam
           at nunc ut enim posuere bibendum ut vitae felis.
         </p>
       </div>
 
-      {/* Right Side - Image */}
+      {/* Right Side - Image with Loading State */}
       <div className="w-full h-full">
-        <div
-          className="w-full h-64 md:h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `url("https://picsum.photos/600/600")`,
-          }}
-        ></div>
+        {loading ? (
+          <ImageSkeleton className="w-full h-64 md:h-full" />
+        ) : (
+          <div
+            className="w-full h-64 md:h-full bg-cover bg-center rounded-lg transition-opacity duration-300"
+            style={{
+              backgroundImage: `url("${aboutImage}")`,
+            }}
+          />
+        )}
       </div>
     </section>
   );
@@ -287,21 +333,48 @@ export const LargeTitle = ({ title }) => {
 };
 
 const HomePage = observer(() => {
+  const [heroImage, setHeroImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    MobxStore.fetchCategories();
-    // ... other fetch calls if needed
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        MobxStore.fetchCategories();
+
+        // Fetch hero image
+        const docRef = doc(db, "images", "hero");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setHeroImage(docSnap.data().url);
+        }
+      } catch (error) {
+        console.error("Error fetching hero image:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
-    <div className="bg-black text-white  min-h-[1000px] pt-16 flex flex-col justify-center items-center">
-      <Image
-        src="https://picsum.photos/2000/1000"
-        width={1920}
-        height={1080}
-        alt="bg"
-      />
-      <div className="flex flex-col justify-center items-center px-4 sm:px-8">
-        <AboutSection />
+    <div className="bg-black text-white min-h-[1000px] pt-16 flex flex-col justify-center items-center">
+      {loading ? (
+        <ImageSkeleton className="w-full h-[1080px] mb-32" />
+      ) : (
+        <Image
+          src={heroImage || "https://picsum.photos/2000/1000"} // Fallback image
+          width={1920}
+          height={1080}
+          alt="Hero background"
+          className="mb-32"
+          priority
+        />
+      )}
+      <div className="flex flex-col justify-center items-center px-4 sm:px-32">
+        <AboutSection showBack={false} />
         {MobxStore.categoriesLoading ? (
           <p>Loading categories...</p>
         ) : (

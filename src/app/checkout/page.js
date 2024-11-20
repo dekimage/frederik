@@ -98,7 +98,7 @@ const CheckoutForm = observer(() => {
       </div>
 
       {/* Payment Button */}
-      {MobxStore.canProceedToPayment && email && (
+      {MobxStore.canProceedToPayment && (
         <div className="mt-8">
           <PaymentButton
             cartItems={cartItems}

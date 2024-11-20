@@ -9,6 +9,7 @@ const nextConfig = {
       "images.unsplash.com",
       "firebasestorage.googleapis.com",
       "picsum.photos",
+      "plus.unsplash.com",
     ],
   },
 };

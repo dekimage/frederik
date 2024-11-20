@@ -92,17 +92,31 @@ export async function POST(req) {
     const tax = subtotal * taxRate;
     const total = subtotal + shippingCost + tax;
 
+    // Add shipping as a separate line item
+    validatedItems.push({
+      price_data: {
+        currency: "eur",
+        product_data: {
+          name: "Shipping Fee",
+          description: "Flat rate shipping",
+        },
+        unit_amount: Math.round(shippingCost * 100),
+      },
+      quantity: 1,
+    });
+
     // Store order details in Firestore first
     const orderRef = await firestore.collection("pendingOrders").add({
       billingDetails,
       cartItems,
       shippingDetails,
-      total, // Make sure to include the total in the Firestore document
+      total,
       createdAt: new Date(),
     });
 
     console.log("Order stored in Firestore, ID:", orderRef.id);
 
+    // Create Stripe session with automatic tax calculation
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: validatedItems,
@@ -113,6 +127,10 @@ export async function POST(req) {
       metadata: {
         orderRef: orderRef.id,
       },
+      automatic_tax: {
+        enabled: true,
+      },
+      // tax_rates: [process.env.STRIPE_TAX_RATE_ID],
     });
 
     console.log("Stripe session created:", session.id);

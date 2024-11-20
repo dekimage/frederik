@@ -41,7 +41,7 @@ const CartPage = observer(() => {
       {/* Empty Cart Message */}
       {cartProducts.length === 0 ? (
         <div className="text-center">
-          <p className="text-lg mb-4">Your cart is currently empty.</p>
+          <p className="text-lg mb-4 mt-32">Your cart is currently empty.</p>
           <Link href="/shop">
             <button className="bg-white text-black py-2 px-4 rounded">
               Continue Shopping
