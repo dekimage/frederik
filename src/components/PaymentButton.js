@@ -1,7 +1,7 @@
 import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "./ui/button";
 
-const stripePromise = loadStripe(process.env.STRIPE_PUBLIC_KEY);
+const stripePromise = loadStripe(process.env.NEXT_STRIPE_PUBLIC_KEY);
 
 const PaymentButton = ({
   cartItems,
