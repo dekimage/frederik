@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { firestore } from "@/app/firebaseAdmin";
 
-const stripe = new Stripe(process.env.NEXT_STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // const config = {
 //   api: {
@@ -22,7 +22,7 @@ export async function POST(req) {
     event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
-      process.env.NEXT_STRIPE_WEBHOOK_SECRET
+      process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
