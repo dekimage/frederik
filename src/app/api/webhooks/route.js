@@ -5,11 +5,11 @@ import { firestore } from "@/app/firebaseAdmin";
 
 const stripe = new Stripe(process.env.NEXT_STRIPE_SECRET_KEY);
 
-export const config = {
-  api: {
-    bodyParser: false, // Disable body parsing to handle Stripe's raw request body
-  },
-};
+// const config = {
+//   api: {
+//     bodyParser: false, // Disable body parsing to handle Stripe's raw request body
+//   },
+// };
 
 export async function POST(req) {
   const rawBody = await req.text();
