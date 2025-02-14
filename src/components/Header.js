@@ -19,7 +19,7 @@ const Header = observer(() => {
   };
 
   return (
-    <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-24 flex items-center justify-between px-6 z-50">
+    <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-between px-6 z-50">
       {/* Logo Placeholder */}
       <Link href="/">
         <div className="flex items-center">
@@ -28,7 +28,7 @@ const Header = observer(() => {
             height={1000}
             src={logoImg}
             alt="Logo"
-            className="w-auto h-16"
+            className="w-auto h-16 sm:h-20 md:h-22 lg:h-24"
           />
         </div>
       </Link>
@@ -40,9 +40,8 @@ const Header = observer(() => {
 
       {/* Fullscreen Menu */}
       <div
-        className={`border-b border-t border-white absolute top-full left-0 w-full bg-black text-white flex items-center justify-center transition-all duration-500 ease-in-out overflow-hidden ${
-          isMenuOpen ? "max-h-screen" : "max-h-0"
-        }`}
+        className={`border-b border-t border-white absolute top-full left-0 w-full bg-black text-white flex items-center justify-center transition-all duration-500 ease-in-out overflow-hidden ${isMenuOpen ? "max-h-screen" : "max-h-0"
+          }`}
       >
         <ul className="space-y-4 text-center text-md py-8 w-[150px]">
           {/* Home and About */}

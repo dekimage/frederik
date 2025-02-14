@@ -168,7 +168,7 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
       <div className="relative z-10 bg-black bg-opacity-50 py-8">
         <LargeTitle title={isFromShop ? "Shop by Category" : "Categories"} />
 
-        <div className="grid grid-cols-2 gap-4 p-8">
+        <div className="grid grid-cols-2 gap-4 sm:p-8">
           {categories.map((category, index) => (
             <Link
               key={category.id}
@@ -256,7 +256,7 @@ export const ReelsSection = () => {
       <section className="relative min-h-screen w-full">
         <div className="relative z-10 bg-black bg-opacity-50 py-16">
           <div className="text-4xl font-bold text-center my-8">Reels</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
             {[1, 2, 3, 4, 5, 6].map((skeleton) => (
               <div
                 key={skeleton}
@@ -278,13 +278,12 @@ export const ReelsSection = () => {
       <div className="relative z-10 bg-black bg-opacity-50 py-16">
         <div className="text-4xl font-bold text-center my-8">Reels</div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
           {reels.map((reel) => (
             <div
               key={reel.id}
-              className={`relative group h-64 bg-cover bg-center rounded-lg overflow-hidden transition-all duration-500 ${
-                playing[reel.id] ? "" : " transform"
-              }`}
+              className={` relative group h-64 bg-cover bg-center overflow-hidden transition-all duration-500 ${playing[reel.id] ? "" : " transform"
+                }`}
               style={{
                 backgroundImage: !playing[reel.id]
                   ? `url('https://img.youtube.com/vi/${reel.videoId}/0.jpg')`
@@ -294,7 +293,7 @@ export const ReelsSection = () => {
               {/* Overlay and Play Button */}
               {!playing[reel.id] && (
                 <div
-                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-opacity duration-500 group-hover:bg-opacity-50 cursor-pointer"
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-opacity duration-500 group-hover:bg-opacity-50 cursor-pointer "
                   onClick={() => handlePlay(reel.id)}
                 >
                   <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full">
@@ -362,14 +361,14 @@ const HomePage = observer(() => {
   return (
     <div className="bg-black text-white min-h-[1000px] pt-16 flex flex-col justify-center items-center">
       {loading ? (
-        <ImageSkeleton className="w-full h-[1080px] mb-32" />
+        <ImageSkeleton className="w-full h-[1080px] mb-8 sm:mb-32" />
       ) : (
         <Image
           src={heroImage || "https://picsum.photos/2000/1000"} // Fallback image
           width={1920}
           height={1080}
           alt="Hero background"
-          className="mb-32"
+          className="mb-8 sm:mb-32"
           priority
         />
       )}

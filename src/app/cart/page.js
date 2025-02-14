@@ -8,13 +8,12 @@ import { toJS } from "mobx";
 const CartPage = observer(() => {
   const [cartProducts, setCartProducts] = useState([]);
 
-  useEffect(() => {
-    // Fetch cart products and set them to the state
-    const fetchCartProducts = async () => {
-      const products = await MobxStore.getCartProducts();
-      setCartProducts(products);
-    };
+  const fetchCartProducts = async () => {
+    const products = await MobxStore.getCartProducts();
+    setCartProducts(products);
+  };
 
+  useEffect(() => {
     fetchCartProducts();
   }, []);
 
@@ -28,14 +27,16 @@ const CartPage = observer(() => {
   };
 
   // Remove item from cart
-  const removeFromCart = (productId, size) => {
-    MobxStore.removeFromCart(productId, size);
+  const removeFromCart = async (productId, size, material) => {
+    MobxStore.removeFromCart(productId, size, material);
+    // Refresh the cart products after removal
+    await fetchCartProducts();
   };
 
   const total = MobxStore.calculateTotal();
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8">
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 mt-32">
       <h1 className="text-4xl font-bold mb-8 text-center">Cart</h1>
 
       {/* Empty Cart Message */}
@@ -57,6 +58,7 @@ const CartPage = observer(() => {
                 <tr>
                   <th className="border-b border-white py-2">Product</th>
                   <th className="border-b border-white py-2">Size</th>
+                  <th className="border-b border-white py-2">Material</th>
                   <th className="border-b border-white py-2">Price</th>
                   <th className="border-b border-white py-2">Quantity</th>
                   <th className="border-b border-white py-2">Subtotal</th>
@@ -65,7 +67,7 @@ const CartPage = observer(() => {
               <tbody>
                 {cartProducts.map((item) => (
                   <tr
-                    key={`${item.productId}-${item.size}`}
+                    key={`${item.productId}-${item.size}-${item.material}`}
                     className="border-b border-white"
                   >
                     {/* Product Column */}
@@ -73,7 +75,7 @@ const CartPage = observer(() => {
                       <button
                         className="text-red-500"
                         onClick={() =>
-                          removeFromCart(item.productId, item.size)
+                          removeFromCart(item.productId, item.size, item.material)
                         }
                       >
                         ×
@@ -85,11 +87,17 @@ const CartPage = observer(() => {
                       />
                       <div>
                         <p>{item.name}</p>
+                        <p className="text-sm text-gray-400">
+                          {item.size} - {item.material}
+                        </p>
                       </div>
                     </td>
 
                     {/* Size Column */}
                     <td className="py-4">{item.size}</td>
+
+                    {/* Material Column */}
+                    <td className="py-4">{item.material}</td>
 
                     {/* Price Column */}
                     <td className="py-4">€{item.price}</td>

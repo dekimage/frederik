@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { usStates } from "../data";
-import { countries as fallbackCountries } from "../data";
+import { fallbackCountries } from "../data";
 import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 import { Button } from "./ui/button";
-import { ChevronRight } from "lucide-react";
+
 
 const BillingDetailsForm = observer(
   ({ formTitle, isShipping = false, onSubmit }) => {
@@ -57,8 +57,8 @@ const BillingDetailsForm = observer(
           : Yup.string(),
       email: isShipping
         ? Yup.string()
-            .email("Invalid email format")
-            .required("Email is required")
+          .email("Invalid email format")
+          .required("Email is required")
         : Yup.string(),
     });
 

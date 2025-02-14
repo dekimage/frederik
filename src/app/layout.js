@@ -28,10 +28,10 @@ export default function RootLayout({ children }) {
   );
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head></head>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark">
+      <body className={`${inter.className} bg-black`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
           {!shouldExclude && <Header categories={categories} />}
           {children}
           {!shouldExclude && <Footer />}

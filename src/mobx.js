@@ -17,6 +17,8 @@ import {
   limit,
 } from "firebase/firestore";
 
+
+
 class Store {
   // App Data
   cartItems = [];
@@ -244,7 +246,7 @@ class Store {
     const products = [];
 
     for (const cartItem of cartItems) {
-      const { productId, quantity, size } = cartItem; // Extract size and other properties
+      const { productId, quantity, size, material } = cartItem; // Extract size and other properties
 
       // Check if product is already cached
       let product = this.cachedProducts[productId];
@@ -266,6 +268,7 @@ class Store {
           ...product,
           quantity,
           size,
+          material,
           price: parseFloat(cartItem.price), // Use the stored price from the cart item
           productId,
         });
@@ -279,7 +282,9 @@ class Store {
   addToCart(item) {
     const existingItem = this.cartItems.find(
       (cartItem) =>
-        cartItem.productId === item.productId && cartItem.size === item.size
+        cartItem.productId === item.productId &&
+        cartItem.size === item.size &&
+        cartItem.material === item.material
     );
 
     if (existingItem) {
@@ -288,8 +293,9 @@ class Store {
       this.cartItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        size: item.size, // Add size to the cart item
-        price: item.price, // Capture price at the time of adding to cart
+        size: item.size,
+        material: item.material,
+        price: item.price,
       });
     }
 
@@ -297,9 +303,12 @@ class Store {
   }
 
   // Update quantity of an item in the cart
-  updateQuantity(productId, size, newQuantity) {
+  updateQuantity(productId, size, material, newQuantity) {
     const item = this.cartItems.find(
-      (cartItem) => cartItem.productId === productId && cartItem.size === size
+      (cartItem) =>
+        cartItem.productId === productId &&
+        cartItem.size === size &&
+        cartItem.material === material
     );
 
     if (item) {
@@ -308,9 +317,13 @@ class Store {
     }
   }
   // Remove from cart
-  removeFromCart(productId, size) {
+  removeFromCart(productId, size, material) {
     this.cartItems = this.cartItems.filter(
-      (item) => !(item.productId === productId && item.size === size)
+      (item) => !(
+        item.productId === productId &&
+        item.size === size &&
+        item.material === material
+      )
     );
     this.saveCartToLocalStorage();
   }

@@ -24,11 +24,43 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 
+const MATERIALS = [
+  { id: 'wooden', label: 'Wooden', },
+  { id: 'glass', label: 'Glass', },
+  { id: 'iron', label: 'Iron', },
+  { id: 'marble', label: 'Marble', },
+  { id: 'steel', label: 'Steel', }
+];
+
+export const PRICE_COMBINATIONS = {
+  'small-wooden': 29.99,
+  'small-glass': 39.99,
+  'small-iron': 49.99,
+  'small-marble': 69.99,
+  'small-steel': 59.99,
+  'medium-wooden': 49.99,
+  'medium-glass': 59.99,
+  'medium-iron': 69.99,
+  'medium-marble': 89.99,
+  'medium-steel': 79.99,
+  'large-wooden': 69.99,
+  'large-glass': 79.99,
+  'large-iron': 89.99,
+  'large-marble': 109.99,
+  'large-steel': 99.99,
+  'xl-wooden': 89.99,
+  'xl-glass': 99.99,
+  'xl-iron': 109.99,
+  'xl-marble': 129.99,
+  'xl-steel': 119.99,
+};
+
 const ProductDetailsPage = observer(({ params }) => {
   const { product_id } = params;
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("");
+  const [selectedMaterial, setSelectedMaterial] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const router = useRouter();
@@ -41,27 +73,31 @@ const ProductDetailsPage = observer(({ params }) => {
         setProduct(productData);
         if (MobxStore.shopConfig?.sizes) {
           setSelectedSize(MobxStore.shopConfig.sizes[0]?.size || "");
+          setSelectedMaterial(MATERIALS[0]?.id || "");
         }
       }
     };
     fetchProduct();
   }, [product_id]);
 
+  const getCurrentPrice = () => {
+    const combination = `${selectedSize.toLowerCase()}-${selectedMaterial}`;
+    return PRICE_COMBINATIONS[combination] || 0;
+  };
+
   const addToCart = () => {
-    if (product && selectedSize) {
-      const selectedSizeObj = MobxStore.shopConfig.sizes.find(
-        (sizeObj) => sizeObj.size === selectedSize
-      );
-      const price = selectedSizeObj ? parseFloat(selectedSizeObj.price) : 0;
+    if (product && selectedSize && selectedMaterial) {
+      const price = getCurrentPrice();
       MobxStore.addToCart({
         productId: product_id,
         quantity,
         size: selectedSize,
+        material: selectedMaterial,
         price,
       });
       toast({
         title: "Added to Cart",
-        description: `${quantity} x ${product.name} (${selectedSize}) added to your cart.`,
+        description: `${quantity} x ${product.name} (${selectedSize}, ${selectedMaterial}) added to your cart.`,
         duration: 3000,
       });
     }
@@ -101,10 +137,7 @@ const ProductDetailsPage = observer(({ params }) => {
 
             <div className="space-y-4">
               <div>
-                <label
-                  htmlFor="size"
-                  className="block text-sm font-medium mb-2"
-                >
+                <label htmlFor="size" className="block text-sm font-medium mb-2">
                   Size
                 </label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
@@ -114,12 +147,38 @@ const ProductDetailsPage = observer(({ params }) => {
                   <SelectContent>
                     {MobxStore.shopConfig?.sizes.map((sizeObj) => (
                       <SelectItem key={sizeObj.size} value={sizeObj.size}>
-                        {sizeObj.size} (€{sizeObj.price})
+                        {sizeObj.size}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <label htmlFor="material" className="block text-sm font-medium mb-2">
+                  Material
+                </label>
+                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MATERIALS.map((material) => (
+                      <SelectItem key={material.id} value={material.id}>
+                        {material.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedSize && selectedMaterial && (
+                <div className="mt-4">
+                  <p className="text-2xl font-bold text-white">
+                    Price: €{getCurrentPrice().toFixed(2)}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label
@@ -223,7 +282,7 @@ const ProductDetailsPage = observer(({ params }) => {
             size="icon"
             className="rounded-full w-16 h-16"
           >
-            <ShoppingCart className="h-6 w-6" />
+            <ShoppingCart className="h-6 w-6 text-black" />
           </Button>
         </Link>
       </div>

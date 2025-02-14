@@ -40,7 +40,7 @@ const CategoryPage = ({ params }) => {
           where("category", "in", [
             normalizedCategory,
             normalizedCategory.charAt(0).toUpperCase() +
-              normalizedCategory.slice(1),
+            normalizedCategory.slice(1),
           ])
         );
 

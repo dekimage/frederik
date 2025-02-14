@@ -20,7 +20,7 @@ const CategoryPage = ({ params }) => {
   }, [category]);
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 mt-24">
+    <div className="min-h-screen bg-black text-white p-8 mt-32">
       <Link href={`/shop`} className="flex items-center mb-8">
         <ChevronLeft size={32} /> BACK
       </Link>
