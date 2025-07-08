@@ -56,63 +56,73 @@ const CheckoutForm = observer(() => {
   };
 
   return (
-    <div className="bg-black text-white mt-16 p-8 min-h-screen">
-      <div className="flex gap-8 flex-col sm:flex-row mx-auto max-w-[1200px] mt-16">
-        <BillingDetailsForm
-          formTitle="Shipping Details"
-          isShipping={true}
-          onSubmit={handleShippingSubmit}
-        />
+    <div
+      className="bg-black text-white mt-16 p-8 min-h-screen"
+      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+    >
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-semibold mb-8 text-center">Checkout</h1>
+        <div className="flex gap-8 flex-col lg:flex-row mt-8">
+          <BillingDetailsForm
+            formTitle="Shipping Details"
+            isShipping={true}
+            onSubmit={handleShippingSubmit}
+          />
 
-        <div className="w-full">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="mr-2"
-              checked={isShippingDifferent}
-              onChange={handleShippingDifferentChange}
-            />
-            Different Billing Address?
-          </label>
-
-          {isShippingDifferent && (
-            <div className="mt-8">
-              <BillingDetailsForm
-                formTitle="Billing Details"
-                isShipping={false}
-                onSubmit={handleBillingSubmit}
-              />
+          <div className="w-full">
+            <div className="bg-gray-900 rounded-lg p-6 mb-6">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mr-3 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                  checked={isShippingDifferent}
+                  onChange={handleShippingDifferentChange}
+                />
+                <span className="text-gray-300">
+                  Use different billing address
+                </span>
+              </label>
             </div>
-          )}
+
+            {isShippingDifferent && (
+              <div className="mt-6">
+                <BillingDetailsForm
+                  formTitle="Billing Details"
+                  isShipping={false}
+                  onSubmit={handleBillingSubmit}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Order Summary */}
-      <div className="mt-8">
-        <OrderSummary
-          cartItems={cartItems}
-          subtotal={calculateSubtotal()}
-          shippingCost={shippingCost}
-          taxRate={taxRate}
-        />
-      </div>
-
-      {/* Payment Button */}
-      {MobxStore.canProceedToPayment && (
+        {/* Order Summary */}
         <div className="mt-8">
-          <PaymentButton
+          <OrderSummary
             cartItems={cartItems}
             subtotal={calculateSubtotal()}
             shippingCost={shippingCost}
-            tax={calculateSubtotal() * taxRate}
-            billingDetails={
-              isShippingDifferent ? billingDetails : shippingDetails
-            }
-            shippingDetails={shippingDetails}
-            email={email}
+            taxRate={taxRate}
           />
         </div>
-      )}
+
+        {/* Payment Button */}
+        {MobxStore.canProceedToPayment && (
+          <div className="mt-8">
+            <PaymentButton
+              cartItems={cartItems}
+              subtotal={calculateSubtotal()}
+              shippingCost={shippingCost}
+              tax={calculateSubtotal() * taxRate}
+              billingDetails={
+                isShippingDifferent ? billingDetails : shippingDetails
+              }
+              shippingDetails={shippingDetails}
+              email={email}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 });

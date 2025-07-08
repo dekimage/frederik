@@ -8,7 +8,6 @@ import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 import { Button } from "./ui/button";
 
-
 const BillingDetailsForm = observer(
   ({ formTitle, isShipping = false, onSubmit }) => {
     const [selectedCountry, setSelectedCountry] = useState("");
@@ -57,8 +56,8 @@ const BillingDetailsForm = observer(
           : Yup.string(),
       email: isShipping
         ? Yup.string()
-          .email("Invalid email format")
-          .required("Email is required")
+            .email("Invalid email format")
+            .required("Email is required")
         : Yup.string(),
     });
 
@@ -86,34 +85,49 @@ const BillingDetailsForm = observer(
         }}
       >
         {({ isValid, dirty, isSubmitting, setFieldValue }) => (
-          <Form className="space-y-4 w-full">
-            <h2 className="text-2xl font-bold mb-4">{formTitle}</h2>
+          <Form
+            className="space-y-4 w-full bg-gray-900 rounded-lg p-6"
+            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+          >
+            <h2 className="text-2xl font-semibold mb-6 text-white">
+              {formTitle}
+            </h2>
 
             {/* First Name */}
-            <div className="flex flex-col">
-              <label htmlFor="firstName">First Name *</label>
+            <div className="flex flex-col space-y-2">
+              <label
+                htmlFor="firstName"
+                className="text-sm font-medium text-gray-300"
+              >
+                First Name *
+              </label>
               <Field
                 name="firstName"
-                className="p-2 rounded bg-gray-800 text-white"
+                className="p-3 rounded-lg bg-gray-800 border border-gray-600 text-white focus:border-blue-500 focus:outline-none transition-colors"
               />
               <ErrorMessage
                 name="firstName"
                 component="div"
-                className="text-red-500"
+                className="text-red-400 text-sm"
               />
             </div>
 
             {/* Last Name */}
-            <div className="flex flex-col">
-              <label htmlFor="lastName">Last Name *</label>
+            <div className="flex flex-col space-y-2">
+              <label
+                htmlFor="lastName"
+                className="text-sm font-medium text-gray-300"
+              >
+                Last Name *
+              </label>
               <Field
                 name="lastName"
-                className="p-2 rounded bg-gray-800 text-white"
+                className="p-3 rounded-lg bg-gray-800 border border-gray-600 text-white focus:border-blue-500 focus:outline-none transition-colors"
               />
               <ErrorMessage
                 name="lastName"
                 component="div"
-                className="text-red-500"
+                className="text-red-400 text-sm"
               />
             </div>
 

@@ -97,8 +97,35 @@ const ProductDetailsPage = observer(({ params }) => {
       });
       toast({
         title: "Added to Cart",
-        description: `${quantity} x ${product.name} (${selectedSize}, ${selectedMaterial}) added to your cart.`,
-        duration: 3000,
+        description: (
+          <div
+            className="flex items-center space-x-3"
+            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+          >
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-12 h-12 object-cover rounded-lg"
+            />
+            <div className="flex-1">
+              <p className="font-medium">
+                {quantity} x {product.name}
+              </p>
+              <p className="text-sm text-gray-400">
+                {selectedSize}, {selectedMaterial}
+              </p>
+            </div>
+          </div>
+        ),
+        duration: 5000,
+        action: (
+          <Link
+            href="/cart"
+            className="bg-white text-black px-3 py-1 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
+          >
+            View Cart
+          </Link>
+        ),
       });
     }
   };
@@ -112,42 +139,56 @@ const ProductDetailsPage = observer(({ params }) => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 mt-24">
+    <div
+      className="min-h-screen bg-black text-white p-8 mt-24"
+      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+    >
       <div className="max-w-6xl mx-auto">
-        <div
+        <button
           onClick={() => router.back()}
-          className="cursor-pointer flex items-center my-8"
+          className="flex items-center my-8 text-gray-300 hover:text-white transition-colors"
         >
-          <ChevronLeft size={32} /> BACK
-        </div>
-        <div className="flex flex-col md:flex-row gap-12">
-          <div className="md:w-1/2">
-            <Image
-              src={product.image}
-              alt={product.name}
-              width={500}
-              height={500}
-              className="w-full h-auto object-cover rounded-lg shadow-lg cursor-pointer"
-              onClick={() => setIsFullScreen(true)}
-            />
+          <ChevronLeft size={24} className="mr-2" />
+          <span className="text-lg">Back</span>
+        </button>
+        <div className="flex flex-col lg:flex-row gap-12">
+          <div className="lg:w-1/2">
+            <div className="bg-gray-900 rounded-lg p-4">
+              <Image
+                src={product.image}
+                alt={product.name}
+                width={500}
+                height={500}
+                className="w-full h-auto object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setIsFullScreen(true)}
+              />
+              <p className="text-sm text-gray-400 mt-2 text-center">
+                Click to enlarge
+              </p>
+            </div>
           </div>
-          <div className="md:w-1/2 space-y-6">
-            <h1 className="text-4xl font-bold">{product.name}</h1>
-            <p className="text-xl text-gray-400 ">{product.description}</p>
+          <div className="lg:w-1/2 space-y-6">
+            <div>
+              <h1 className="text-3xl font-semibold mb-4">{product.name}</h1>
+            </div>
 
-            <div className="space-y-4">
+            <div className="bg-gray-900 rounded-lg p-6 space-y-6">
               <div>
                 <label
                   htmlFor="size"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-sm font-medium mb-3 text-gray-300"
                 >
                   Size
                 </label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
                     <SelectValue placeholder="Select a size" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    style={{
+                      fontFamily: "system-ui, -apple-system, sans-serif",
+                    }}
+                  >
                     {MobxStore.shopConfig?.sizes.map((sizeObj) => (
                       <SelectItem key={sizeObj.size} value={sizeObj.size}>
                         {sizeObj.size}
@@ -160,7 +201,7 @@ const ProductDetailsPage = observer(({ params }) => {
               <div>
                 <label
                   htmlFor="material"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-sm font-medium mb-3 text-gray-300"
                 >
                   Material
                 </label>
@@ -168,10 +209,14 @@ const ProductDetailsPage = observer(({ params }) => {
                   value={selectedMaterial}
                   onValueChange={setSelectedMaterial}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
                     <SelectValue placeholder="Select a material" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    style={{
+                      fontFamily: "system-ui, -apple-system, sans-serif",
+                    }}
+                  >
                     {MATERIALS.map((material) => (
                       <SelectItem key={material.id} value={material.id}>
                         {material.label}
@@ -182,8 +227,8 @@ const ProductDetailsPage = observer(({ params }) => {
               </div>
 
               {selectedSize && selectedMaterial && (
-                <div className="mt-4">
-                  <p className="text-2xl font-bold text-white">
+                <div className="border-t border-gray-700 pt-4">
+                  <p className="text-2xl font-semibold text-white">
                     Price: €{getCurrentPrice().toFixed(2)}
                   </p>
                 </div>
@@ -192,15 +237,16 @@ const ProductDetailsPage = observer(({ params }) => {
               <div>
                 <label
                   htmlFor="quantity"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-sm font-medium mb-3 text-gray-300"
                 >
                   Quantity
                 </label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="bg-gray-800 border-gray-600 hover:bg-gray-700"
                   >
                     -
                   </Button>
@@ -211,13 +257,14 @@ const ProductDetailsPage = observer(({ params }) => {
                     onChange={(e) =>
                       setQuantity(Math.max(1, parseInt(e.target.value) || 1))
                     }
-                    className="w-16 text-center bg-gray-800 border border-gray-700 rounded p-2"
+                    className="w-16 text-center bg-gray-800 border border-gray-600 rounded-lg p-2 text-white"
                     min="1"
                   />
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(quantity + 1)}
+                    className="bg-gray-800 border-gray-600 hover:bg-gray-700"
                   >
                     +
                   </Button>
@@ -225,17 +272,30 @@ const ProductDetailsPage = observer(({ params }) => {
               </div>
             </div>
 
-            <Button onClick={addToCart} className="w-full">
+            <Button
+              onClick={addToCart}
+              className="w-full bg-white text-black hover:bg-gray-100 font-medium py-3 text-lg"
+            >
               Add to Cart
             </Button>
 
             <Link
               href="/cart"
-              className="inline-flex items-center text-blue-500 hover:text-blue-400"
+              className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
             >
-              Go to Shopping Cart <ArrowRight className="ml-2 h-4 w-4" />
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              View Shopping Cart
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </div>
+        </div>
+
+        {/* Product Description - Full Width Section */}
+        <div className="mt-16 bg-gray-900 rounded-lg p-8">
+          <h2 className="text-2xl font-semibold mb-6">Product Description</h2>
+          <p className="text-lg text-gray-300 leading-relaxed">
+            {product.description}
+          </p>
         </div>
       </div>
 

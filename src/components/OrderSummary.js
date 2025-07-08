@@ -7,35 +7,40 @@ const OrderSummary = ({ cartItems, subtotal, shippingCost, taxRate }) => {
     );
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg text-white">
-      <h2 className="text-2xl font-bold mb-4">Order Summary</h2>
+    <div
+      className="bg-gray-900 p-6 rounded-lg text-white border border-gray-700"
+      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+    >
+      <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
       <div className="space-y-4">
         {cartItems.map((item) => (
           <div
             key={`${item.productId}-${item.size}`}
-            className="flex justify-between"
+            className="flex justify-between py-2 text-gray-300"
           >
             <span>
               {item.name} ({item.size}) x {item.quantity}
             </span>
-            <span>€{(item.price * item.quantity).toFixed(2)}</span>
+            <span className="font-medium">
+              €{(item.price * item.quantity).toFixed(2)}
+            </span>
           </div>
         ))}
-        <div className="border-t border-gray-600 my-4"></div>
-        <div className="flex justify-between">
+        <div className="border-t border-gray-700 my-4"></div>
+        <div className="flex justify-between py-2 text-gray-300">
           <span>Subtotal</span>
           <span>€{subtotal.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between py-2 text-gray-300">
           <span>Shipping</span>
           <span>€{shippingCost}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between py-2 text-gray-300">
           <span>Tax</span>
           <span>€{calculateTax()}</span>
         </div>
-        <div className="border-t border-gray-600 my-4"></div>
-        <div className="flex justify-between text-lg font-bold">
+        <div className="border-t border-gray-700 my-4"></div>
+        <div className="flex justify-between text-xl font-semibold py-2">
           <span>Total</span>
           <span>€{calculateTotal()}</span>
         </div>

@@ -86,4 +86,8 @@
     @apply bg-background text-foreground;
     font-family: "Ethnocentric", sans-serif !important;
   }
+
+  footer {
+    font-family: system-ui, -apple-system, sans-serif !important;
+  }
 }

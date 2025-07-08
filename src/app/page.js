@@ -89,19 +89,30 @@ export const AboutSection = ({ showBack = true }) => {
           </Link>
         )}
         <h2 className="text-4xl font-bold text-center md:text-left">
-          About Me
+          INTRODUCTION
         </h2>
         <p className="text-lg font-second">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent
-          viverra nisl ut justo pharetra, ut pharetra lacus ultricies.
+          Passionate, bursting with creativity and with an eye for detail.
+          That's how I would describe myself. With my professional drones, I am
+          always looking for new ways to explore the world and capture it on
+          film. This gives me the chance to create unique images from a
+          perspective like you have never seen the world before.
         </p>
         <p className="text-lg font-second">
-          Curabitur malesuada felis non purus blandit, vitae interdum urna
-          condimentum. Vivamus placerat ipsum et urna consequat venenatis.
+          What started as a passion long ago, has now grown into a way of
+          sharing the beauty of landscapes and cities around us with others.
+          Whether it is a misty landscape or vibrant city, each image tells a
+          special story and shows how beautiful our world really is.
         </p>
         <p className="text-lg font-second">
-          Nullam dictum magna nec urna malesuada, ac auctor nisi interdum. Etiam
-          at nunc ut enim posuere bibendum ut vitae felis.
+          With my posters, printed on paper, canvas, wood or metal, I want to
+          bring this world into your home and let you enjoy our environment seen
+          from above.
+        </p>
+        <p className="text-lg font-second font-bold mt-4">
+          Johannes Kort,
+          <br />
+          WOLFSKIN Photography™
         </p>
       </div>
 
@@ -180,15 +191,15 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
             >
               <div
                 ref={(el) => (categoryRefs.current[index] = el)}
-                className="relative group h-64 rounded-lg overflow-hidden opacity-0 transform translate-y-8 transition-all duration-500"
+                className="relative group aspect-square rounded-lg overflow-hidden opacity-0 transform translate-y-8 transition-all duration-500"
               >
                 {/* Category Image with Hover Scale */}
                 <div className="w-full h-full transition-transform duration-500 group-hover:scale-150">
                   <Image
                     src={category.image || getImageByCategory(category.name)}
                     alt={category.name}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    className="object-cover"
                   />
                 </div>
 
@@ -332,6 +343,90 @@ export const LargeTitle = ({ title }) => {
   return <div className="text-4xl font-bold text-center my-8">{title}</div>;
 };
 
+export const ImportantInfoSection = () => {
+  return (
+    <section
+      className="w-full max-w-6xl mx-auto py-12 px-4"
+      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+    >
+      <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
+        <h2 className="text-2xl font-bold text-center mb-8 text-white">
+          IMPORTANT INFORMATION
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                WEBSITE INFORMATION AND PLACING ORDERS
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                On this website you will find several categories: spring,
+                summer, fall and winter. Each category consists of several
+                photos taken in a beautiful location around the world in the
+                season the photo falls under. Scroll through the categories and
+                view all photos in larger size by clicking on them. Found
+                yourself a photo you would like to hang in your living room or
+                bedroom as a poster? Just select the type of material you want
+                the photo printed on, select the size of the item and place it
+                in your shopping cart. Have you chosen all the items you want to
+                order? Click on order and go through the steps there. We will
+                take care of the rest and make sure the poster is printed on the
+                chosen material, carefully packed and shipped to the address you
+                provided.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                DELIVERY
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                All orders come with additional information about when and where
+                the photo was taken. In The Netherlands, posters are usually
+                delivered within a few days after ordering them online. Do you
+                live elsewhere in Europe, outside The Netherlands? In that case
+                delivery may take a few days to about two weeks. Delivery
+                outside Europe is also possible, but please understand the
+                delivery might need a longer period then.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                ORDER CANCELLATION AND RETURNS
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Do you still have doubts after your purchase? You can cancel an
+                order within 24 hours and the full amount will be refunded to
+                the account you paid the order with. An order placed 24 hours
+                ago or longer, unfortunately cannot be cancelled. Returns are
+                unfortunately not possible.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                MOUNTING OF THE POSTER
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Mounting materials are not included and depend on the back wall
+                on which the poster will be hung. Get information from your
+                local hardware store and, if necessary, hire an expert to hang
+                the poster for you.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const HomePage = observer(() => {
   const [heroImage, setHeroImage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -360,19 +455,32 @@ const HomePage = observer(() => {
   }, []);
 
   return (
-    <div className="bg-black text-white min-h-[1000px] pt-16 flex flex-col justify-center items-center">
-      {loading ? (
-        <ImageSkeleton className="w-full h-[1080px] mb-8 sm:mb-32" />
-      ) : (
-        <Image
-          src={heroImage || "https://picsum.photos/2000/1000"} // Fallback image
-          width={1920}
-          height={1080}
-          alt="Hero background"
-          className="mb-8 sm:mb-32"
-          priority
-        />
-      )}
+    <div className="bg-black text-white min-h-screen pt-16">
+      {/* Hero Section */}
+      <div className="relative h-[60vh] min-h-[400px] max-h-[600px] overflow-hidden">
+        {loading ? (
+          <ImageSkeleton className="w-full h-full" />
+        ) : (
+          <Image
+            src={heroImage || "https://picsum.photos/2000/1000"} // Fallback image
+            fill
+            alt="Hero background"
+            className="object-cover"
+            priority
+          />
+        )}
+        {/* Hero Overlay with Title */}
+        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+              Welcome to Our Photography Shop
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-200">
+              Capturing moments, creating memories
+            </p>
+          </div>
+        </div>
+      </div>
       <div className="flex flex-col justify-center items-center px-4 sm:px-32">
         <AboutSection showBack={false} />
         {MobxStore.categoriesLoading ? (
@@ -381,6 +489,7 @@ const HomePage = observer(() => {
           <CategoriesSection categories={MobxStore.categories} />
         )}
         <ReelsSection />
+        <ImportantInfoSection />
       </div>
     </div>
   );

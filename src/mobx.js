@@ -17,8 +17,6 @@ import {
   limit,
 } from "firebase/firestore";
 
-
-
 class Store {
   // App Data
   cartItems = [];
@@ -319,11 +317,12 @@ class Store {
   // Remove from cart
   removeFromCart(productId, size, material) {
     this.cartItems = this.cartItems.filter(
-      (item) => !(
-        item.productId === productId &&
-        item.size === size &&
-        item.material === material
-      )
+      (item) =>
+        !(
+          item.productId === productId &&
+          item.size === size &&
+          item.material === material
+        )
     );
     this.saveCartToLocalStorage();
   }
@@ -354,6 +353,11 @@ class Store {
     const total = subtotal + shipping;
 
     return total; // Return total as a number
+  }
+
+  // Get total number of items in cart
+  get cartItemsCount() {
+    return this.cartItems.reduce((total, item) => total + item.quantity, 0);
   }
   async fetchProductDetails() {
     const productIds = this.cartItems.map((item) => item.productId);

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaBars, FaTimes } from "react-icons/fa";
+import { ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { observer } from "mobx-react-lite";
 import MobxStore from "../mobx";
@@ -33,15 +34,33 @@ const Header = observer(() => {
         </div>
       </Link>
 
-      {/* Hamburger Menu */}
-      <div className="text-4xl cursor-pointer" onClick={toggleMenu}>
-        {isMenuOpen ? <FaTimes /> : <FaBars />}
+      {/* Cart Icon and Hamburger Menu */}
+      <div className="flex items-center space-x-4">
+        {/* Cart Icon with Count */}
+        <Link href="/cart" className="relative">
+          <div className="p-3 hover:bg-gray-800 rounded-full transition-colors">
+            <ShoppingCart className="w-6 h-6 text-white" />
+            {MobxStore.cartItemsCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                {MobxStore.cartItemsCount > 99
+                  ? "99+"
+                  : MobxStore.cartItemsCount}
+              </span>
+            )}
+          </div>
+        </Link>
+
+        {/* Hamburger Menu */}
+        <div className="text-4xl cursor-pointer" onClick={toggleMenu}>
+          {isMenuOpen ? <FaTimes /> : <FaBars />}
+        </div>
       </div>
 
       {/* Fullscreen Menu */}
       <div
-        className={`border-b border-t border-white absolute top-full left-0 w-full bg-black text-white flex items-center justify-center transition-all duration-500 ease-in-out overflow-hidden ${isMenuOpen ? "max-h-screen" : "max-h-0"
-          }`}
+        className={`border-b border-t border-white absolute top-full left-0 w-full bg-black text-white flex items-center justify-center transition-all duration-500 ease-in-out overflow-hidden ${
+          isMenuOpen ? "max-h-screen" : "max-h-0"
+        }`}
       >
         <ul className="space-y-4 text-center text-md py-8 w-[150px]">
           {/* Home and About */}
