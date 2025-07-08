@@ -25,34 +25,34 @@ import Link from "next/link";
 import Image from "next/image";
 
 const MATERIALS = [
-  { id: 'wooden', label: 'Wooden', },
-  { id: 'glass', label: 'Glass', },
-  { id: 'iron', label: 'Iron', },
-  { id: 'marble', label: 'Marble', },
-  { id: 'steel', label: 'Steel', }
+  { id: "wooden", label: "Wooden" },
+  { id: "glass", label: "Glass" },
+  { id: "iron", label: "Iron" },
+  { id: "marble", label: "Marble" },
+  { id: "steel", label: "Steel" },
 ];
 
 export const PRICE_COMBINATIONS = {
-  'small-wooden': 29.99,
-  'small-glass': 39.99,
-  'small-iron': 49.99,
-  'small-marble': 69.99,
-  'small-steel': 59.99,
-  'medium-wooden': 49.99,
-  'medium-glass': 59.99,
-  'medium-iron': 69.99,
-  'medium-marble': 89.99,
-  'medium-steel': 79.99,
-  'large-wooden': 69.99,
-  'large-glass': 79.99,
-  'large-iron': 89.99,
-  'large-marble': 109.99,
-  'large-steel': 99.99,
-  'xl-wooden': 89.99,
-  'xl-glass': 99.99,
-  'xl-iron': 109.99,
-  'xl-marble': 129.99,
-  'xl-steel': 119.99,
+  "small-wooden": 29.99,
+  "small-glass": 39.99,
+  "small-iron": 49.99,
+  "small-marble": 69.99,
+  "small-steel": 59.99,
+  "medium-wooden": 49.99,
+  "medium-glass": 59.99,
+  "medium-iron": 69.99,
+  "medium-marble": 89.99,
+  "medium-steel": 79.99,
+  "large-wooden": 69.99,
+  "large-glass": 79.99,
+  "large-iron": 89.99,
+  "large-marble": 109.99,
+  "large-steel": 99.99,
+  "xl-wooden": 89.99,
+  "xl-glass": 99.99,
+  "xl-iron": 109.99,
+  "xl-marble": 129.99,
+  "xl-steel": 119.99,
 };
 
 const ProductDetailsPage = observer(({ params }) => {
@@ -116,7 +116,7 @@ const ProductDetailsPage = observer(({ params }) => {
       <div className="max-w-6xl mx-auto">
         <div
           onClick={() => router.back()}
-          className="cursor-pointer flex items-center mb-8"
+          className="cursor-pointer flex items-center my-8"
         >
           <ChevronLeft size={32} /> BACK
         </div>
@@ -133,11 +133,14 @@ const ProductDetailsPage = observer(({ params }) => {
           </div>
           <div className="md:w-1/2 space-y-6">
             <h1 className="text-4xl font-bold">{product.name}</h1>
-            <p className="text-xl text-gray-400">{product.description}</p>
+            <p className="text-xl text-gray-400 ">{product.description}</p>
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="size" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="size"
+                  className="block text-sm font-medium mb-2"
+                >
                   Size
                 </label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
@@ -155,10 +158,16 @@ const ProductDetailsPage = observer(({ params }) => {
               </div>
 
               <div>
-                <label htmlFor="material" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="material"
+                  className="block text-sm font-medium mb-2"
+                >
                   Material
                 </label>
-                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                <Select
+                  value={selectedMaterial}
+                  onValueChange={setSelectedMaterial}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a material" />
                   </SelectTrigger>

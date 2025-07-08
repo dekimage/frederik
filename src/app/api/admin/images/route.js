@@ -25,7 +25,7 @@ export async function POST(request) {
 
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = storage.bucket();
+    const bucket = storage.bucket("photography-shop.appspot.com");
     const fileName = `images/${Date.now()}-${file.name}`;
     const fileRef = bucket.file(fileName);
 

@@ -7,6 +7,7 @@ import {
   PackageIcon,
   ShoppingCartIcon,
 } from "lucide-react";
+import { ModeToggle } from "../ui/themeButton";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: HomeIcon },
@@ -21,7 +22,7 @@ export default function AdminSidebar() {
   return (
     <div className="h-full border-r border-gray-200 bg-black">
       <div className="flex h-16 items-center px-6 border-b">
-        <h1 className="text-xl font-semibold">Admin Panel</h1>
+        <h1 className="text-xl font-semibold mr-4">Admin Panel</h1>
       </div>
       <nav className="space-y-1 px-3 py-4">
         {navigation.map((item) => {

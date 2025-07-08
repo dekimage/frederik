@@ -11,7 +11,7 @@ export async function POST(request) {
 
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = storage.bucket();
+    const bucket = storage.bucket("photography-shop.appspot.com");
 
     // Clean the filename to remove special characters and spaces
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");

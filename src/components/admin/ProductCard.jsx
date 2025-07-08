@@ -179,6 +179,19 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                 />
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Label htmlFor={`bestseller-${product.id}`}>Bestseller</Label>
+                <input
+                  type="checkbox"
+                  id={`bestseller-${product.id}`}
+                  checked={formData.bestseller || false}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bestseller: e.target.checked })
+                  }
+                  className="h-4 w-4"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor={`index-${product.id}`}>Display Order</Label>
                 <Input
@@ -220,6 +233,11 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
               <p className="text-sm text-gray-500">
                 Category: {product.category || "Not set"}
               </p>
+              {product.bestseller && (
+                <p className="text-sm font-medium text-yellow-600">
+                  ⭐ Bestseller
+                </p>
+              )}
               <p className="text-sm text-gray-500">
                 Display Order: {product.index || "0"}
               </p>

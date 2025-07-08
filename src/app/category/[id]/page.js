@@ -40,7 +40,7 @@ const CategoryPage = ({ params }) => {
           where("category", "in", [
             normalizedCategory,
             normalizedCategory.charAt(0).toUpperCase() +
-            normalizedCategory.slice(1),
+              normalizedCategory.slice(1),
           ])
         );
 
@@ -102,7 +102,7 @@ const CategoryPage = ({ params }) => {
         </Link>
 
         {/* Image Grid with Loading State */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {loading ? (
             // Show skeletons while loading
             [...Array(8)].map((_, index) => <ImageSkeleton key={index} />)
@@ -126,6 +126,11 @@ const CategoryPage = ({ params }) => {
                   height={600}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+
+                {/* Added description overlay for grid images */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center p-4">
+                  {image.description}
+                </div>
 
                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-40 transition-opacity duration-300 flex items-center justify-center">
                   <FaCamera className="text-black text-4xl" />
@@ -155,11 +160,6 @@ const CategoryPage = ({ params }) => {
                 height={600}
                 onClick={handleNextImage}
               />
-
-              {/* Image Description */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center p-4">
-                {images[activeImageIndex].description}
-              </div>
 
               {/* Left Arrow */}
               <div

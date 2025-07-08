@@ -30,7 +30,7 @@ export async function DELETE(request, { params }) {
     if (imageData?.url) {
       try {
         // Get the bucket
-        const bucket = storage.bucket();
+        const bucket = storage.bucket("photography-shop.appspot.com");
 
         // Extract the filename from the URL
         // URL format: https://storage.googleapis.com/BUCKET_NAME/images/filename.jpg

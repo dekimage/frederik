@@ -274,7 +274,7 @@ export const ReelsSection = () => {
   }
 
   return (
-    <section className="relative min-h-screen w-full">
+    <section className="relative w-full">
       <div className="relative z-10 bg-black bg-opacity-50 py-16">
         <div className="text-4xl font-bold text-center my-8">Reels</div>
 
@@ -282,8 +282,9 @@ export const ReelsSection = () => {
           {reels.map((reel) => (
             <div
               key={reel.id}
-              className={` relative group h-64 bg-cover bg-center overflow-hidden transition-all duration-500 ${playing[reel.id] ? "" : " transform"
-                }`}
+              className={` relative group h-64 bg-cover bg-center overflow-hidden transition-all duration-500 ${
+                playing[reel.id] ? "" : " transform"
+              }`}
               style={{
                 backgroundImage: !playing[reel.id]
                   ? `url('https://img.youtube.com/vi/${reel.videoId}/0.jpg')`
