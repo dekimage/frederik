@@ -7,6 +7,7 @@ import winterImage from "../../assets/winter.png";
 
 import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -59,6 +60,7 @@ const ImageSkeleton = ({ className }) => (
 export const AboutSection = ({ showBack = true }) => {
   const [aboutImage, setAboutImage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchAboutImage = async () => {
@@ -89,31 +91,12 @@ export const AboutSection = ({ showBack = true }) => {
           </Link>
         )}
         <h2 className="text-4xl font-bold text-center md:text-left">
-          INTRODUCTION
+          {t("introduction")}
         </h2>
-        <p className="text-lg font-second">
-          Passionate, bursting with creativity and with an eye for detail.
-          That's how I would describe myself. With my professional drones, I am
-          always looking for new ways to explore the world and capture it on
-          film. This gives me the chance to create unique images from a
-          perspective like you have never seen the world before.
-        </p>
-        <p className="text-lg font-second">
-          What started as a passion long ago, has now grown into a way of
-          sharing the beauty of landscapes and cities around us with others.
-          Whether it is a misty landscape or vibrant city, each image tells a
-          special story and shows how beautiful our world really is.
-        </p>
-        <p className="text-lg font-second">
-          With my posters, printed on paper, canvas, wood or metal, I want to
-          bring this world into your home and let you enjoy our environment seen
-          from above.
-        </p>
-        <p className="text-lg font-second font-bold mt-4">
-          Johannes Kort,
-          <br />
-          WOLFSKIN Photography™
-        </p>
+        <p className="text-lg font-second">{t("introText1")}</p>
+        <p className="text-lg font-second">{t("introText2")}</p>
+        <p className="text-lg font-second">{t("introText3")}</p>
+        <p className="text-lg font-second font-bold mt-4">{t("signature")}</p>
       </div>
 
       {/* Right Side - Image with Loading State */}
@@ -150,6 +133,7 @@ const getImageByCategory = (category) => {
 
 export const CategoriesSection = ({ categories, isFromShop = false }) => {
   const categoryRefs = useRef([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -177,7 +161,7 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
     <section className="w-full">
       {/* Content */}
       <div className="relative z-10 bg-black bg-opacity-50 py-8">
-        <LargeTitle title={isFromShop ? "Shop by Category" : "Categories"} />
+        <LargeTitle title={isFromShop ? "Shop by Category" : t("categories")} />
 
         <div className="grid grid-cols-2 gap-4 sm:p-8">
           {categories.map((category, index) => (
@@ -206,7 +190,7 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
                 {/* Overlay and Text */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-transform duration-500">
                   <h3 className="text-2xl text-white font-bold transition-transform duration-500 group-hover:scale-150">
-                    {category.name}
+                    {t(category.name.toLowerCase())}
                   </h3>
                 </div>
               </div>
@@ -223,6 +207,7 @@ export const ReelsSection = () => {
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchReels = async () => {
@@ -255,7 +240,9 @@ export const ReelsSection = () => {
     return (
       <section className="relative min-h-screen w-full">
         <div className="relative z-10 bg-black bg-opacity-50 py-16">
-          <div className="text-4xl font-bold text-center my-8">Reels</div>
+          <div className="text-4xl font-bold text-center my-8">
+            {t("reels")}
+          </div>
           <div className="text-center text-red-500">Error: {error}</div>
         </div>
       </section>
@@ -266,7 +253,9 @@ export const ReelsSection = () => {
     return (
       <section className="relative min-h-screen w-full">
         <div className="relative z-10 bg-black bg-opacity-50 py-16">
-          <div className="text-4xl font-bold text-center my-8">Reels</div>
+          <div className="text-4xl font-bold text-center my-8">
+            {t("reels")}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
             {[1, 2, 3, 4, 5, 6].map((skeleton) => (
               <div
@@ -287,7 +276,7 @@ export const ReelsSection = () => {
   return (
     <section className="relative w-full">
       <div className="relative z-10 bg-black bg-opacity-50 py-16">
-        <div className="text-4xl font-bold text-center my-8">Reels</div>
+        <div className="text-4xl font-bold text-center my-8">{t("reels")}</div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
           {reels.map((reel) => (
@@ -344,6 +333,8 @@ export const LargeTitle = ({ title }) => {
 };
 
 export const ImportantInfoSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section
       className="w-full max-w-6xl mx-auto py-12 px-4"
@@ -351,7 +342,7 @@ export const ImportantInfoSection = () => {
     >
       <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
         <h2 className="text-2xl font-bold text-center mb-8 text-white">
-          IMPORTANT INFORMATION
+          {t("importantInfo")}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -359,37 +350,19 @@ export const ImportantInfoSection = () => {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-white mb-3">
-                WEBSITE INFORMATION AND PLACING ORDERS
+                {t("websiteInfo")}
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                On this website you will find several categories: spring,
-                summer, fall and winter. Each category consists of several
-                photos taken in a beautiful location around the world in the
-                season the photo falls under. Scroll through the categories and
-                view all photos in larger size by clicking on them. Found
-                yourself a photo you would like to hang in your living room or
-                bedroom as a poster? Just select the type of material you want
-                the photo printed on, select the size of the item and place it
-                in your shopping cart. Have you chosen all the items you want to
-                order? Click on order and go through the steps there. We will
-                take care of the rest and make sure the poster is printed on the
-                chosen material, carefully packed and shipped to the address you
-                provided.
+                {t("websiteInfoText")}
               </p>
             </div>
 
             <div>
               <h3 className="text-lg font-semibold text-white mb-3">
-                DELIVERY
+                {t("delivery")}
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                All orders come with additional information about when and where
-                the photo was taken. In The Netherlands, posters are usually
-                delivered within a few days after ordering them online. Do you
-                live elsewhere in Europe, outside The Netherlands? In that case
-                delivery may take a few days to about two weeks. Delivery
-                outside Europe is also possible, but please understand the
-                delivery might need a longer period then.
+                {t("deliveryText")}
               </p>
             </div>
           </div>
@@ -398,26 +371,19 @@ export const ImportantInfoSection = () => {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-white mb-3">
-                ORDER CANCELLATION AND RETURNS
+                {t("orderCancellation")}
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                Do you still have doubts after your purchase? You can cancel an
-                order within 24 hours and the full amount will be refunded to
-                the account you paid the order with. An order placed 24 hours
-                ago or longer, unfortunately cannot be cancelled. Returns are
-                unfortunately not possible.
+                {t("orderCancellationText")}
               </p>
             </div>
 
             <div>
               <h3 className="text-lg font-semibold text-white mb-3">
-                MOUNTING OF THE POSTER
+                {t("mounting")}
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                Mounting materials are not included and depend on the back wall
-                on which the poster will be hung. Get information from your
-                local hardware store and, if necessary, hire an expert to hang
-                the poster for you.
+                {t("mountingText")}
               </p>
             </div>
           </div>
@@ -430,6 +396,7 @@ export const ImportantInfoSection = () => {
 const HomePage = observer(() => {
   const [heroImage, setHeroImage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -473,10 +440,10 @@ const HomePage = observer(() => {
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Welcome to Our Photography Shop
+              {t("heroTitle")}
             </h1>
             <p className="text-xl md:text-2xl text-gray-200">
-              Capturing moments, creating memories
+              {t("heroSubtitle")}
             </p>
           </div>
         </div>

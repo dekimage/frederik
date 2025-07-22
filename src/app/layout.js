@@ -1,5 +1,6 @@
 "use client";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import "../globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,12 +32,19 @@ export default function RootLayout({ children }) {
     <html lang="en" className="dark">
       <head></head>
       <body className={`${inter.className} bg-black`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
-          {!shouldExclude && <Header categories={categories} />}
-          {children}
-          {!shouldExclude && <Footer />}
-          <Toaster />
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            forcedTheme="dark"
+          >
+            {!shouldExclude && <Header categories={categories} />}
+            {children}
+            {!shouldExclude && <Footer />}
+            <Toaster />
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
