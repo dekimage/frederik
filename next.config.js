@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // Heavy server-only SDKs — keep out of webpack bundle (avoids phantom vendor-chunks).
+    serverComponentsExternalPackages: ["firebase-admin", "cloudinary"],
+  },
   images: {
     domains: [
       "localhost",
@@ -11,6 +15,8 @@ const nextConfig = {
       "picsum.photos",
       "plus.unsplash.com",
       "storage.googleapis.com",
+      "img.youtube.com",
+      "res.cloudinary.com",
     ],
   },
 };

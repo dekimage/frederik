@@ -1,25 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import BillingDetailsForm from "@/components/BillingDetailsForm";
 import OrderSummary from "@/components/OrderSummary";
 import PaymentButton from "@/components/PaymentButton";
 import MobxStore from "@/mobx";
+import { quoteOrderForShippingCountry } from "@/lib/pricingCatalog";
 
 const CheckoutForm = observer(() => {
   const [isShippingDifferent, setIsShippingDifferent] = useState(false);
   const [shippingDetails, setShippingDetails] = useState({});
   const [billingDetails, setBillingDetails] = useState({});
-  const [email, setEmail] = useState("");
   const [cartItems, setCartItems] = useState([]);
+  const [shippingCountryEstimate, setShippingCountryEstimate] = useState("");
 
-  const {
-    calculateSubtotal,
-    shopConfig,
-    setIsShippingDifferent: setMobxIsShippingDifferent,
-  } = MobxStore;
-  const shippingCost = shopConfig?.shippingRate;
-  const taxRate = 0.1; // Example tax rate of 10%
+  const { setIsShippingDifferent: setMobxIsShippingDifferent } = MobxStore;
+
+  const shippingCost = 0;
+  const taxRate = 0.1;
 
   useEffect(() => {
     const fetchCartProducts = async () => {
@@ -29,6 +27,29 @@ const CheckoutForm = observer(() => {
 
     fetchCartProducts();
   }, []);
+
+  const effectiveShippingCountry =
+    (shippingDetails.country || shippingCountryEstimate || "")
+      .toString()
+      .trim()
+      .toUpperCase() || "";
+
+  const quotedCheckout = useMemo(() => {
+    const lines = cartItems.map((item) => ({
+      quantity: item.quantity,
+      material: item.material,
+      sizeKey: item.sizeKey,
+    }));
+    return quoteOrderForShippingCountry(lines, effectiveShippingCountry);
+  }, [cartItems, effectiveShippingCountry]);
+
+  const paymentReady =
+    effectiveShippingCountry.length === 2 && quotedCheckout?.ok;
+
+  const paymentMerchandiseTotal = paymentReady
+    ? quotedCheckout.totalSum
+    : 0;
+  const paymentTaxEstimate = paymentMerchandiseTotal * taxRate;
 
   const handleShippingDifferentChange = (e) => {
     const newValue = e.target.checked;
@@ -43,6 +64,11 @@ const CheckoutForm = observer(() => {
 
   const handleShippingSubmit = (details) => {
     setShippingDetails(details);
+    if (details?.country) {
+      setShippingCountryEstimate(
+        details.country.toString().trim().toUpperCase()
+      );
+    }
     MobxStore.setShippingDetailsCompleted(true);
     if (!isShippingDifferent) {
       setBillingDetails(details);
@@ -56,17 +82,25 @@ const CheckoutForm = observer(() => {
   };
 
   return (
-    <div
-      className="bg-black text-white mt-16 p-8 min-h-screen"
-      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-    >
+    <div className="bg-black text-white mt-16 p-8 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-8 text-center">Checkout</h1>
+        <h1 className="text-3xl font-semibold mb-3 text-center">Checkout</h1>
+        <p className="text-center text-sm text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+          Product pages show <strong className="text-gray-300">print list prices</strong>{" "}
+          for the reference market. Enter your <strong className="text-gray-300">shipping address</strong>{" "}
+          here: we add postal/delivery from the price list for that country and
+          charge the matching total at payment.
+        </p>
         <div className="flex gap-8 flex-col lg:flex-row mt-8">
           <BillingDetailsForm
             formTitle="Shipping Details"
             isShipping={true}
             onSubmit={handleShippingSubmit}
+            onCountryChange={(cc) =>
+              setShippingCountryEstimate(
+                (cc || "").toString().trim().toUpperCase()
+              )
+            }
           />
 
           <div className="w-full">
@@ -100,25 +134,32 @@ const CheckoutForm = observer(() => {
         <div className="mt-8">
           <OrderSummary
             cartItems={cartItems}
-            subtotal={calculateSubtotal()}
-            shippingCost={shippingCost}
+            shippingCountryCode={effectiveShippingCountry}
             taxRate={taxRate}
           />
         </div>
 
         {/* Payment Button */}
         {MobxStore.canProceedToPayment && (
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col items-stretch max-w-md mx-auto">
+            {!paymentReady && (
+              <p className="text-center text-amber-400 text-sm mb-3 leading-relaxed">
+                {effectiveShippingCountry.length === 2 && !quotedCheckout?.ok
+                  ? "This cart cannot be priced for the shipping country (variant not in the list or catalog issue). Change the country or edit the cart."
+                  : "Shipping country is missing or invalid for pricing."}
+              </p>
+            )}
             <PaymentButton
               cartItems={cartItems}
-              subtotal={calculateSubtotal()}
+              subtotal={paymentMerchandiseTotal}
               shippingCost={shippingCost}
-              tax={calculateSubtotal() * taxRate}
+              tax={paymentTaxEstimate}
+              taxRate={taxRate}
               billingDetails={
                 isShippingDifferent ? billingDetails : shippingDetails
               }
               shippingDetails={shippingDetails}
-              email={email}
+              disabled={!paymentReady}
             />
           </div>
         )}

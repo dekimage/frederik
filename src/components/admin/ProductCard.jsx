@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { EditIcon, TrashIcon, SaveIcon, ImageIcon } from "lucide-react";
+import { EditIcon, TrashIcon, SaveIcon, ImageIcon, Link2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,19 +14,27 @@ import {
 } from "@/components/ui/dialog";
 import CategorySelect from "./CategorySelect";
 import { Label } from "../ui/label";
-
+import PickGalleryImageDialog from "./PickGalleryImageDialog";
 export default function ProductCard({ product, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [formData, setFormData] = useState(product);
   const [loading, setLoading] = useState(false);
   const [newImageFile, setNewImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(product.image);
 
+  useEffect(() => {
+    setFormData(product);
+    setImagePreview(product.image);
+    setNewImageFile(null);
+  }, [product]);
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setNewImageFile(file);
+      setFormData((prev) => ({ ...prev, sharedGalleryImage: false }));
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -35,6 +43,16 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
     }
   };
 
+  const handleGalleryPick = ({ url, cloudinaryPublicId }) => {
+    setNewImageFile(null);
+    setImagePreview(url);
+    setFormData((prev) => ({
+      ...prev,
+      image: url,
+      cloudinaryPublicId: cloudinaryPublicId ?? null,
+      sharedGalleryImage: true,
+    }));
+  };
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -52,8 +70,10 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
         });
 
         if (!uploadResponse.ok) throw new Error("Failed to upload new image");
-        const { url } = await uploadResponse.json();
+        const { url, cloudinaryPublicId } = await uploadResponse.json();
         updatedData.image = url;
+        updatedData.cloudinaryPublicId = cloudinaryPublicId;
+        updatedData.sharedGalleryImage = false;
       }
 
       // Ensure price is a number
@@ -102,13 +122,13 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
       <Card className="overflow-hidden">
         <div className="relative aspect-square">
           <img
-            src={formData.image || "https://via.placeholder.com/400"}
+            src={imagePreview || formData.image || "https://via.placeholder.com/400"}
             alt={formData.name}
             className="object-cover w-full h-full"
           />
           {isEditing && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <div className="text-center p-4">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-2">
+              <div className="text-center p-2 space-y-2">
                 <Input
                   type="file"
                   accept="image/*"
@@ -118,11 +138,21 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                 />
                 <label
                   htmlFor={`file-upload-${product.id}`}
-                  className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white text-gray-900 rounded-md hover:bg-gray-100"
+                  className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white text-gray-900 rounded-md hover:bg-gray-100 text-sm"
                 >
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  Change Image
+                  Upload new
                 </label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setGalleryOpen(true)}
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  From Images library
+                </Button>
               </div>
             </div>
           )}
@@ -214,6 +244,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                   onClick={() => {
                     setIsEditing(false);
                     setFormData(product);
+                    setImagePreview(product.image);
                     setNewImageFile(null);
                   }}
                 >
@@ -281,6 +312,12 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PickGalleryImageDialog
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        onPick={handleGalleryPick}
+      />
     </>
   );
 }

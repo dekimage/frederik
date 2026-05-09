@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import MobxStore from "@/mobx";
 import Link from "next/link";
-import { toJS } from "mobx";
+import { materialLabel, getCountryLabel, PDP_REFERENCE_COUNTRY } from "@/lib/pricingCatalog";
+import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
 
 const CartPage = observer(() => {
   const [cartProducts, setCartProducts] = useState([]);
@@ -19,38 +20,33 @@ const CartPage = observer(() => {
 
   const handleQuantityChange = async (
     productId,
-    size,
+    sizeKey,
     material,
     newQuantity
   ) => {
-    // Update quantity in MobX store
-    MobxStore.updateQuantity(productId, size, material, newQuantity);
-
-    // Re-fetch the cart products from the store to update local state
+    MobxStore.updateQuantity(productId, sizeKey, material, newQuantity);
     const updatedProducts = await MobxStore.getCartProducts();
-    setCartProducts(updatedProducts); // Update the local state
+    setCartProducts(updatedProducts);
   };
 
-  // Remove item from cart
-  const removeFromCart = async (productId, size, material) => {
-    MobxStore.removeFromCart(productId, size, material);
-    // Refresh the cart products after removal
+  const removeFromCart = async (productId, sizeKey, material) => {
+    MobxStore.removeFromCart(productId, sizeKey, material);
     await fetchCartProducts();
   };
 
-  const total = MobxStore.calculateTotal();
+  const printSubtotal = cartProducts.reduce(
+    (acc, item) => acc + Number(item.price) * item.quantity,
+    0
+  );
+  const refLabel = getCountryLabel(PDP_REFERENCE_COUNTRY);
 
   return (
-    <div
-      className="min-h-screen bg-black text-white p-4 md:p-8 mt-32"
-      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-    >
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 mt-32">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-semibold mb-8 text-center">
           Shopping Cart
         </h1>
 
-        {/* Empty Cart Message */}
         {cartProducts.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-gray-400 text-6xl mb-4">🛒</div>
@@ -64,7 +60,6 @@ const CartPage = observer(() => {
             </Link>
           </div>
         ) : (
-          // Cart Table
           <div className="space-y-8">
             <div className="hidden md:block bg-gray-900 rounded-lg overflow-hidden">
               <table className="w-full text-left">
@@ -79,142 +74,144 @@ const CartPage = observer(() => {
                     <th className="px-6 py-4 font-medium text-gray-300">
                       Material
                     </th>
-                    <th className="px-6 py-4 font-medium text-gray-300">
-                      Price
+                    <th className="px-4 py-4 font-medium text-gray-300 text-right">
+                      Print ea. ({refLabel})
                     </th>
-                    <th className="px-6 py-4 font-medium text-gray-300">
-                      Quantity
+                    <th className="px-4 py-4 font-medium text-gray-300">
+                      Qty
                     </th>
-                    <th className="px-6 py-4 font-medium text-gray-300">
-                      Subtotal
+                    <th className="px-4 py-4 font-medium text-gray-300 text-right">
+                      Line total
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cartProducts.map((item) => (
-                    <tr
-                      key={`${item.productId}-${item.size}-${item.material}`}
-                      className="border-b border-gray-700 hover:bg-gray-800 transition-colors"
-                    >
-                      {/* Product Column */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-4">
-                          <button
-                            className="text-red-500 hover:text-red-400 text-xl font-bold"
-                            onClick={() =>
-                              removeFromCart(
-                                item.productId,
-                                item.size,
-                                item.material
-                              )
-                            }
-                          >
-                            ×
-                          </button>
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-gray-400">
-                              {item.size} - {item.material}
-                            </p>
+                  {cartProducts.map((item) => {
+                    const linePrint = Number(item.price) * item.quantity;
+                    return (
+                      <tr
+                        key={`${item.productId}-${item.sizeKey}-${item.material}`}
+                        className="border-b border-gray-700 hover:bg-gray-800 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-4">
+                            <button
+                              className="text-red-500 hover:text-red-400 text-xl font-bold"
+                              onClick={() =>
+                                removeFromCart(
+                                  item.productId,
+                                  item.sizeKey,
+                                  item.material
+                                )
+                              }
+                            >
+                              ×
+                            </button>
+                            <img
+                              src={cloudinaryMaxQualityDeliveryUrl(item.image)}
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-lg"
+                            />
+                            <div>
+                              <p className="font-medium">{item.name}</p>
+                              <p className="text-sm text-gray-400">
+                                {materialLabel(item.material)} · {item.size}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-
-                      {/* Size Column */}
-                      <td className="px-6 py-4 text-gray-300">{item.size}</td>
-
-                      {/* Material Column */}
-                      <td className="px-6 py-4 text-gray-300">
-                        {item.material}
-                      </td>
-
-                      {/* Price Column */}
-                      <td className="px-6 py-4 font-medium">€{item.price}</td>
-
-                      {/* Quantity Column */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition-colors"
-                            onClick={() =>
-                              handleQuantityChange(
-                                item.productId,
-                                item.size,
-                                item.material,
-                                Math.max(1, item.quantity - 1)
-                              )
-                            }
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            min="1"
-                            className="w-12 text-center bg-gray-800 border border-gray-600 rounded py-1"
-                            onChange={(e) => {
-                              const newQuantity = parseInt(e.target.value) || 1;
-                              handleQuantityChange(
-                                item.productId,
-                                item.size,
-                                item.material,
-                                Math.max(1, newQuantity)
-                              );
-                            }}
-                          />
-                          <button
-                            className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition-colors"
-                            onClick={() =>
-                              handleQuantityChange(
-                                item.productId,
-                                item.size,
-                                item.material,
-                                item.quantity + 1
-                              )
-                            }
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Subtotal Column */}
-                      <td className="px-6 py-4 font-medium">
-                        €{(item.price * item.quantity).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 text-gray-300">{item.size}</td>
+                        <td className="px-6 py-4 text-gray-300">
+                          {materialLabel(item.material)}
+                        </td>
+                        <td className="px-4 py-4 text-right text-gray-300 text-sm tabular-nums">
+                          €{Number(item.price).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition-colors"
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.productId,
+                                  item.sizeKey,
+                                  item.material,
+                                  Math.max(1, item.quantity - 1)
+                                )
+                              }
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              min="1"
+                              className="w-12 text-center bg-gray-800 border border-gray-600 rounded py-1"
+                              onChange={(e) => {
+                                const newQuantity =
+                                  parseInt(e.target.value, 10) || 1;
+                                handleQuantityChange(
+                                  item.productId,
+                                  item.sizeKey,
+                                  item.material,
+                                  Math.max(1, newQuantity)
+                                );
+                              }}
+                            />
+                            <button
+                              className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition-colors"
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.productId,
+                                  item.sizeKey,
+                                  item.material,
+                                  item.quantity + 1
+                                )
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right align-top tabular-nums font-medium text-white">
+                          €{linePrint.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            {/* Summary Section */}
             <div className="flex justify-end">
               <div className="w-full max-w-md bg-gray-900 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-gray-300">
-                    <span>Subtotal:</span>
-                    <span>€{MobxStore.calculateSubtotal()?.toFixed(2)}</span>
+                <h3 className="text-xl font-semibold mb-2">Cart subtotal</h3>
+                <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                  Totals here are <span className="text-gray-300">print only</span>{" "}
+                  at the {refLabel} ({PDP_REFERENCE_COUNTRY}) list. Postal /
+                  delivery for your address is calculated at checkout.
+                </p>
+                <div className="space-y-2 text-sm tabular-nums">
+                  <div className="flex justify-between gap-4 text-gray-300">
+                    <span className="text-left shrink">Poster print (Σ qty)</span>
+                    <span className="font-medium">
+                      €{printSubtotal.toFixed(2)}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Shipping:</span>
-                    <span>€{MobxStore.shopConfig?.shippingRate}</span>
-                  </div>
-                  <div className="border-t border-gray-700 pt-3">
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>Total:</span>
-                      <span>€{(total || 0).toFixed(2)}</span>
+                  <div className="border-t border-gray-700 pt-3 mt-2">
+                    <div className="flex justify-between gap-4 font-semibold text-white">
+                      <span>Due at payment (preview)</span>
+                      <span className="text-gray-400 font-normal text-sm">
+                        After checkout address
+                      </span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      You will see print + delivery for your country and tax on
+                      the checkout page once shipping details are filled in.
+                    </p>
                   </div>
                 </div>
 
-                {/* Checkout Button */}
                 <div className="mt-6">
                   <Link href="/checkout">
                     <button className="w-full bg-white text-black py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors">

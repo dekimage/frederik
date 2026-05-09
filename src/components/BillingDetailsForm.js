@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { usStates } from "../data";
-import { fallbackCountries } from "../data";
+// import { fallbackCountries } from "../data"; /* used only when worldwide country list below is restored */
 import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 import { Button } from "./ui/button";
+import { getCountryLabel, listCountries } from "@/lib/pricingCatalog";
 
 const BillingDetailsForm = observer(
-  ({ formTitle, isShipping = false, onSubmit }) => {
+  ({ formTitle, isShipping = false, onSubmit, onCountryChange }) => {
     const [selectedCountry, setSelectedCountry] = useState("");
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,7 +18,29 @@ const BillingDetailsForm = observer(
 
     const { shippingDetailsCompleted, billingDetailsCompleted } = MobxStore;
 
-    // Fetch countries from restcountries.com API
+    /*
+     * SHIPPING DESTINATION COUNTRIES (current): Only ISO codes present in pricingNormalized.json
+     * (`listCountries`). Checkout + Stripe use the same catalog; no addresses outside this set.
+     *
+     * When the client expands coverage, regenerate JSON (new countries / rows), or restore the
+     * worldwide dropdown below plus manual-quote / blended pricing UX.
+     */
+    useEffect(() => {
+      const catalogCodes = listCountries();
+      const countryOptions = catalogCodes.map((cca2) => ({
+        label: `${getCountryLabel(cca2)} (${cca2})`,
+        value: cca2,
+      }));
+      countryOptions.sort((a, b) => a.label.localeCompare(b.label));
+      setCountries(countryOptions);
+      setLoading(false);
+      setError(null);
+    }, []);
+
+    /*
+    // --- Worldwide list (paused; do not delete) ---
+    // import { fallbackCountries } from "../data"; at top when re-enabling
+    //
     useEffect(() => {
       const fetchCountries = async () => {
         try {
@@ -27,9 +50,9 @@ const BillingDetailsForm = observer(
           const countryOptions = data
             .map((country) => ({
               label: country.name.common,
-              value: country.cca2, // 2-letter country code
+              value: country.cca2,
             }))
-            .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
+            .sort((a, b) => a.label.localeCompare(b.label));
           setCountries(countryOptions);
         } catch (err) {
           console.error("Failed to fetch countries:", err);
@@ -39,9 +62,9 @@ const BillingDetailsForm = observer(
           setLoading(false);
         }
       };
-
       fetchCountries();
     }, []);
+    */
 
     // Validation Schema
     const validationSchema = Yup.object({
@@ -85,10 +108,7 @@ const BillingDetailsForm = observer(
         }}
       >
         {({ isValid, dirty, isSubmitting, setFieldValue }) => (
-          <Form
-            className="space-y-4 w-full bg-gray-900 rounded-lg p-6"
-            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-          >
+          <Form className="space-y-4 w-full bg-gray-900 rounded-lg p-6">
             <h2 className="text-2xl font-semibold mb-6 text-white">
               {formTitle}
             </h2>
@@ -132,8 +152,12 @@ const BillingDetailsForm = observer(
             </div>
 
             {/* Country/Region */}
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-2">
               <label htmlFor="country">Country/Region *</label>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                We currently ship only to destinations covered by our price list ({countries.length}{" "}
+                countries). Contact us if yours is not listed.
+              </p>
               {loading ? (
                 <div className="text-white">Loading countries...</div>
               ) : (
@@ -142,8 +166,12 @@ const BillingDetailsForm = observer(
                   name="country"
                   className="p-2 rounded bg-gray-800 text-white"
                   onChange={(e) => {
-                    setFieldValue("country", e.target.value);
-                    setSelectedCountry(e.target.value);
+                    const v = e.target.value;
+                    setFieldValue("country", v);
+                    setSelectedCountry(v);
+                    if (typeof onCountryChange === "function") {
+                      onCountryChange(v || "");
+                    }
                   }}
                 >
                   <option value="">Select a country</option>

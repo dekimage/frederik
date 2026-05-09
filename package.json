@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "pricing:normalize": "node scripts/normalize-pricing.mjs"
   },
   "dependencies": {
     "@firebase/firestore": "^4.4.0",
@@ -35,6 +36,7 @@
     "@tanstack/react-table": "^8.20.6",
     "@uiw/react-color-circle": "^2.0.5",
     "class-variance-authority": "^0.7.0",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
     "date-fns": "^3.0.6",
@@ -70,6 +72,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10",
+    "csv-parse": "^6.2.1",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
     "postcss": "^8",

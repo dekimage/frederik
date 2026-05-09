@@ -4,6 +4,7 @@ import { firestore } from "@/app/firebaseAdmin";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { sendEmails } from "./email";
+import { getQuote, materialLabel } from "@/lib/pricingCatalog";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -11,16 +12,13 @@ export async function POST(req) {
   try {
     const {
       cartItems,
-      shippingCost,
-      taxRate,
+      taxRate = 0.1,
       billingDetails,
       shippingDetails,
     } = await req.json();
 
     console.log("Received data:", {
       cartItems,
-      shippingCost,
-      taxRate,
       billingDetails,
       shippingDetails,
     });
@@ -28,25 +26,31 @@ export async function POST(req) {
     const validatedItems = [];
     let subtotal = 0;
 
-    // Fetch the shop configuration
-    const shopConfigRef = firestore
-      .collection("shopConfig")
-      .doc("productSpecifications");
-    const shopConfigDoc = await shopConfigRef.get();
-    const shopConfig = shopConfigDoc.exists ? shopConfigDoc.data() : null;
-
-    if (!shopConfig) {
-      console.error("Shop configuration not found");
+    const shippingCountry = (shippingDetails?.country || "")
+      .toString()
+      .toUpperCase();
+    if (!shippingCountry || shippingCountry.length !== 2) {
       return NextResponse.json(
-        { error: "Shop configuration not found." },
+        { error: "Shipping country is required (ISO alpha-2)." },
         { status: 400 }
       );
     }
 
     for (const cartItem of cartItems) {
-      const { productId, quantity, size } = cartItem;
+      const { productId, quantity } = cartItem;
+      const material = cartItem.material;
+      const sizeKey = cartItem.sizeKey;
 
-      // Fetch the product details
+      if (!material || !sizeKey) {
+        return NextResponse.json(
+          {
+            error:
+              "Each cart line must include material and sizeKey from the print catalog.",
+          },
+          { status: 400 }
+        );
+      }
+
       const productRef = firestore.collection("products").doc(productId);
       const productDoc = await productRef.get();
 
@@ -60,18 +64,21 @@ export async function POST(req) {
 
       const productData = productDoc.data();
 
-      // Find the size and corresponding price in shopConfig
-      const sizeConfig = shopConfig.sizes.find((s) => s.size === size);
-      if (!sizeConfig) {
-        console.error(`Size ${size} not found for product ${productId}`);
+      const row = getQuote(shippingCountry, material, sizeKey);
+      if (!row || !row.available) {
         return NextResponse.json(
-          { error: `Size ${size} not found for product ${productId}.` },
+          {
+            error: `Print option not available for ${shippingCountry}: ${materialLabel(
+              material
+            )} · ${sizeKey}`,
+          },
           { status: 400 }
         );
       }
 
-      // Calculate total for the line item based on size price
-      const itemTotal = parseFloat(sizeConfig.price) * quantity;
+      const unit = Number(row.priceIncShipping);
+
+      const itemTotal = unit * quantity;
       subtotal += itemTotal;
 
       validatedItems.push({
@@ -79,9 +86,10 @@ export async function POST(req) {
           currency: "eur",
           product_data: {
             name: productData.name,
-            images: [productData.image],
+            description: `${materialLabel(material)} · ${row.sizeRaw} · ship ${shippingCountry}`,
+            images: productData.image ? [productData.image] : [],
           },
-          unit_amount: Math.round(parseFloat(sizeConfig.price) * 100),
+          unit_amount: Math.round(unit * 100),
         },
         quantity: quantity,
       });
@@ -90,20 +98,7 @@ export async function POST(req) {
     console.log("Validated items:", validatedItems);
 
     const tax = subtotal * taxRate;
-    const total = subtotal + shippingCost + tax;
-
-    // Add shipping as a separate line item
-    validatedItems.push({
-      price_data: {
-        currency: "eur",
-        product_data: {
-          name: "Shipping Fee",
-          description: "Flat rate shipping",
-        },
-        unit_amount: Math.round(shippingCost * 100),
-      },
-      quantity: 1,
-    });
+    const total = subtotal + tax;
 
     // Store order details in Firestore first
     const orderRef = await firestore.collection("pendingOrders").add({

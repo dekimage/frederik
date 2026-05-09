@@ -8,10 +8,13 @@ const PaymentButton = ({
   subtotal,
   shippingCost,
   tax,
+  taxRate = 0.1,
   billingDetails,
   shippingDetails,
+  disabled = false,
 }) => {
   const handlePayment = async () => {
+    if (disabled) return;
     const stripe = await stripePromise;
     const response = await fetch("/api/checkout-session", {
       method: "POST",
@@ -22,6 +25,7 @@ const PaymentButton = ({
         cartItems,
         shippingCost,
         tax,
+        taxRate,
         billingDetails,
         shippingDetails,
       }),
@@ -46,7 +50,11 @@ const PaymentButton = ({
     }
   };
 
-  return <Button onClick={handlePayment}>Proceed to Payment</Button>;
+  return (
+    <Button onClick={handlePayment} disabled={disabled}>
+      Proceed to Payment
+    </Button>
+  );
 };
 
 export default PaymentButton;

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { FaArrowLeft, FaArrowRight, FaCamera } from "react-icons/fa";
-import Image from "next/image";
+import RemotePhotoImage from "@/components/RemotePhotoImage";
 import { LargeTitle } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
@@ -119,12 +119,13 @@ const CategoryPage = ({ params }) => {
                 className="relative group overflow-hidden cursor-pointer"
                 onClick={() => handleImageClick(index)}
               >
-                <Image
+                <RemotePhotoImage
                   src={image.url}
                   alt={image.description || `Image ${index + 1}`}
                   width={600}
                   height={600}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                 />
 
                 {/* Added description overlay for grid images */}
@@ -152,12 +153,13 @@ const CategoryPage = ({ params }) => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Active Image */}
-              <Image
+              <RemotePhotoImage
                 src={images[activeImageIndex].url}
-                alt={`Active Image`}
+                alt="Active Image"
                 className="w-full h-auto object-contain"
                 width={600}
                 height={600}
+                sizes="(max-width: 768px) 100vw, 48rem"
                 onClick={handleNextImage}
               />
 

@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { extendedTranslations } from "@/data/importantInfoTranslations";
 
 const LanguageContext = createContext();
 
@@ -30,7 +31,8 @@ const translations = {
 
     // Home page
     heroTitle: "Welcome to Our Photography Shop",
-    heroSubtitle: "Capturing moments, creating memories",
+    heroSubtitle:
+      "Capturing moments, creating memories",
     introduction: "INTRODUCTION",
     introText1:
       "Passionate, bursting with creativity and with an eye for detail. That's how I would describe myself. With my professional drones, I am always looking for new ways to explore the world and capture it on film. This gives me the chance to create unique images from a perspective like you have never seen the world before.",
@@ -38,24 +40,9 @@ const translations = {
       "What started as a passion long ago, has now grown into a way of sharing the beauty of landscapes and cities around us with others. Whether it is a misty landscape or vibrant city, each image tells a special story and shows how beautiful our world really is.",
     introText3:
       "With my posters, printed on paper, canvas, wood or metal, I want to bring this world into your home and let you enjoy our environment seen from above.",
-    signature: "Johannes Kort,\nWOLFSKIN Photography™",
+    signature: "Johannes Kort\nWOLFSKIN Photography™",
     categories: "Categories",
     reels: "Reels",
-
-    // Important Information
-    importantInfo: "IMPORTANT INFORMATION",
-    websiteInfo: "WEBSITE INFORMATION AND PLACING ORDERS",
-    websiteInfoText:
-      "On this website you will find several categories: spring, summer, fall and winter. Each category consists of several photos taken in a beautiful location around the world in the season the photo falls under. Scroll through the categories and view all photos in larger size by clicking on them. Found yourself a photo you would like to hang in your living room or bedroom as a poster? Just select the type of material you want the photo printed on, select the size of the item and place it in your shopping cart. Have you chosen all the items you want to order? Click on order and go through the steps there. We will take care of the rest and make sure the poster is printed on the chosen material, carefully packed and shipped to the address you provided.",
-    delivery: "DELIVERY",
-    deliveryText:
-      "All orders come with additional information about when and where the photo was taken. In The Netherlands, posters are usually delivered within a few days after ordering them online. Do you live elsewhere in Europe, outside The Netherlands? In that case delivery may take a few days to about two weeks. Delivery outside Europe is also possible, but please understand the delivery might need a longer period then.",
-    orderCancellation: "ORDER CANCELLATION AND RETURNS",
-    orderCancellationText:
-      "Do you still have doubts after your purchase? You can cancel an order within 24 hours and the full amount will be refunded to the account you paid the order with. An order placed 24 hours ago or longer, unfortunately cannot be cancelled. Returns are unfortunately not possible.",
-    mounting: "MOUNTING OF THE POSTER",
-    mountingText:
-      "Mounting materials are not included and depend on the back wall on which the poster will be hung. Get information from your local hardware store and, if necessary, hire an expert to hang the poster for you.",
 
     // Legal Pages
     privacyPolicyTitle: "PRIVACY POLICY",
@@ -128,6 +115,8 @@ We may update this cookie policy from time to time. Please check this page regul
 
 CONTACT
 Do you have questions about our use of cookies? Please feel free to contact us at contact@wolfskinphotography.com.`,
+
+    ...extendedTranslations.en,
   },
 
   nl: {
@@ -148,7 +137,8 @@ Do you have questions about our use of cookies? Please feel free to contact us a
 
     // Home page
     heroTitle: "Welkom bij Onze Fotografie Winkel",
-    heroSubtitle: "Momenten vastleggen, herinneringen creëren",
+    heroSubtitle:
+      "Capturing moments, creating memories",
     introduction: "INTRODUCTIE",
     introText1:
       "Gepassioneerd, boordevol creativiteit en met oog voor detail. Zo zou ik mijzelf omschrijven. Met mijn professionele drones ben ik altijd op zoek naar nieuwe manieren om de wereld te ontdekken en vast te leggen op de gevoelige plaat. Zo krijg ik de kans om unieke beelden te maken vanuit een perspectief zoals je de wereld nog nooit gezien hebt.",
@@ -156,24 +146,9 @@ Do you have questions about our use of cookies? Please feel free to contact us a
       "Wat lang geleden begon als een passie, is inmiddels uitgegroeid tot een manier om de schoonheid van landschappen en steden om ons heen met anderen te delen. Of het nu gaat om een mistig landschap of bruisende stad, elk beeld vertelt een bijzonder verhaal en laat zien hoe prachtig onze wereld eigenlijk is.",
     introText3:
       "Met mijn posters, geprint op papier, canvas, hout of metaal, wil ik deze wereld bij jou thuis brengen en je laten genieten van onze omgeving van bovenaf gezien.",
-    signature: "Johannes Kort,\nWOLFSKIN Photography™",
+    signature: "Johannes Kort\nWOLFSKIN Photography™",
     categories: "Categorieën",
     reels: "Reels",
-
-    // Important Information
-    importantInfo: "BELANGRIJKE INFORMATIE",
-    websiteInfo: "WEBSITE-INFORMATIE EN BESTELLINGEN PLAATSEN",
-    websiteInfoText:
-      "Op deze website vind je verschillende categorieën: lente, zomer, herfst en winter. Elke categorie bestaat uit meerdere foto's, gemaakt op een prachtige locatie in de wereld in het seizoen waar de foto onder valt. Scroll door de categorieën heen en bekijk alle foto's in groter formaat door er op te klikken. Zie je een foto die je als een poster in je huiskamer of slaapkamer aan de muur wilt hangen? Selecteer het soort materiaal waar je de foto op geprint wilt hebben, selecteer de grootte van het item en plaats het in je winkelmandje. Heb je alle items gekozen die je wilt bestellen? Klik op bestellen en doorloop de stappen. Wij regelen de rest en zorgen dat de poster op het gekozen materiaal wordt geprint, zorgvuldig wordt ingepakt en verstuurd naar het opgegeven adres.",
-    delivery: "LEVERING",
-    deliveryText:
-      "Alle bestellingen worden geleverd met extra informatie over de locatie waar de foto is gemaakt en wanneer. Posters worden doorgaans na bestelling binnen enkele dagen in Nederland geleverd. Woon je elders in Europa? Dan kan de levering een aantal dagen tot ongeveer twee weken duren. Levering buiten Europa is ook mogelijk, houd dan rekening met een langere levertijd.",
-    orderCancellation: "ANNULERING BESTELLING EN RETOURNEREN",
-    orderCancellationText:
-      "Heb je na je aankoop toch twijfels? Een annulering van een bestelling kan binnen 24 uur waarbij het volledige bedrag wordt teruggestort op de rekening waarmee betaald is. Is de bestelling inmiddels 24 uur geleden? Dan kan de bestelling helaas niet meer geannuleerd worden. Retourneren is helaas niet mogelijk.",
-    mounting: "MONTAGE VAN DE POSTER",
-    mountingText:
-      "Montagemateriaal is exclusief en is afhankelijk van de achterwand waarop de poster komt te hangen. Laat je wat betreft montage informeren bij je lokale bouwmarkt en schakel desnoods een expert in bij het ophangen van de poster.",
 
     // Legal Pages
     privacyPolicyTitle: "PRIVACY POLICY",
@@ -246,6 +221,8 @@ We kunnen dit cookiesbeleid van tijd tot tijd aanpassen. Controleer deze pagina 
 
 CONTACT
 Heb je vragen over ons gebruik van cookies? Neem gerust contact met ons op via contact@wolfskinphotography.com.`,
+
+    ...extendedTranslations.nl,
   },
 };
 

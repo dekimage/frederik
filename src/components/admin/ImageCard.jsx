@@ -54,8 +54,9 @@ export default function ImageCard({ image, onUpdate }) {
         });
 
         if (!uploadResponse.ok) throw new Error("Failed to upload new image");
-        const { url } = await uploadResponse.json();
+        const { url, cloudinaryPublicId } = await uploadResponse.json();
         updatedData.url = url;
+        updatedData.cloudinaryPublicId = cloudinaryPublicId;
       }
 
       const response = await fetch(`/api/admin/images/${image.id}`, {

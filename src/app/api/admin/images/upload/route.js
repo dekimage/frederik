@@ -1,4 +1,7 @@
-import { storage } from "@/app/firebaseAdmin";
+import {
+  uploadImageBuffer,
+  CLOUDINARY_FOLDER_IMAGES,
+} from "@/lib/cloudinaryMedia";
 
 export async function POST(request) {
   try {
@@ -9,24 +12,12 @@ export async function POST(request) {
       throw new Error("No file uploaded");
     }
 
-    // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = storage.bucket("photography-shop.appspot.com");
-    const fileName = `images/${Date.now()}-${file.name}`;
-    const fileRef = bucket.file(fileName);
-
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
-      },
+    const { url, cloudinaryPublicId } = await uploadImageBuffer(buffer, {
+      folder: CLOUDINARY_FOLDER_IMAGES,
     });
 
-    // Make the file publicly accessible
-    await fileRef.makePublic();
-
-    const url = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
-    return Response.json({ url });
+    return Response.json({ url, cloudinaryPublicId });
   } catch (error) {
     console.error("Upload error:", error);
     return Response.json({ error: error.message }, { status: 500 });

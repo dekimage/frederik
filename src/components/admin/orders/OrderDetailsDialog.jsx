@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
 
 // Helper function to format currency
 const formatCurrency = (value) => {
@@ -186,7 +187,7 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     >
                       <div className="w-20 h-20 relative rounded-md overflow-hidden">
                         <img
-                          src={item.image}
+                          src={cloudinaryMaxQualityDeliveryUrl(item.image)}
                           alt={item.name}
                           className="object-cover w-full h-full"
                         />

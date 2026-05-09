@@ -2,14 +2,19 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import "../globals.css";
-import { Inter } from "next/font/google";
+import { Lato } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { usePathname } from "next/navigation";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const lato = Lato({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-lato",
+  display: "swap",
+});
 
 const categories = [
   { id: "spring", name: "Spring" },
@@ -31,7 +36,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <head></head>
-      <body className={`${inter.className} bg-black`}>
+      <body className={`${lato.variable} font-sans bg-black antialiased`}>
         <LanguageProvider>
           <ThemeProvider
             attribute="class"

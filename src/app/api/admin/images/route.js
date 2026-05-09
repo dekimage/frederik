@@ -1,4 +1,8 @@
-import { firestore, storage, admin } from "@/app/firebaseAdmin";
+import { firestore, admin } from "@/app/firebaseAdmin";
+import {
+  uploadImageBuffer,
+  CLOUDINARY_FOLDER_IMAGES,
+} from "@/lib/cloudinaryMedia";
 
 export async function GET() {
   try {
@@ -23,27 +27,15 @@ export async function POST(request) {
       throw new Error("No file uploaded");
     }
 
-    // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = storage.bucket("photography-shop.appspot.com");
-    const fileName = `images/${Date.now()}-${file.name}`;
-    const fileRef = bucket.file(fileName);
-
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
-      },
+    const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(buffer, {
+      folder: CLOUDINARY_FOLDER_IMAGES,
     });
 
-    // Make the file publicly accessible
-    await fileRef.makePublic();
-
-    const imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
-    // Save image data to Firestore with server timestamp
     const docRef = await firestore.collection("images").add({
       ...imageData,
       url: imageUrl,
+      cloudinaryPublicId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -51,6 +43,7 @@ export async function POST(request) {
       id: docRef.id,
       ...imageData,
       url: imageUrl,
+      cloudinaryPublicId,
     });
   } catch (error) {
     console.error("Upload error:", error);

@@ -18,8 +18,8 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        sans: ["var(--font-lato)", "Lato", "system-ui", "sans-serif"],
         ethnocentric: ["Ethnocentric", "sans-serif"],
-        second: ["SecondFont", "sans-serif"],
       },
       ...colors,
       colors: {

@@ -12,7 +12,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import Link from "next/link";
-import Image from "next/image";
+import RemotePhotoImage from "@/components/RemotePhotoImage";
+import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
 import {
   collection,
   query,
@@ -57,7 +58,7 @@ const ImageSkeleton = ({ className }) => (
   </div>
 );
 
-export const AboutSection = ({ showBack = true }) => {
+export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
   const [aboutImage, setAboutImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
@@ -90,13 +91,24 @@ export const AboutSection = ({ showBack = true }) => {
             <ChevronLeft size={32} /> Back
           </Link>
         )}
-        <h2 className="text-4xl font-bold text-center md:text-left">
+        <h2 className="font-ethnocentric text-3xl md:text-4xl tracking-wide text-center md:text-left">
           {t("introduction")}
         </h2>
-        <p className="text-lg font-second">{t("introText1")}</p>
-        <p className="text-lg font-second">{t("introText2")}</p>
-        <p className="text-lg font-second">{t("introText3")}</p>
-        <p className="text-lg font-second font-bold mt-4">{t("signature")}</p>
+        <p className="text-lg leading-relaxed">{t("introText1")}</p>
+        <p className="text-lg leading-relaxed">{t("introText2")}</p>
+        <p className="text-lg leading-relaxed">{t("introText3")}</p>
+        <p className="text-lg font-bold mt-6 whitespace-pre-line leading-relaxed">
+          {t("signature")}
+        </p>
+
+        {showWebsiteInfo && (
+          <div className="pt-10 space-y-4 border-t border-gray-800 mt-10">
+            <h3 className="font-ethnocentric text-2xl md:text-3xl tracking-wide text-center md:text-left">
+              {t("homeWebsiteHeading")}
+            </h3>
+            <p className="text-base leading-relaxed">{t("homeWebsiteBody")}</p>
+          </div>
+        )}
       </div>
 
       {/* Right Side - Image with Loading State */}
@@ -107,7 +119,9 @@ export const AboutSection = ({ showBack = true }) => {
           <div
             className="w-full h-64 md:h-full bg-cover bg-center rounded-lg transition-opacity duration-300"
             style={{
-              backgroundImage: `url("${aboutImage}")`,
+              backgroundImage: aboutImage
+                ? `url("${cloudinaryMaxQualityDeliveryUrl(aboutImage)}")`
+                : undefined,
             }}
           />
         )}
@@ -179,17 +193,18 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
               >
                 {/* Category Image with Hover Scale */}
                 <div className="w-full h-full transition-transform duration-500 group-hover:scale-150">
-                  <Image
+                  <RemotePhotoImage
                     src={category.image || getImageByCategory(category.name)}
                     alt={category.name}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
 
                 {/* Overlay and Text */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-transform duration-500">
-                  <h3 className="text-2xl text-white font-bold transition-transform duration-500 group-hover:scale-150">
+                  <h3 className="font-ethnocentric text-xl md:text-2xl text-white transition-transform duration-500 group-hover:scale-150">
                     {t(category.name.toLowerCase())}
                   </h3>
                 </div>
@@ -240,7 +255,7 @@ export const ReelsSection = () => {
     return (
       <section className="relative min-h-screen w-full">
         <div className="relative z-10 bg-black bg-opacity-50 py-16">
-          <div className="text-4xl font-bold text-center my-8">
+          <div className="font-ethnocentric text-3xl md:text-4xl text-center my-8 tracking-wide">
             {t("reels")}
           </div>
           <div className="text-center text-red-500">Error: {error}</div>
@@ -253,7 +268,7 @@ export const ReelsSection = () => {
     return (
       <section className="relative min-h-screen w-full">
         <div className="relative z-10 bg-black bg-opacity-50 py-16">
-          <div className="text-4xl font-bold text-center my-8">
+          <div className="font-ethnocentric text-3xl md:text-4xl text-center my-8 tracking-wide">
             {t("reels")}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
@@ -276,7 +291,9 @@ export const ReelsSection = () => {
   return (
     <section className="relative w-full">
       <div className="relative z-10 bg-black bg-opacity-50 py-16">
-        <div className="text-4xl font-bold text-center my-8">{t("reels")}</div>
+        <div className="font-ethnocentric text-3xl md:text-4xl text-center my-8 tracking-wide">
+          {t("reels")}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
           {reels.map((reel) => (
@@ -329,69 +346,14 @@ export const ReelsSection = () => {
 };
 
 export const LargeTitle = ({ title }) => {
-  return <div className="text-4xl font-bold text-center my-8">{title}</div>;
-};
-
-export const ImportantInfoSection = () => {
-  const { t } = useLanguage();
-
   return (
-    <section
-      className="w-full max-w-6xl mx-auto py-12 px-4"
-      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-    >
-      <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
-        <h2 className="text-2xl font-bold text-center mb-8 text-white">
-          {t("importantInfo")}
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Left Column */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
-                {t("websiteInfo")}
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {t("websiteInfoText")}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
-                {t("delivery")}
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {t("deliveryText")}
-              </p>
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
-                {t("orderCancellation")}
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {t("orderCancellationText")}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
-                {t("mounting")}
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {t("mountingText")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div className="font-ethnocentric text-3xl md:text-4xl text-center my-8 tracking-wide">
+      {title}
+    </div>
   );
 };
+
+const LOCAL_HERO_FALLBACK = "/hero-home.jpg";
 
 const HomePage = observer(() => {
   const [heroImage, setHeroImage] = useState(null);
@@ -408,11 +370,14 @@ const HomePage = observer(() => {
         const docRef = doc(db, "images", "hero");
         const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
+        if (docSnap.exists() && docSnap.data()?.url) {
           setHeroImage(docSnap.data().url);
+        } else {
+          setHeroImage(LOCAL_HERO_FALLBACK);
         }
       } catch (error) {
         console.error("Error fetching hero image:", error);
+        setHeroImage(LOCAL_HERO_FALLBACK);
       } finally {
         setLoading(false);
       }
@@ -428,35 +393,32 @@ const HomePage = observer(() => {
         {loading ? (
           <ImageSkeleton className="w-full h-full" />
         ) : (
-          <Image
-            src={heroImage || "https://picsum.photos/2000/1000"} // Fallback image
+          <RemotePhotoImage
+            src={heroImage || LOCAL_HERO_FALLBACK}
             fill
-            alt="Hero background"
+            alt="WOLFSKIN Photography"
             className="object-cover"
             priority
+            sizes="100vw"
           />
         )}
         {/* Hero Overlay with Title */}
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              {t("heroTitle")}
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-200">
+        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center px-4">
+          <div className="text-center max-w-4xl">
+            <p className="font-ethnocentric text-xl sm:text-2xl md:text-3xl text-white tracking-wide drop-shadow-lg">
               {t("heroSubtitle")}
             </p>
           </div>
         </div>
       </div>
       <div className="flex flex-col justify-center items-center px-4 sm:px-32">
-        <AboutSection showBack={false} />
+        <AboutSection showBack={false} showWebsiteInfo />
         {MobxStore.categoriesLoading ? (
           <p>Loading categories...</p>
         ) : (
           <CategoriesSection categories={MobxStore.categories} />
         )}
         <ReelsSection />
-        <ImportantInfoSection />
       </div>
     </div>
   );

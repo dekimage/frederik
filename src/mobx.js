@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { db } from "./firebase";
+import { getPdpQuote } from "@/lib/pricingCatalog";
 
 import {
   doc,
@@ -62,10 +63,46 @@ class Store {
     this.fetchCategories = this.fetchCategories.bind(this);
 
     if (typeof window !== "undefined") {
-      this.loadCartFromLocalStorage(); // Load cart only when in the browser
+      this.loadCartFromLocalStorage();
     }
     this.initializeShopConfig();
     this.fetchCategories();
+  }
+
+  /** Unit print price for cart line (PDP reference market). */
+  deriveUnitPrintPriceFromCatalog(material, sizeKey) {
+    const row = getPdpQuote(material, sizeKey);
+    if (row && typeof row.priceExShipping === "number") {
+      return Number(row.priceExShipping);
+    }
+    return NaN;
+  }
+
+  normalizeCartPayload(parsed) {
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((i) => i && i.productId && i.sizeKey && i.material)
+      .map((i) => {
+        const catalogPrice = this.deriveUnitPrintPriceFromCatalog(
+          i.material,
+          i.sizeKey
+        );
+        const unit =
+          Number.isFinite(catalogPrice) && catalogPrice > 0
+            ? catalogPrice
+            : typeof i.price === "number" && Number.isFinite(i.price)
+              ? i.price
+              : 0;
+        return {
+          productId: i.productId,
+          quantity: Math.max(1, Number(i.quantity) || 1),
+          sizeKey: i.sizeKey,
+          sizeRaw: i.sizeRaw,
+          material: i.material,
+          price: unit,
+        };
+      })
+      .filter((i) => i.price > 0);
   }
 
   async fetchCategories() {
@@ -91,17 +128,20 @@ class Store {
   }
 
   async getProductById(productId) {
-    if (this.cachedProducts[productId]) {
-      return this.cachedProducts[productId];
-    }
-    const productRef = doc(db, "products", productId);
-    const productSnap = await getDoc(productRef);
-    if (productSnap.exists()) {
-      const productData = productSnap.data();
-      this.cachedProducts[productId] = productData; // Cache product
-      return productData;
-    } else {
-      console.error("Product not found in Firestore");
+    try {
+      const productRef = doc(db, "products", productId);
+      const productSnap = await getDoc(productRef);
+      if (!productSnap.exists()) {
+        console.error("Product not found in Firestore");
+        return null;
+      }
+      const merged = { id: productId, ...productSnap.data() };
+      runInAction(() => {
+        this.cachedProducts[productId] = merged;
+      });
+      return merged;
+    } catch (error) {
+      console.error(error);
       return null;
     }
   }
@@ -120,18 +160,12 @@ class Store {
 
   cacheProducts(products) {
     products.forEach((product) => {
-      if (!this.cachedProducts[product.id]) {
-        this.cachedProducts[product.id] = product;
-      }
+      this.cachedProducts[product.id] = product;
     });
   }
 
   // Fetch limited products (e.g., for home page or shop)
   async fetchLimitedProducts() {
-    if (this.fetchedApis.limitedProducts) {
-      return Object.values(this.cachedProducts).slice(0, 10); // Return first 10 products from cache
-    }
-
     const productsQuery = query(collection(db, "products"), limit(10));
 
     const productsSnapshot = await getDocs(productsQuery);
@@ -150,10 +184,6 @@ class Store {
 
   // Fetch all products
   async fetchAllProducts() {
-    if (this.fetchedApis.allProducts) {
-      return Object.values(this.cachedProducts);
-    }
-
     const productsQuery = query(collection(db, "products"));
 
     const productsSnapshot = await getDocs(productsQuery);
@@ -171,12 +201,6 @@ class Store {
   }
 
   async fetchProductsByCategory(category) {
-    if (this.fetchedApis[category]) {
-      return Object.values(this.cachedProducts).filter(
-        (product) => product.category === category
-      );
-    }
-
     const productQuery = query(
       collection(db, "products"),
       where("category", "==", category)
@@ -197,12 +221,6 @@ class Store {
   }
 
   async fetchBestSellers() {
-    if (this.fetchedApis.bestseller) {
-      return Object.values(this.cachedProducts).filter(
-        (product) => product.bestseller
-      );
-    }
-
     const bestSellerQuery = query(
       collection(db, "products"),
       where("bestseller", "==", true)
@@ -244,20 +262,17 @@ class Store {
     const products = [];
 
     for (const cartItem of cartItems) {
-      const { productId, quantity, size, material } = cartItem; // Extract size and other properties
+      const { productId, quantity, material } = cartItem;
+      const sizeLabel = cartItem.sizeRaw ?? cartItem.size ?? cartItem.sizeKey;
 
-      // Check if product is already cached
-      let product = this.cachedProducts[productId];
-
-      // If not cached, fetch from Firestore
-      if (!product) {
-        const productRef = doc(db, "products", productId);
-        const productSnap = await getDoc(productRef);
-
-        if (productSnap.exists()) {
-          product = productSnap.data();
-          this.cachedProducts[productId] = product; // Cache the product
-        }
+      const productRef = doc(db, "products", productId);
+      const productSnap = await getDoc(productRef);
+      let product = null;
+      if (productSnap.exists()) {
+        product = { id: productId, ...productSnap.data() };
+        runInAction(() => {
+          this.cachedProducts[productId] = product;
+        });
       }
 
       // Ensure that we have the product data and then include size and quantity
@@ -265,9 +280,11 @@ class Store {
         products.push({
           ...product,
           quantity,
-          size,
+          size: sizeLabel,
+          sizeRaw: cartItem.sizeRaw,
+          sizeKey: cartItem.sizeKey,
           material,
-          price: parseFloat(cartItem.price), // Use the stored price from the cart item
+          price: parseFloat(cartItem.price),
           productId,
         });
       }
@@ -276,12 +293,13 @@ class Store {
     return products;
   };
 
-  // Add to cart (stores only id and quantity)
+  // Add to cart (print price only; shipping added at checkout from address)
   addToCart(item) {
+    const sizeKey = item.sizeKey;
     const existingItem = this.cartItems.find(
       (cartItem) =>
         cartItem.productId === item.productId &&
-        cartItem.size === item.size &&
+        cartItem.sizeKey === sizeKey &&
         cartItem.material === item.material
     );
 
@@ -291,7 +309,8 @@ class Store {
       this.cartItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        size: item.size,
+        sizeKey,
+        sizeRaw: item.sizeRaw,
         material: item.material,
         price: item.price,
       });
@@ -301,11 +320,11 @@ class Store {
   }
 
   // Update quantity of an item in the cart
-  updateQuantity(productId, size, material, newQuantity) {
+  updateQuantity(productId, sizeKey, material, newQuantity) {
     const item = this.cartItems.find(
       (cartItem) =>
         cartItem.productId === productId &&
-        cartItem.size === size &&
+        cartItem.sizeKey === sizeKey &&
         cartItem.material === material
     );
 
@@ -315,12 +334,12 @@ class Store {
     }
   }
   // Remove from cart
-  removeFromCart(productId, size, material) {
+  removeFromCart(productId, sizeKey, material) {
     this.cartItems = this.cartItems.filter(
       (item) =>
         !(
           item.productId === productId &&
-          item.size === size &&
+          item.sizeKey === sizeKey &&
           item.material === material
         )
     );
@@ -330,10 +349,16 @@ class Store {
   // Load cart from localStorage
   async loadCartFromLocalStorage() {
     const cartData = localStorage.getItem("cart");
-    if (cartData) {
-      this.cartItems = JSON.parse(cartData);
-      await this.fetchProductDetails(); // Ensure product details are fetched
+    if (!cartData) return;
+    const parsed = JSON.parse(cartData);
+    const normalized = this.normalizeCartPayload(parsed);
+    runInAction(() => {
+      this.cartItems = normalized;
+    });
+    if (Array.isArray(parsed) && normalized.length !== parsed.length) {
+      this.saveCartToLocalStorage();
     }
+    await this.fetchProductDetails();
   }
 
   // Save cart to localStorage
@@ -348,11 +373,8 @@ class Store {
   }
   // Calculate total
   calculateTotal() {
-    const subtotal = this.calculateSubtotal() || 0; // Default to 0 if undefined
-    const shipping = parseFloat(this.shopConfig?.shippingRate) || 0; // Ensure shippingRate is a number
-    const total = subtotal + shipping;
-
-    return total; // Return total as a number
+    const subtotal = this.calculateSubtotal() || 0;
+    return subtotal;
   }
 
   // Get total number of items in cart
@@ -360,19 +382,14 @@ class Store {
     return this.cartItems.reduce((total, item) => total + item.quantity, 0);
   }
   async fetchProductDetails() {
-    const productIds = this.cartItems.map((item) => item.productId);
+    const productIds = [...new Set(this.cartItems.map((item) => item.productId))];
 
-    // Fetch only products that are not already cached
-    const missingProductIds = productIds.filter(
-      (id) => !this.cachedProducts[id]
-    );
-
-    if (missingProductIds.length === 0) {
-      return; // All products are already cached
+    if (productIds.length === 0) {
+      return;
     }
 
     const productDocs = await Promise.all(
-      missingProductIds.map(async (id) => {
+      productIds.map(async (id) => {
         const productRef = doc(db, "products", id);
         const productSnap = await getDoc(productRef);
         return productSnap.exists() ? { id, ...productSnap.data() } : null;

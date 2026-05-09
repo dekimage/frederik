@@ -15,8 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const SEASON_IDS = ["spring", "summer", "autumn", "winter"];
+
+/** Docs like `hero`, `about`, `home` usually have no seasonal `category` — they aren't gallery rows. */
+function imageCategoryBucket(image) {
+  const c = typeof image.category === "string" ? image.category.trim().toLowerCase() : "";
+  return SEASON_IDS.includes(c) ? c : "site-slot";
+}
+
 const CATEGORIES = [
   { id: "all", label: "All" },
+  { id: "site-slot", label: "Site slots (hero, about, …)" },
   { id: "spring", label: "Spring" },
   { id: "summer", label: "Summer" },
   { id: "autumn", label: "Autumn" },
@@ -47,13 +56,15 @@ export default function ImagesPage() {
   };
 
   const filteredImages = images.filter((image) => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch =
-      image.description?.toLowerCase().includes(searchLower) ||
-      image.name?.toLowerCase().includes(searchLower);
+    const searchLower = searchQuery.trim().toLowerCase();
+    const haystack =
+      `${image.description ?? ""} ${image.name ?? ""} ${image.id ?? ""}`.toLowerCase();
+    const matchesSearch = searchLower === "" || haystack.includes(searchLower);
 
     const matchesCategory =
-      selectedCategory === "all" || image.category === selectedCategory;
+      selectedCategory === "all"
+        ? true
+        : imageCategoryBucket(image) === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });

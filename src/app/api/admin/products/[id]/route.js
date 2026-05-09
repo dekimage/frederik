@@ -1,47 +1,20 @@
-import { firestore, storage, admin } from "@/app/firebaseAdmin";
+import { firestore, admin } from "@/app/firebaseAdmin";
+import {
+  cleanupReplacedImageAsset,
+  deleteStoredImageFromDoc,
+} from "@/lib/cloudinaryMedia";
+
+const PRODUCT_IMAGE_KEYS = { urlField: "image", publicIdField: "cloudinaryPublicId" };
 
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;
 
-    // Get the product document first to get the image URL
     const doc = await firestore.collection("products").doc(id).get();
     const productData = doc.data();
 
-    if (productData?.image) {
-      try {
-        // Get the bucket
-        const bucket = storage.bucket("photography-shop.appspot.com");
+    await deleteStoredImageFromDoc(productData, PRODUCT_IMAGE_KEYS);
 
-        // Extract the filename from the URL
-        // URL format: https://storage.googleapis.com/BUCKET_NAME/products/filename.jpg
-        const urlParts = productData.image.split("/");
-        const fileName = urlParts.slice(4).join("/"); // Get everything after 'products/'
-
-        console.log("Attempting to delete:", fileName);
-
-        // Delete the file
-        const file = bucket.file(fileName);
-        const [exists] = await file.exists();
-
-        if (exists) {
-          await file
-            .delete()
-            .then(() => {
-              console.log("Successfully deleted file:", fileName);
-            })
-            .catch((error) => {
-              console.error("Error deleting file:", error);
-            });
-        } else {
-          console.log("File does not exist:", fileName);
-        }
-      } catch (storageError) {
-        console.error("Storage deletion error:", storageError);
-      }
-    }
-
-    // Delete from Firestore
     await firestore.collection("products").doc(id).delete();
 
     return Response.json({ success: true });
@@ -56,13 +29,20 @@ export async function PUT(request, { params }) {
     const { id } = params;
     const data = await request.json();
 
-    await firestore
-      .collection("products")
-      .doc(id)
-      .update({
-        ...data,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+    const docRef = firestore.collection("products").doc(id);
+    const prevSnap = await docRef.get();
+    const previous = prevSnap.data() || {};
+
+    await docRef.update({
+      ...data,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    await cleanupReplacedImageAsset(previous, data, PRODUCT_IMAGE_KEYS).catch(
+      (err) => {
+        console.error("Asset cleanup after product update:", err);
+      }
+    );
 
     return Response.json({ success: true });
   } catch (error) {

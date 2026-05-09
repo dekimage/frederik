@@ -1,4 +1,8 @@
-import { firestore, storage, admin } from "@/app/firebaseAdmin";
+import { firestore, admin } from "@/app/firebaseAdmin";
+import {
+  uploadImageBuffer,
+  CLOUDINARY_FOLDER_PRODUCTS,
+} from "@/lib/cloudinaryMedia";
 
 export async function GET() {
   try {
@@ -23,7 +27,6 @@ export async function POST(request) {
       throw new Error("No file uploaded");
     }
 
-    // Parse the product data and ensure price is a number
     const productData = JSON.parse(productDataString);
     productData.price = Number(productData.price);
 
@@ -31,27 +34,16 @@ export async function POST(request) {
       throw new Error("Invalid price value");
     }
 
-    // Upload image
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = storage.bucket("photography-shop.appspot.com");
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const fileName = `products/${Date.now()}-${cleanFileName}`;
-    const fileRef = bucket.file(fileName);
-
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
-      },
+    const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(buffer, {
+      folder: CLOUDINARY_FOLDER_PRODUCTS,
     });
 
-    await fileRef.makePublic();
-
-    const imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
-    // Save to Firestore with the image URL
     const docRef = await firestore.collection("products").add({
       ...productData,
       image: imageUrl,
+      cloudinaryPublicId,
+      sharedGalleryImage: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -59,6 +51,7 @@ export async function POST(request) {
       id: docRef.id,
       ...productData,
       image: imageUrl,
+      cloudinaryPublicId,
     });
   } catch (error) {
     console.error("Product creation error:", error);

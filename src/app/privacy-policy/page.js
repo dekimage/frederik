@@ -5,10 +5,7 @@ export default function PrivacyPolicyPage() {
   const { t } = useLanguage();
 
   return (
-    <div
-      className="min-h-screen bg-black text-white pt-24 px-4 sm:px-8"
-      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-    >
+    <div className="min-h-screen bg-black text-white pt-24 px-4 sm:px-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-12">
           {t("privacyPolicyTitle")}

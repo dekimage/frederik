@@ -1,16 +1,17 @@
 import Link from "next/link";
-import Image from "next/image";
+import RemotePhotoImage from "@/components/RemotePhotoImage";
 
 const ProductCard = ({ product }) => {
   return (
     <div className="bg-black border border-gray-800 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-600">
       <Link href={`/product-details/${product.id}`} className="block">
         <div className="relative w-full aspect-square">
-          <Image
+          <RemotePhotoImage
             src={product.image}
             alt={product.name}
             fill
             className="object-cover transition-all duration-300 hover:opacity-80"
+            sizes="(max-width: 768px) 100vw, 33vw"
           />
         </div>
         <div className="p-4">
