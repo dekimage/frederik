@@ -34,6 +34,13 @@ export function listCountries() {
   return [...data.meta.countries].sort();
 }
 
+/** True when ISO code is on the official price/shipping list (carrier-supported destinations). */
+export function isSupportedShippingCountry(countryCode) {
+  const code = (countryCode || "").toString().toUpperCase().slice(0, 2);
+  if (!code || code.length !== 2) return false;
+  return listCountries().includes(code);
+}
+
 export function getCountryLabel(iso) {
   try {
     return new Intl.DisplayNames(["en"], { type: "region" }).of(iso) || iso;
@@ -70,6 +77,18 @@ export function getPdpQuote(material, sizeKey) {
   return getQuote(PDP_REFERENCE_COUNTRY, material, sizeKey);
 }
 
+/** Lowest print-only price in the reference market (for “from €…” on product grids). */
+export function getLowestReferencePrintPrice() {
+  let min = null;
+  for (const row of data.rows) {
+    if (row.country !== PDP_REFERENCE_COUNTRY || !row.available) continue;
+    const price = Number(row.priceExShipping);
+    if (!Number.isFinite(price) || price <= 0) continue;
+    if (min === null || price < min) min = price;
+  }
+  return min;
+}
+
 /**
  * Full order totals for a shipping destination (matches CSV columns for that country).
  * @param {Array<{ quantity?: number, material?: string, sizeKey?: string }>} lines
@@ -81,6 +100,18 @@ export function quoteOrderForShippingCountry(lines, shippingCountryCode) {
     return {
       ok: false,
       reason: "no_country",
+      printSum: 0,
+      shippingSum: 0,
+      totalSum: 0,
+      unavailable: [],
+    };
+  }
+
+  if (!isSupportedShippingCountry(code)) {
+    return {
+      ok: false,
+      reason: "unsupported_country",
+      country: code,
       printSum: 0,
       shippingSum: 0,
       totalSum: 0,

@@ -4,6 +4,34 @@ export const extendedTranslations = {
     importantInformationNav: "Important information",
     footerCopyright: "© 2026 WOLFSKIN Photography™. All rights reserved.",
     footerViewCart: "View your cart",
+    trackOrder: "Track your order",
+
+    shippingCountrySelectHint:
+      "We only ship to countries on our official price list (shown below). Our fulfilment partner has carrier agreements for those destinations only — we cannot deliver elsewhere.",
+    shippingCoveragePdp:
+      "Delivery is calculated at checkout for your shipping country. We only ship to countries on our official price list; destinations not on that list cannot be ordered online.",
+    shippingCoverageCart:
+      "Print prices use the reference market list. Postal/delivery is added at checkout for supported shipping countries only.",
+    shippingCoverageCartCheckout:
+      "At checkout, choose a country from our official price list. We cannot ship to destinations outside that list.",
+    shippingCoverageCheckoutIntro:
+      "Enter your shipping address using a country from our official price list. Print and postal charges for that destination are calculated automatically. We do not offer delivery to countries outside that list — our fulfilment partner has no carrier contract for other destinations.",
+    shippingCoverageOrderSummaryLines:
+      "Line amounts are print list prices. Delivery is added below for supported shipping countries only.",
+    shippingCoverageOrderSummaryChooseCountry:
+      "Select a shipping country from our official price list to show delivery and the full total.",
+    shippingCoverageOrderSummaryUnavailable:
+      "One or more items cannot be shipped to this country, or it is not on our official price list. Adjust your cart or choose a supported destination.",
+    shippingCoverageOrderSummaryStripeNote:
+      "Payment uses print + postal prices from the official list for your shipping country. We only ship to countries on that list.",
+    checkoutPaymentBlockedUnsupported:
+      "This order cannot be completed: the shipping country is not on our official price list (no carrier coverage). Choose a supported country or contact us.",
+    checkoutPaymentBlockedMissing:
+      "Select a supported shipping country from our official price list to continue to payment.",
+    checkoutPaymentMethodsNl:
+      "On the next step you can pay by card or iDEAL (Dutch banks). You will be redirected securely via Stripe.",
+    checkoutPaymentMethodsDefault:
+      "On the next step you can pay by card via Stripe’s secure checkout.",
 
     homeWebsiteHeading: "WEBSITE INFORMATION",
     homeWebsiteBody: `On this website you will find several categories: spring, summer, fall and winter. Each category consists of several photos taken in a beautiful location around the world in the season the photo falls under. Scroll through the categories and view all photos in larger size by clicking on them. Found yourself a photo you would like to hang in your living room or bedroom as a poster? Just select the type of material you want it printed on and place it in your shopping cart. Have you chosen all the items you want to order? Click on "order" and go through the steps there. We will take care of the rest, and make sure the picture is printed on the chosen material, carefully packed and shipped to the address you provided.`,
@@ -63,7 +91,9 @@ export const extendedTranslations = {
     inf_wood_more_body: `Printed on medium density fibreboard (MDF) and with a shiny finish, this is the perfect style in your home. It's also UV- and scratch resistance, so made to last. Printed in super sharp and full color. It is also very easy to hang due to the holes in the back of the wooden panel.`,
 
     inf_delivery_title: "DELIVERY",
-    inf_delivery_body: `All orders come with additional information about when and where the photo was taken. In The Netherlands, the pictures are usually being delivered within a couple days after ordering online. Do you live elsewhere in Europe? In that case delivery might take a few days to about two weeks. Delivery outside Europe is also possible, but please understand that delivery might need a longer period.`,
+    inf_delivery_body: `All orders come with additional information about when and where the photo was taken. In The Netherlands, the pictures are usually being delivered within a couple days after ordering online. Do you live elsewhere in Europe? In that case delivery might take a few days to about two weeks. Delivery outside Europe is also possible for supported destinations, but please understand that delivery might need a longer period.
+
+We only ship to countries on our official price list (the same countries you can select at checkout). For destinations not on that list, our fulfilment partner does not have a carrier contract, so we cannot offer delivery there.`,
 
     inf_cancel_title: "ORDER CANCELLATION AND RETURNS",
     inf_cancel_body: `Do you still have doubts about your purchase? You can cancel an order within 24 hours and the full amount will be refunded to the account you paid the order with. An order placed 24 hours ago or longer, cannot be cancelled. Returns are unfortunately not possible.`,
@@ -79,6 +109,34 @@ export const extendedTranslations = {
     importantInformationNav: "Belangrijke informatie",
     footerCopyright: "© 2026 WOLFSKIN Photography™. Alle rechten voorbehouden.",
     footerViewCart: "Bekijk je winkelmandje",
+    trackOrder: "Volg je bestelling",
+
+    shippingCountrySelectHint:
+      "We verzenden alleen naar landen op onze officiële prijslijst (hieronder). Onze fulfilmentpartner heeft alleen vervoersovereenkomsten voor die bestemmingen — levering elders is niet mogelijk.",
+    shippingCoveragePdp:
+      "Levering wordt bij het afrekenen berekend voor je verzendland. We verzenden alleen naar landen op onze officiële prijslijst; bestemmingen die niet op die lijst staan kunnen niet online worden besteld.",
+    shippingCoverageCart:
+      "Printprijzen gebruiken de referentiemarkt. Post/levering wordt bij het afrekenen toegevoegd, alleen voor ondersteunde verzendlanden.",
+    shippingCoverageCartCheckout:
+      "Kies bij het afrekenen een land uit onze officiële prijslijst. We kunnen niet verzenden naar bestemmingen buiten die lijst.",
+    shippingCoverageCheckoutIntro:
+      "Vul je verzendadres in met een land uit onze officiële prijslijst. Print- en posttarieven voor die bestemming worden automatisch berekend. We leveren niet in landen buiten die lijst — onze fulfilmentpartner heeft geen vervoerscontract voor andere bestemmingen.",
+    shippingCoverageOrderSummaryLines:
+      "Regelbedragen zijn printprijzen uit de lijst. Levering wordt hieronder toegevoegd, alleen voor ondersteunde verzendlanden.",
+    shippingCoverageOrderSummaryChooseCountry:
+      "Selecteer een verzendland uit onze officiële prijslijst om levering en het volledige totaal te tonen.",
+    shippingCoverageOrderSummaryUnavailable:
+      "Een of meer items kunnen niet naar dit land worden verzonden, of het land staat niet op onze officiële prijslijst. Pas je winkelmand aan of kies een ondersteunde bestemming.",
+    shippingCoverageOrderSummaryStripeNote:
+      "Betaling gebruikt print- + postprijzen uit de officiële lijst voor je verzendland. We verzenden alleen naar landen op die lijst.",
+    checkoutPaymentBlockedUnsupported:
+      "Deze bestelling kan niet worden afgerond: het verzendland staat niet op onze officiële prijslijst (geen vervoersdekking). Kies een ondersteund land of neem contact op.",
+    checkoutPaymentBlockedMissing:
+      "Selecteer een ondersteund verzendland uit onze officiële prijslijst om door te gaan naar betaling.",
+    checkoutPaymentMethodsNl:
+      "In de volgende stap kun je betalen met kaart of iDEAL (Nederlandse banken). Je wordt veilig doorgestuurd via Stripe.",
+    checkoutPaymentMethodsDefault:
+      "In de volgende stap kun je met kaart betalen via het beveiligde Stripe-afrekenproces.",
 
     homeWebsiteHeading: "WEBSITE-INFORMATIE",
     homeWebsiteBody: `Op deze website vind je verschillende categorieën: lente, zomer, herfst en winter. Elke categorie bestaat uit meerdere foto's die op een prachtige locatie over de hele wereld zijn gemaakt in het seizoen waarin de foto hoort. Blader door de categorieën en bekijk alle foto's in groter formaat door erop te klikken. Heb je een foto gevonden die je als poster in je woonkamer of slaapkamer wilt ophangen? Kies het gewenste materiaal en voeg het toe aan je winkelmandje. Heb je alle gewenste artikelen geselecteerd? Klik dan op "Bestellen" en overloop de stappen. Wij zorgen voor de rest en printen de foto op het gekozen materiaal, verpakken het zorgvuldig en versturen het naar het opgegeven adres.`,
@@ -138,7 +196,9 @@ export const extendedTranslations = {
     inf_wood_more_body: `Gedrukt op medium density fibreboard (MDF) en met een glanzende afwerking, biedt dit de perfecte stijl voor in je huis. Het is ook UV- en krasbestendig, dus gemaakt om lang mee te gaan. De print wordt zeer scherp en in full color gedrukt. Deze houten panelen zijn ook heel gemakkelijk op te hangen door de uitsparingen aan de achterkant.`,
 
     inf_delivery_title: "LEVERING",
-    inf_delivery_body: `Alle bestellingen worden geleverd met aanvullende informatie over wanneer en waar de foto is genomen. In Nederland worden de foto's meestal binnen een paar dagen na het plaatsen van de online bestelling geleverd. Woon je elders in Europa? In dat geval kan de levering enkele dagen tot ongeveer twee weken duren. Levering buiten Europa is ook mogelijk, maar houd er rekening mee dat de levering dan mogelijk langer duurt.`,
+    inf_delivery_body: `Alle bestellingen worden geleverd met aanvullende informatie over wanneer en waar de foto is genomen. In Nederland worden de foto's meestal binnen een paar dagen na het plaatsen van de online bestelling geleverd. Woon je elders in Europa? In dat geval kan de levering enkele dagen tot ongeveer twee weken duren. Levering buiten Europa is ook mogelijk voor ondersteunde bestemmingen, maar houd er rekening mee dat de levering dan mogelijk langer duurt.
+
+We verzenden alleen naar landen op onze officiële prijslijst (dezelfde landen die je bij het afrekenen kunt kiezen). Voor bestemmingen die niet op die lijst staan heeft onze fulfilmentpartner geen vervoerscontract, dus levering daar is niet mogelijk.`,
 
     inf_cancel_title: "ANNULERING VAN BESTELLINGEN EN RETOURZENDINGEN",
     inf_cancel_body: `Twijfel je nog over je aankoop? Je kunt een bestelling binnen 24 uur annuleren en het volledige bedrag wordt teruggestort op de rekening waarmee je de bestelling hebt betaald. Een bestelling die 24 uur of langer geleden is geplaatst, kan niet worden geannuleerd. Retourneren is helaas niet mogelijk.`,

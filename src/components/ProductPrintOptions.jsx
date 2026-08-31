@@ -20,9 +20,16 @@ import {
   materialLabel,
   PDP_REFERENCE_COUNTRY,
 } from "@/lib/pricingCatalog";
+import {
+  clampLineQuantity,
+  MAX_LINE_QUANTITY,
+  MAX_ORDER_TOTAL_QUANTITY,
+} from "@/lib/cartLimits";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ProductPrintOptions({ productId, product }) {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [material, setMaterial] = useState("");
   const [sizeKey, setSizeKey] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -62,7 +69,8 @@ export default function ProductPrintOptions({ productId, product }) {
       });
       return;
     }
-    MobxStore.addToCart({
+
+    const result = MobxStore.addToCart({
       productId,
       quantity,
       sizeKey: quote.sizeKey,
@@ -70,6 +78,15 @@ export default function ProductPrintOptions({ productId, product }) {
       material,
       price: quote.priceExShipping,
     });
+
+    if (result?.ok === false) {
+      toast({
+        title: "Order limit reached",
+        description: result.error,
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
       title: "Added to Cart",
       description: (
@@ -98,8 +115,7 @@ export default function ProductPrintOptions({ productId, product }) {
     <div className="bg-gray-900 rounded-lg p-6 space-y-6">
       <p className="text-xs text-gray-400 leading-relaxed border border-gray-700 rounded-md p-3">
         List prices use <span className="text-gray-300">{referenceLabel}</span>{" "}
-        ({PDP_REFERENCE_COUNTRY}) as the reference market. Delivery/postal for
-        your order is calculated at checkout from your shipping country.
+        ({PDP_REFERENCE_COUNTRY}) as the reference market. {t("shippingCoveragePdp")}
       </p>
 
       <div>
@@ -156,21 +172,28 @@ export default function ProductPrintOptions({ productId, product }) {
             type="number"
             value={quantity}
             onChange={(e) =>
-              setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))
+              setQuantity(clampLineQuantity(e.target.value))
             }
             className="w-16 text-center bg-gray-800 border border-gray-600 rounded-lg p-2 text-white"
             min={1}
+            max={MAX_LINE_QUANTITY}
           />
           <Button
             variant="outline"
             size="icon"
             type="button"
-            onClick={() => setQuantity((q) => q + 1)}
+            onClick={() =>
+              setQuantity((q) => clampLineQuantity(q + 1))
+            }
             className="bg-gray-800 border-gray-600 hover:bg-gray-700"
           >
             +
           </Button>
         </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Max {MAX_LINE_QUANTITY} per line · {MAX_ORDER_TOTAL_QUANTITY} items
+          per order
+        </p>
       </div>
 
       {quote && (

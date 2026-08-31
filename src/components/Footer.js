@@ -13,7 +13,7 @@ const Footer = () => {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-black border-t border-white text-white text-center py-8">
+    <footer className="bg-black border-t border-white text-white text-center py-8 font-sans">
       <div className="mb-4">
         <Link href="/cart" className="text-lg font-bold">
           {t("footerViewCart")}
@@ -23,6 +23,8 @@ const Footer = () => {
       <div className="mb-4">{t("footerCopyright")}</div>
 
       <div className="mb-4 space-x-4">
+        <Link href="/track-order">{t("trackOrder")}</Link>
+        <span>|</span>
         <Link href="/privacy-policy">{t("privacyPolicy")}</Link>
         <span>|</span>
         <Link href="/copyright-statement">{t("copyright")}</Link>

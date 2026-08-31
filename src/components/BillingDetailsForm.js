@@ -8,6 +8,8 @@ import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 import { Button } from "./ui/button";
 import { getCountryLabel, listCountries } from "@/lib/pricingCatalog";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { normalizeAddressFormValues } from "@/lib/orderUtils";
 
 const BillingDetailsForm = observer(
   ({ formTitle, isShipping = false, onSubmit, onCountryChange }) => {
@@ -17,13 +19,15 @@ const BillingDetailsForm = observer(
     const [error, setError] = useState(null);
 
     const { shippingDetailsCompleted, billingDetailsCompleted } = MobxStore;
+    const { t } = useLanguage();
 
     /*
-     * SHIPPING DESTINATION COUNTRIES (current): Only ISO codes present in pricingNormalized.json
-     * (`listCountries`). Checkout + Stripe use the same catalog; no addresses outside this set.
+     * SHIPPING DESTINATION COUNTRIES: Only ISO codes on the official price list
+     * (`listCountries` from pricingNormalized.json). YourSurprise has carrier
+     * contracts for those destinations only — no shipping elsewhere.
      *
-     * When the client expands coverage, regenerate JSON (new countries / rows), or restore the
-     * worldwide dropdown below plus manual-quote / blended pricing UX.
+     * When the client expands coverage, regenerate the CSV/JSON and uncomment the
+     * worldwide dropdown below if manual-quote flow is added.
      */
     useEffect(() => {
       const catalogCodes = listCountries();
@@ -73,15 +77,14 @@ const BillingDetailsForm = observer(
       country: Yup.string().required("Country is required"),
       streetAddress1: Yup.string().required("Street address is required"),
       city: Yup.string().required("City is required"),
+      postalCode: Yup.string().required("Postal / ZIP code is required"),
       state:
         selectedCountry === "US"
           ? Yup.string().required("State is required")
           : Yup.string(),
-      email: isShipping
-        ? Yup.string()
-            .email("Invalid email format")
-            .required("Email is required")
-        : Yup.string(),
+      email: Yup.string()
+        .email("Invalid email format")
+        .required("Email is required"),
     });
 
     return (
@@ -94,11 +97,12 @@ const BillingDetailsForm = observer(
           streetAddress2: "",
           city: "",
           state: "",
+          postalCode: "",
           email: "",
         }}
         validationSchema={validationSchema}
         onSubmit={(values, { setSubmitting }) => {
-          onSubmit(values);
+          onSubmit(normalizeAddressFormValues(values));
           if (isShipping) {
             MobxStore.setShippingDetailsCompleted(true);
           } else {
@@ -155,8 +159,7 @@ const BillingDetailsForm = observer(
             <div className="flex flex-col gap-2">
               <label htmlFor="country">Country/Region *</label>
               <p className="text-xs text-gray-500 leading-relaxed">
-                We currently ship only to destinations covered by our price list ({countries.length}{" "}
-                countries). Contact us if yours is not listed.
+                {t("shippingCountrySelectHint")}
               </p>
               {loading ? (
                 <div className="text-white">Loading countries...</div>
@@ -229,6 +232,20 @@ const BillingDetailsForm = observer(
               />
             </div>
 
+            {/* Postal / ZIP */}
+            <div className="flex flex-col">
+              <label htmlFor="postalCode">Postal / ZIP code *</label>
+              <Field
+                name="postalCode"
+                className="p-2 rounded bg-gray-800 text-white"
+              />
+              <ErrorMessage
+                name="postalCode"
+                component="div"
+                className="text-red-500"
+              />
+            </div>
+
             {/* US State Dropdown */}
             {selectedCountry === "US" && (
               <div className="flex flex-col">
@@ -254,21 +271,21 @@ const BillingDetailsForm = observer(
             )}
 
             {/* Email */}
-            {isShipping && (
-              <div className="flex flex-col">
-                <label htmlFor="email">Email *</label>
-                <Field
-                  name="email"
-                  type="email"
-                  className="p-2 rounded bg-gray-800 text-white"
-                />
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-red-500"
-                />
-              </div>
-            )}
+            <div className="flex flex-col">
+              <label htmlFor="email">
+                Email *{!isShipping ? " (billing)" : ""}
+              </label>
+              <Field
+                name="email"
+                type="email"
+                className="p-2 rounded bg-gray-800 text-white"
+              />
+              <ErrorMessage
+                name="email"
+                component="div"
+                className="text-red-500"
+              />
+            </div>
 
             <Button
               type="submit"

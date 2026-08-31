@@ -1,4 +1,7 @@
+"use client";
+
 import { useState, useEffect } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +60,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
     setLoading(true);
     try {
       let updatedData = { ...formData };
+      delete updatedData.price;
 
       // If there's a new image file, upload it first
       if (newImageFile) {
@@ -64,7 +68,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
         formDataWithFile.append("file", newImageFile);
         formDataWithFile.append("productData", JSON.stringify(formData));
 
-        const uploadResponse = await fetch("/api/admin/products/upload", {
+        const uploadResponse = await adminFetch("/api/admin/products/upload", {
           method: "POST",
           body: formDataWithFile,
         });
@@ -76,10 +80,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
         updatedData.sharedGalleryImage = false;
       }
 
-      // Ensure price is a number
-      updatedData.price = Number(updatedData.price);
-
-      const response = await fetch(`/api/admin/products/${product.id}`, {
+      const response = await adminFetch(`/api/admin/products/${product.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +103,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/products/${product.id}`, {
+      const response = await adminFetch(`/api/admin/products/${product.id}`, {
         method: "DELETE",
       });
 
@@ -174,20 +175,6 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`price-${product.id}`}>Price ($)</Label>
-                <Input
-                  id={`price-${product.id}`}
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
-                  }
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor={`description-${product.id}`}>Description</Label>
                 <Textarea
                   id={`description-${product.id}`}
@@ -198,6 +185,11 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                   placeholder="Product description"
                 />
               </div>
+
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Pricing is set in the print catalogue (material × size ×
+                country), not on this product.
+              </p>
 
               <div className="space-y-2">
                 <Label>Category</Label>
@@ -260,7 +252,9 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
             <>
               <h3 className="font-semibold">{product.name}</h3>
               <p className="text-sm text-gray-500">{product.description}</p>
-              <p className="font-medium">${product.price}</p>
+              <p className="text-xs text-gray-500">
+                Print prices: material × size × country catalogue
+              </p>
               <p className="text-sm text-gray-500">
                 Category: {product.category || "Not set"}
               </p>

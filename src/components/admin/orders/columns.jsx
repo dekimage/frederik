@@ -5,9 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import OrderDetailsDialog from "./OrderDetailsDialog";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  formatCurrencyEUR,
+  ORDER_STATUS,
+  ORDER_STATUS_LABELS,
+} from "@/lib/orderUtils";
 
-// Separate component for the actions cell
-function OrderActions({ order, onFulfillmentChange }) {
+function OrderActions({ order, onFulfillmentChange, onOrderStatusChange }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -18,6 +29,21 @@ function OrderActions({ order, onFulfillmentChange }) {
           onFulfillmentChange(order.id, checked);
         }}
       />
+      <Select
+        value={order.orderStatus || ORDER_STATUS.PROCESSING}
+        onValueChange={(value) => onOrderStatusChange(order.id, value)}
+      >
+        <SelectTrigger className="w-[150px] h-8">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.values(ORDER_STATUS).map((status) => (
+            <SelectItem key={status} value={status}>
+              {ORDER_STATUS_LABELS[status]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
         View Details
       </Button>
@@ -30,17 +56,6 @@ function OrderActions({ order, onFulfillmentChange }) {
   );
 }
 
-// Helper function to format currency
-const formatCurrency = (value) => {
-  if (typeof value === "string") {
-    value = parseFloat(value);
-  }
-  return typeof value === "number" && !isNaN(value)
-    ? `$${value.toFixed(2)}`
-    : "$0.00";
-};
-
-// Helper function to format date
 const formatDate = (dateString) => {
   try {
     return format(new Date(dateString), "MMM d, yyyy");
@@ -49,7 +64,7 @@ const formatDate = (dateString) => {
   }
 };
 
-export const createColumns = (onFulfillmentChange) => [
+export const createColumns = (onFulfillmentChange, onOrderStatusChange) => [
   {
     accessorKey: "id",
     header: "Order ID",
@@ -59,34 +74,45 @@ export const createColumns = (onFulfillmentChange) => [
     accessorKey: "customerName",
     header: "Customer",
     cell: ({ row }) => {
+      const shipping = row.original.shippingDetails || {};
       const billing = row.original.billingDetails || {};
       return (
-        `${billing.firstName || ""} ${billing.lastName || ""}`.trim() || "N/A"
+        `${shipping.firstName || billing.firstName || ""} ${shipping.lastName || billing.lastName || ""}`.trim() ||
+        "N/A"
       );
     },
   },
   {
     accessorKey: "amountTotal",
     header: "Total",
-    cell: ({ row }) => formatCurrency(row.original.amountTotal),
+    cell: ({ row }) => formatCurrencyEUR(row.original.amountTotal),
   },
   {
     accessorKey: "paymentStatus",
-    header: "Status",
+    header: "Payment",
     cell: ({ row }) => {
       const status = row.original.paymentStatus || "pending";
       const colors = {
         paid: "bg-green-100 text-green-800",
         pending: "bg-yellow-100 text-yellow-800",
         failed: "bg-red-100 text-red-800",
+        refunded: "bg-purple-100 text-purple-800",
       };
 
       return (
-        <span className={`px-2 py-1 rounded-full text-xs ${colors[status]}`}>
+        <span className={`px-2 py-1 rounded-full text-xs ${colors[status] || colors.pending}`}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
       );
     },
+  },
+  {
+    accessorKey: "orderStatus",
+    header: "Order status",
+    cell: ({ row }) =>
+      ORDER_STATUS_LABELS[row.original.orderStatus] ||
+      row.original.orderStatus ||
+      "N/A",
   },
   {
     accessorKey: "createdAt",
@@ -95,11 +121,12 @@ export const createColumns = (onFulfillmentChange) => [
   },
   {
     accessorKey: "isFulfilled",
-    header: "Fulfilled",
+    header: "Actions",
     cell: ({ row }) => (
       <OrderActions
         order={row.original}
         onFulfillmentChange={onFulfillmentChange}
+        onOrderStatusChange={onOrderStatusChange}
       />
     ),
   },

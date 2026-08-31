@@ -1,13 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { isLocalhostHostname } from "@/lib/localhost";
 import {
   HomeIcon,
   ImageIcon,
   PackageIcon,
   ShoppingCartIcon,
+  WrenchIcon,
 } from "lucide-react";
-import { ModeToggle } from "../ui/themeButton";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: HomeIcon },
@@ -16,8 +20,23 @@ const navigation = [
   { name: "Orders", href: "/admin/orders", icon: ShoppingCartIcon },
 ];
 
+const devToolsNav = {
+  name: "Dev tools",
+  href: "/admin/dev-tools",
+  icon: WrenchIcon,
+};
+
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const [showDevTools, setShowDevTools] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShowDevTools(isLocalhostHostname(window.location.hostname));
+    }
+  }, []);
+
+  const items = showDevTools ? [...navigation, devToolsNav] : navigation;
 
   return (
     <div className="h-full border-r border-gray-200 bg-black">
@@ -25,7 +44,7 @@ export default function AdminSidebar() {
         <h1 className="text-xl font-semibold mr-4">Admin Panel</h1>
       </div>
       <nav className="space-y-1 px-3 py-4">
-        {navigation.map((item) => {
+        {items.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link

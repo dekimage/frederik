@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +46,7 @@ export default function AddImageDialog({ open, onClose, onSuccess }) {
       formDataToSend.append("file", imageFile);
       formDataToSend.append("imageData", JSON.stringify(formData));
 
-      const response = await fetch("/api/admin/images", {
+      const response = await adminFetch("/api/admin/images", {
         method: "POST",
         body: formDataToSend,
       });

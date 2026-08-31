@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ export default function CategorySelect({ value, onValueChange }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("/api/admin/categories");
+        const response = await adminFetch("/api/admin/categories");
         const data = await response.json();
         setCategories(data.categories);
       } catch (error) {

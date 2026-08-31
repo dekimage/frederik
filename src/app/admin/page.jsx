@@ -1,5 +1,7 @@
 "use client";
 
+import { adminFetch } from "@/lib/adminFetch";
+
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Input } from "@/components/ui/input";
@@ -34,7 +36,7 @@ export default function AdminDashboard() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/admin/categories");
+      const response = await adminFetch("/api/admin/categories");
       const data = await response.json();
       setCategories(data.categories);
     } catch (error) {
@@ -49,7 +51,7 @@ export default function AdminDashboard() {
     if (!newCategory.trim()) return;
 
     try {
-      const response = await fetch("/api/admin/categories", {
+      const response = await adminFetch("/api/admin/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,7 +70,7 @@ export default function AdminDashboard() {
 
   const handleDeleteCategory = async () => {
     try {
-      const response = await fetch(`/api/admin/categories/${deleteDialog.id}`, {
+      const response = await adminFetch(`/api/admin/categories/${deleteDialog.id}`, {
         method: "DELETE",
       });
 

@@ -7,18 +7,12 @@ import {
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
+import {
+  formatAddressLines,
+  formatCurrencyEUR,
+  ORDER_STATUS_LABELS,
+} from "@/lib/orderUtils";
 
-// Helper function to format currency
-const formatCurrency = (value) => {
-  if (typeof value === "string") {
-    value = parseFloat(value);
-  }
-  return typeof value === "number" && !isNaN(value)
-    ? `$${value.toFixed(2)}`
-    : "$0.00";
-};
-
-// Helper function to format date
 const formatDate = (dateString) => {
   try {
     return format(new Date(dateString), "PPP");
@@ -27,11 +21,13 @@ const formatDate = (dateString) => {
   }
 };
 
-// Helper function to format Firestore timestamp
 const formatTimestamp = (timestamp) => {
   if (!timestamp) return "No date available";
   try {
-    const date = new Date(timestamp._seconds * 1000);
+    const date =
+      typeof timestamp === "string"
+        ? new Date(timestamp)
+        : new Date(timestamp._seconds * 1000);
     return format(date, "PPP");
   } catch (error) {
     return "Invalid date";
@@ -46,16 +42,9 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
     );
   };
 
-  const formatAddress = (details) => {
-    if (!details) return [];
-    return [
-      details.streetAddress1,
-      details.streetAddress2,
-      details.city,
-      details.state,
-      details.country,
-    ].filter(Boolean);
-  };
+  const lineItems = order.validatedLineItems?.length
+    ? order.validatedLineItems
+    : order.cartItems || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,14 +55,12 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
 
         <ScrollArea className="max-h-[80vh] font-mono">
           <div className="space-y-6">
-            {/* Order Info */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-2">Order Information</h3>
                 <div className="space-y-1 text-sm">
                   <p>
-                    <span className="font-medium">Order ID:</span>{" "}
-                    {order.id || "N/A"}
+                    <span className="font-medium">Order ID:</span> {order.id || "N/A"}
                   </p>
                   <p>
                     <span className="font-medium">Created:</span>{" "}
@@ -84,26 +71,29 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     {formatTimestamp(order.paidAt)}
                   </p>
                   <p>
-                    <span className="font-medium">Payment Status:</span>
-                    <span
-                      className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                        order.paymentStatus === "paid"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {order.paymentStatus || "pending"}
-                    </span>
+                    <span className="font-medium">Payment Status:</span>{" "}
+                    {order.paymentStatus || "pending"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Order Status:</span>{" "}
+                    {ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Subtotal:</span>{" "}
+                    {formatCurrencyEUR(order.amountSubtotal ?? order.subtotal)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Tax:</span>{" "}
+                    {formatCurrencyEUR(order.amountTax || 0)}
                   </p>
                   <p>
                     <span className="font-medium">Total Amount:</span>{" "}
-                    {formatCurrency(order.amountTotal)}
+                    {formatCurrencyEUR(order.amountTotal)}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Billing Details */}
             {order.billingDetails && (
               <div>
                 <h3 className="font-semibold mb-2">Billing Details</h3>
@@ -116,19 +106,9 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     <span className="font-medium">Email:</span>{" "}
                     {order.billingDetails.email || "N/A"}
                   </p>
-                  <p>
-                    <span className="font-medium">Phone:</span>{" "}
-                    {order.billingDetails.phone || "N/A"}
-                  </p>
-                  {order.billingDetails.companyName && (
-                    <p>
-                      <span className="font-medium">Company:</span>{" "}
-                      {order.billingDetails.companyName}
-                    </p>
-                  )}
                   <div className="mt-2">
                     <span className="font-medium">Address:</span>
-                    {formatAddress(order.billingDetails).map((line, i) => (
+                    {formatAddressLines(order.billingDetails).map((line, i) => (
                       <p key={i}>{line}</p>
                     ))}
                   </div>
@@ -136,7 +116,6 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
               </div>
             )}
 
-            {/* Shipping Details */}
             {order.shippingDetails && (
               <div>
                 <h3 className="font-semibold mb-2">Shipping Details</h3>
@@ -149,68 +128,50 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     <span className="font-medium">Email:</span>{" "}
                     {order.shippingDetails.email || "N/A"}
                   </p>
-                  <p>
-                    <span className="font-medium">Phone:</span>{" "}
-                    {order.shippingDetails.phone || "N/A"}
-                  </p>
-                  {order.shippingDetails.companyName && (
-                    <p>
-                      <span className="font-medium">Company:</span>{" "}
-                      {order.shippingDetails.companyName}
-                    </p>
-                  )}
                   <div className="mt-2">
                     <span className="font-medium">Address:</span>
-                    {formatAddress(order.shippingDetails).map((line, i) => (
+                    {formatAddressLines(order.shippingDetails).map((line, i) => (
                       <p key={i}>{line}</p>
                     ))}
                   </div>
-                  {order.shippingDetails.orderNotes && (
-                    <div className="mt-2">
-                      <span className="font-medium">Order Notes:</span>
-                      <p>{order.shippingDetails.orderNotes}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-            {/* Order Items */}
-            {order.cartItems?.length > 0 && (
+            {lineItems.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-2">Order Items</h3>
                 <div className="grid gap-4">
-                  {order.cartItems.map((item, index) => (
+                  {lineItems.map((item, index) => (
                     <div
                       key={index}
                       className="flex items-center space-x-4 border rounded-lg p-4"
                     >
-                      <div className="w-20 h-20 relative rounded-md overflow-hidden">
-                        <img
-                          src={cloudinaryMaxQualityDeliveryUrl(item.image)}
-                          alt={item.name}
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
+                      {item.image ? (
+                        <div className="w-20 h-20 relative rounded-md overflow-hidden">
+                          <img
+                            src={cloudinaryMaxQualityDeliveryUrl(item.image)}
+                            alt={item.name}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      ) : null}
                       <div className="flex-1">
-                        <h4 className="font-medium">{item.name}</h4>
-                        <p className="text-sm text-gray-500">
-                          {item.description}
-                        </p>
+                        <h4 className="font-medium">{item.name || item.productId}</h4>
                         <div className="mt-1 text-sm">
-                          <span className="font-medium">Size:</span> {item.size}
+                          <span className="font-medium">Options:</span>{" "}
+                          {item.material || "N/A"} · {item.sizeRaw || item.size || item.sizeKey}
                         </div>
                         <div className="text-sm">
-                          <span className="font-medium">Quantity:</span>{" "}
-                          {item.quantity}
+                          <span className="font-medium">Quantity:</span> {item.quantity}
                         </div>
                         <div className="text-sm">
-                          <span className="font-medium">Price:</span>{" "}
-                          {formatCurrency(item.price)}
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">Total:</span>{" "}
-                          {formatCurrency(item.price * item.quantity)}
+                          <span className="font-medium">Line total:</span>{" "}
+                          {formatCurrencyEUR(
+                            item.lineTotalIncShipping ??
+                              Number(item.unitPriceIncShipping || item.price) *
+                                Number(item.quantity || 1)
+                          )}
                         </div>
                       </div>
                     </div>
@@ -219,7 +180,41 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
               </div>
             )}
 
-            {/* Stripe Session ID */}
+            {order.invoice ? (
+              <div className="text-sm">
+                <h3 className="font-semibold mb-2">Invoice / Receipt</h3>
+                {order.invoice.receiptUrl ? (
+                  <p>
+                    <a
+                      href={order.invoice.receiptUrl}
+                      className="text-blue-600 underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Stripe receipt
+                    </a>
+                  </p>
+                ) : null}
+                <p className="text-gray-500 mt-2">
+                  HTML invoice stored in Firestore on {formatTimestamp(order.invoice.createdAt)}
+                </p>
+              </div>
+            ) : null}
+
+            {order.statusHistory?.length ? (
+              <div>
+                <h3 className="font-semibold mb-2">Status history</h3>
+                <div className="text-sm space-y-2">
+                  {order.statusHistory.map((entry, index) => (
+                    <p key={index}>
+                      {entry.at}: {ORDER_STATUS_LABELS[entry.status] || entry.status}
+                      {entry.note ? ` — ${entry.note}` : ""}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {order.stripeSessionId && (
               <div className="text-sm text-gray-500">
                 <span className="font-medium">Stripe Session ID:</span>{" "}

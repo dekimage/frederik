@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
+import { adminFetch } from "@/lib/adminFetch";
 import ImageCard from "@/components/admin/ImageCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ export default function ImagesPage() {
 
   const fetchImages = async () => {
     try {
-      const response = await fetch("/api/admin/images");
+      const response = await adminFetch("/api/admin/images");
       const data = await response.json();
       setImages(data.images);
     } catch (error) {

@@ -1,6 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { db } from "./firebase";
 import { getPdpQuote } from "@/lib/pricingCatalog";
+import {
+  clampLineQuantity,
+  MAX_LINE_QUANTITY,
+  MAX_ORDER_TOTAL_QUANTITY,
+  sumCartQuantities,
+} from "@/lib/cartLimits";
 
 import {
   doc,
@@ -95,7 +101,7 @@ class Store {
               : 0;
         return {
           productId: i.productId,
-          quantity: Math.max(1, Number(i.quantity) || 1),
+          quantity: clampLineQuantity(i.quantity),
           sizeKey: i.sizeKey,
           sizeRaw: i.sizeRaw,
           material: i.material,
@@ -296,6 +302,7 @@ class Store {
   // Add to cart (print price only; shipping added at checkout from address)
   addToCart(item) {
     const sizeKey = item.sizeKey;
+    const requestedQty = clampLineQuantity(item.quantity);
     const existingItem = this.cartItems.find(
       (cartItem) =>
         cartItem.productId === item.productId &&
@@ -303,12 +310,32 @@ class Store {
         cartItem.material === item.material
     );
 
+    const otherTotal = sumCartQuantities(
+      this.cartItems.filter((cartItem) => cartItem !== existingItem)
+    );
+    const maxForLine = Math.min(
+      MAX_LINE_QUANTITY,
+      MAX_ORDER_TOTAL_QUANTITY - otherTotal
+    );
+
+    if (maxForLine < 1) {
+      return {
+        ok: false,
+        error: `Maximum ${MAX_ORDER_TOTAL_QUANTITY} items per order.`,
+      };
+    }
+
     if (existingItem) {
-      existingItem.quantity += item.quantity;
+      existingItem.quantity = clampLineQuantity(
+        existingItem.quantity + requestedQty
+      );
+      if (existingItem.quantity > maxForLine) {
+        existingItem.quantity = maxForLine;
+      }
     } else {
       this.cartItems.push({
         productId: item.productId,
-        quantity: item.quantity,
+        quantity: Math.min(requestedQty, maxForLine),
         sizeKey,
         sizeRaw: item.sizeRaw,
         material: item.material,
@@ -317,6 +344,7 @@ class Store {
     }
 
     this.saveCartToLocalStorage();
+    return { ok: true };
   }
 
   // Update quantity of an item in the cart
@@ -329,7 +357,14 @@ class Store {
     );
 
     if (item) {
-      item.quantity = newQuantity;
+      const otherTotal = sumCartQuantities(
+        this.cartItems.filter((cartItem) => cartItem !== item)
+      );
+      const maxForLine = Math.min(
+        MAX_LINE_QUANTITY,
+        MAX_ORDER_TOTAL_QUANTITY - otherTotal
+      );
+      item.quantity = clampLineQuantity(Math.min(newQuantity, maxForLine));
       this.saveCartToLocalStorage();
     }
   }

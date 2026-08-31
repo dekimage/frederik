@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
+import { adminFetch } from "@/lib/adminFetch";
 import ProductCard from "@/components/admin/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/admin/products");
+      const response = await adminFetch("/api/admin/products");
       const data = await response.json();
       setProducts(data.products);
     } catch (error) {

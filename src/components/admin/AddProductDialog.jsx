@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +21,6 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: "",
     category: "",
   });
 
@@ -39,24 +41,11 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      // Validate price
-      const price = parseFloat(formData.price);
-      if (isNaN(price) || price < 0) {
-        throw new Error("Please enter a valid price");
-      }
-
       const formDataToSend = new FormData();
       formDataToSend.append("file", imageFile);
+      formDataToSend.append("productData", JSON.stringify(formData));
 
-      // Ensure price is a number before stringifying
-      const productData = {
-        ...formData,
-        price: price, // Convert to number
-      };
-
-      formDataToSend.append("productData", JSON.stringify(productData));
-
-      const response = await fetch("/api/admin/products", {
+      const response = await adminFetch("/api/admin/products", {
         method: "POST",
         body: formDataToSend,
       });
@@ -82,7 +71,6 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
     setFormData({
       name: "",
       description: "",
-      price: "",
       category: "",
     });
   };
@@ -126,17 +114,10 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
             required
           />
 
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="Price"
-            value={formData.price}
-            onChange={(e) =>
-              setFormData({ ...formData, price: e.target.value })
-            }
-            required
-          />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Prices are set in the print catalogue (material × size × country),
+            not per product. Customers choose options on the product page.
+          </p>
 
           <Textarea
             placeholder="Description"

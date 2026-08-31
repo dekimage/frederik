@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "pricing:normalize": "node scripts/normalize-pricing.mjs"
+    "pricing:normalize": "node scripts/normalize-pricing.mjs",
+    "test:payments": "vitest run tests/integration/payments.integration.test.js",
+    "test:payments:watch": "vitest tests/integration/payments.integration.test.js"
   },
   "dependencies": {
     "@firebase/firestore": "^4.4.0",
@@ -73,9 +75,11 @@
   "devDependencies": {
     "autoprefixer": "^10",
     "csv-parse": "^6.2.1",
+    "dotenv": "^17.4.2",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
     "postcss": "^8",
-    "tailwindcss": "^3"
+    "tailwindcss": "^3",
+    "vitest": "^4.1.9"
   }
 }

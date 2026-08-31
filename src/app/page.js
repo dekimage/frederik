@@ -64,6 +64,8 @@ export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
   const { t } = useLanguage();
 
   useEffect(() => {
+    // Personal photo (trees/sunset placeholder): swap Firestore doc `images.about.url`
+    // when the drone portrait is ready — no redeploy needed.
     const fetchAboutImage = async () => {
       try {
         const docRef = doc(db, "images", "about");
@@ -91,22 +93,30 @@ export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
             <ChevronLeft size={32} /> Back
           </Link>
         )}
-        <h2 className="font-ethnocentric text-3xl md:text-4xl tracking-wide text-center md:text-left">
+        <h2 className="font-ethnocentric text-3xl md:text-5xl tracking-wide text-center md:text-left">
           {t("introduction")}
         </h2>
-        <p className="text-lg leading-relaxed">{t("introText1")}</p>
-        <p className="text-lg leading-relaxed">{t("introText2")}</p>
-        <p className="text-lg leading-relaxed">{t("introText3")}</p>
-        <p className="text-lg font-bold mt-6 whitespace-pre-line leading-relaxed">
+        <p className="font-sans text-lg leading-relaxed text-gray-100">
+          {t("introText1")}
+        </p>
+        <p className="font-sans text-lg leading-relaxed text-gray-100">
+          {t("introText2")}
+        </p>
+        <p className="font-sans text-lg leading-relaxed text-gray-100">
+          {t("introText3")}
+        </p>
+        <p className="font-sans text-lg font-bold mt-6 whitespace-pre-line leading-relaxed text-gray-100">
           {t("signature")}
         </p>
 
         {showWebsiteInfo && (
           <div className="pt-10 space-y-4 border-t border-gray-800 mt-10">
-            <h3 className="font-ethnocentric text-2xl md:text-3xl tracking-wide text-center md:text-left">
+            <h3 className="font-ethnocentric text-3xl md:text-5xl tracking-wide text-center md:text-left">
               {t("homeWebsiteHeading")}
             </h3>
-            <p className="text-base leading-relaxed">{t("homeWebsiteBody")}</p>
+            <p className="font-sans text-base leading-relaxed text-gray-100">
+              {t("homeWebsiteBody")}
+            </p>
           </div>
         )}
       </div>
@@ -353,12 +363,14 @@ export const LargeTitle = ({ title }) => {
   );
 };
 
-const LOCAL_HERO_FALLBACK = "/hero-home.jpg";
+/** Client hero (email attachment): add `home-hero-wolfskin.jpg` to `/public/` or set Firestore `images/hero.url`. */
+const LOCAL_HERO_FALLBACK = "/home-hero-wolfskin.jpg";
+/** Same wording on EN and NL site per client brief; Ethnocentric styling in hero overlay. */
+const HERO_TAGLINE_EN = "Capturing moments, creating memories";
 
 const HomePage = observer(() => {
   const [heroImage, setHeroImage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -402,11 +414,11 @@ const HomePage = observer(() => {
             sizes="100vw"
           />
         )}
-        {/* Hero Overlay with Title */}
+        {/* Hero tagline only (no localized welcome title) — Ethnocentric, small */}
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center px-4">
           <div className="text-center max-w-4xl">
-            <p className="font-ethnocentric text-xl sm:text-2xl md:text-3xl text-white tracking-wide drop-shadow-lg">
-              {t("heroSubtitle")}
+            <p className="font-ethnocentric text-lg sm:text-xl md:text-2xl text-white tracking-wide drop-shadow-lg">
+              {HERO_TAGLINE_EN}
             </p>
           </div>
         </div>
@@ -414,7 +426,7 @@ const HomePage = observer(() => {
       <div className="flex flex-col justify-center items-center px-4 sm:px-32">
         <AboutSection showBack={false} showWebsiteInfo />
         {MobxStore.categoriesLoading ? (
-          <p>Loading categories...</p>
+          <p className="font-sans text-gray-400">Loading categories...</p>
         ) : (
           <CategoriesSection categories={MobxStore.categories} />
         )}

@@ -4,10 +4,13 @@ import { observer } from "mobx-react";
 import MobxStore from "@/mobx";
 import Link from "next/link";
 import { materialLabel, getCountryLabel, PDP_REFERENCE_COUNTRY } from "@/lib/pricingCatalog";
+import { clampLineQuantity, MAX_LINE_QUANTITY, MAX_ORDER_TOTAL_QUANTITY } from "@/lib/cartLimits";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CartPage = observer(() => {
   const [cartProducts, setCartProducts] = useState([]);
+  const { t } = useLanguage();
 
   const fetchCartProducts = async () => {
     const products = await MobxStore.getCartProducts();
@@ -136,7 +139,7 @@ const CartPage = observer(() => {
                                   item.productId,
                                   item.sizeKey,
                                   item.material,
-                                  Math.max(1, item.quantity - 1)
+                                  clampLineQuantity(item.quantity - 1)
                                 )
                               }
                             >
@@ -146,15 +149,14 @@ const CartPage = observer(() => {
                               type="number"
                               value={item.quantity}
                               min="1"
+                              max={MAX_LINE_QUANTITY}
                               className="w-12 text-center bg-gray-800 border border-gray-600 rounded py-1"
                               onChange={(e) => {
-                                const newQuantity =
-                                  parseInt(e.target.value, 10) || 1;
                                 handleQuantityChange(
                                   item.productId,
                                   item.sizeKey,
                                   item.material,
-                                  Math.max(1, newQuantity)
+                                  clampLineQuantity(e.target.value)
                                 );
                               }}
                             />
@@ -165,7 +167,7 @@ const CartPage = observer(() => {
                                   item.productId,
                                   item.sizeKey,
                                   item.material,
-                                  item.quantity + 1
+                                  clampLineQuantity(item.quantity + 1)
                                 )
                               }
                             >
@@ -187,9 +189,7 @@ const CartPage = observer(() => {
               <div className="w-full max-w-md bg-gray-900 rounded-lg p-6">
                 <h3 className="text-xl font-semibold mb-2">Cart subtotal</h3>
                 <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                  Totals here are <span className="text-gray-300">print only</span>{" "}
-                  at the {refLabel} ({PDP_REFERENCE_COUNTRY}) list. Postal /
-                  delivery for your address is calculated at checkout.
+                  {t("shippingCoverageCart")}
                 </p>
                 <div className="space-y-2 text-sm tabular-nums">
                   <div className="flex justify-between gap-4 text-gray-300">
@@ -206,12 +206,15 @@ const CartPage = observer(() => {
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      You will see print + delivery for your country and tax on
-                      the checkout page once shipping details are filled in.
+                      {t("shippingCoverageCartCheckout")}
                     </p>
                   </div>
                 </div>
 
+                <p className="text-xs text-gray-500 mt-2">
+                  Max {MAX_LINE_QUANTITY} per line · {MAX_ORDER_TOTAL_QUANTITY}{" "}
+                  items per order
+                </p>
                 <div className="mt-6">
                   <Link href="/checkout">
                     <button className="w-full bg-white text-black py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors">

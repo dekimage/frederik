@@ -29,10 +29,7 @@ const translations = {
     autumn: "Autumn",
     winter: "Winter",
 
-    // Home page
-    heroTitle: "Welcome to Our Photography Shop",
-    heroSubtitle:
-      "Capturing moments, creating memories",
+    // Home page (hero tagline is hardcoded EN on both locales — see page.js)
     introduction: "INTRODUCTION",
     introText1:
       "Passionate, bursting with creativity and with an eye for detail. That's how I would describe myself. With my professional drones, I am always looking for new ways to explore the world and capture it on film. This gives me the chance to create unique images from a perspective like you have never seen the world before.",
@@ -135,10 +132,7 @@ Do you have questions about our use of cookies? Please feel free to contact us a
     autumn: "Herfst",
     winter: "Winter",
 
-    // Home page
-    heroTitle: "Welkom bij Onze Fotografie Winkel",
-    heroSubtitle:
-      "Capturing moments, creating memories",
+    // Home page (hero tagline hardcoded EN on both locales — see page.js)
     introduction: "INTRODUCTIE",
     introText1:
       "Gepassioneerd, boordevol creativiteit en met oog voor detail. Zo zou ik mijzelf omschrijven. Met mijn professionele drones ben ik altijd op zoek naar nieuwe manieren om de wereld te ontdekken en vast te leggen op de gevoelige plaat. Zo krijg ik de kans om unieke beelden te maken vanuit een perspectief zoals je de wereld nog nooit gezien hebt.",

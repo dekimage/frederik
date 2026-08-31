@@ -11,21 +11,18 @@ export async function POST() {
   const products = [
     {
       name: "Canvas Print - Sunset",
-      price: 50, // In euros
       image: "https://picsum.photos/600/400?random=1",
       description: "A beautiful canvas print of a sunset.",
       category: "Canvas Prints",
     },
     {
       name: "Framed Art - Mountains",
-      price: 80, // In euros
       image: "https://picsum.photos/600/400?random=2",
       description: "Framed art depicting scenic mountain landscapes.",
       category: "Framed Art",
     },
     {
       name: "Digital Art - Abstract",
-      price: 30, // In euros
       image: "https://picsum.photos/600/400?random=3",
       description: "Abstract digital art in vibrant colors.",
       category: "Digital Art",

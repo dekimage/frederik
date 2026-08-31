@@ -59,7 +59,7 @@ const Header = observer(() => {
 
   return (
     <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-between px-6 z-50">
-      {/* Logo Placeholder */}
+      {/* Logo — image: public/logo2.png (replace file when branding updates). */}
       <Link href="/">
         <div className="flex items-center">
           <Image
@@ -92,22 +92,26 @@ const Header = observer(() => {
         {/* Language Switcher */}
         <div className="relative" ref={languageRef}>
           <div
-            className="p-3 hover:bg-gray-800 rounded-full transition-colors cursor-pointer flex items-center space-x-1"
+            className="px-2 sm:px-3 py-2 sm:py-3 hover:bg-gray-800 rounded-full transition-colors cursor-pointer flex items-center gap-2"
             onClick={toggleLanguage}
+            title={language === "en" ? "English / Dutch" : "English / Dutch"}
           >
             <Image
               src={getLanguageFlag(language)}
               alt={`${language.toUpperCase()} flag`}
               width={20}
               height={15}
-              className="rounded-sm"
+              className="rounded-sm shrink-0"
             />
-            <ChevronDown className="w-4 h-4 text-white" />
+            <span className="uppercase text-[10px] sm:text-xs font-semibold tracking-wide font-sans text-white">
+              {language === "en" ? "EN" : "NL"}
+            </span>
+            <ChevronDown className="w-4 h-4 text-white shrink-0" />
           </div>
 
           {/* Language Dropdown */}
           {isLanguageOpen && (
-            <div className="absolute right-0 mt-2 w-20 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50">
+            <div className="absolute right-0 mt-2 w-[5.5rem] bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 font-sans text-sm">
               <div
                 className="px-3 py-2 hover:bg-gray-800 cursor-pointer flex items-center justify-center space-x-2 transition-colors"
                 onClick={() => handleLanguageChange("en")}

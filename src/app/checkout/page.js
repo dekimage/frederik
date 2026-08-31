@@ -5,7 +5,8 @@ import BillingDetailsForm from "@/components/BillingDetailsForm";
 import OrderSummary from "@/components/OrderSummary";
 import PaymentButton from "@/components/PaymentButton";
 import MobxStore from "@/mobx";
-import { quoteOrderForShippingCountry } from "@/lib/pricingCatalog";
+import { quoteOrderForShippingCountry, isSupportedShippingCountry } from "@/lib/pricingCatalog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CheckoutForm = observer(() => {
   const [isShippingDifferent, setIsShippingDifferent] = useState(false);
@@ -15,9 +16,7 @@ const CheckoutForm = observer(() => {
   const [shippingCountryEstimate, setShippingCountryEstimate] = useState("");
 
   const { setIsShippingDifferent: setMobxIsShippingDifferent } = MobxStore;
-
-  const shippingCost = 0;
-  const taxRate = 0.1;
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchCartProducts = async () => {
@@ -45,11 +44,6 @@ const CheckoutForm = observer(() => {
 
   const paymentReady =
     effectiveShippingCountry.length === 2 && quotedCheckout?.ok;
-
-  const paymentMerchandiseTotal = paymentReady
-    ? quotedCheckout.totalSum
-    : 0;
-  const paymentTaxEstimate = paymentMerchandiseTotal * taxRate;
 
   const handleShippingDifferentChange = (e) => {
     const newValue = e.target.checked;
@@ -85,11 +79,8 @@ const CheckoutForm = observer(() => {
     <div className="bg-black text-white mt-16 p-8 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-semibold mb-3 text-center">Checkout</h1>
-        <p className="text-center text-sm text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-          Product pages show <strong className="text-gray-300">print list prices</strong>{" "}
-          for the reference market. Enter your <strong className="text-gray-300">shipping address</strong>{" "}
-          here: we add postal/delivery from the price list for that country and
-          charge the matching total at payment.
+        <p className="text-center text-sm text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-sans">
+          {t("shippingCoverageCheckoutIntro")}
         </p>
         <div className="flex gap-8 flex-col lg:flex-row mt-8">
           <BillingDetailsForm
@@ -135,7 +126,6 @@ const CheckoutForm = observer(() => {
           <OrderSummary
             cartItems={cartItems}
             shippingCountryCode={effectiveShippingCountry}
-            taxRate={taxRate}
           />
         </div>
 
@@ -143,18 +133,24 @@ const CheckoutForm = observer(() => {
         {MobxStore.canProceedToPayment && (
           <div className="mt-8 flex flex-col items-stretch max-w-md mx-auto">
             {!paymentReady && (
-              <p className="text-center text-amber-400 text-sm mb-3 leading-relaxed">
-                {effectiveShippingCountry.length === 2 && !quotedCheckout?.ok
-                  ? "This cart cannot be priced for the shipping country (variant not in the list or catalog issue). Change the country or edit the cart."
-                  : "Shipping country is missing or invalid for pricing."}
+              <p className="text-center text-amber-400 text-sm mb-3 leading-relaxed font-sans">
+                {effectiveShippingCountry.length === 2 &&
+                !isSupportedShippingCountry(effectiveShippingCountry)
+                  ? t("checkoutPaymentBlockedUnsupported")
+                  : effectiveShippingCountry.length === 2 && !quotedCheckout?.ok
+                    ? t("shippingCoverageOrderSummaryUnavailable")
+                    : t("checkoutPaymentBlockedMissing")}
+              </p>
+            )}
+            {paymentReady && (
+              <p className="text-center text-gray-400 text-sm mb-3 leading-relaxed font-sans">
+                {effectiveShippingCountry === "NL"
+                  ? t("checkoutPaymentMethodsNl")
+                  : t("checkoutPaymentMethodsDefault")}
               </p>
             )}
             <PaymentButton
               cartItems={cartItems}
-              subtotal={paymentMerchandiseTotal}
-              shippingCost={shippingCost}
-              tax={paymentTaxEstimate}
-              taxRate={taxRate}
               billingDetails={
                 isShippingDifferent ? billingDetails : shippingDetails
               }

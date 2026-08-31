@@ -5,10 +5,6 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
 
 const PaymentButton = ({
   cartItems,
-  subtotal,
-  shippingCost,
-  tax,
-  taxRate = 0.1,
   billingDetails,
   shippingDetails,
   disabled = false,
@@ -23,22 +19,24 @@ const PaymentButton = ({
       },
       body: JSON.stringify({
         cartItems,
-        shippingCost,
-        tax,
-        taxRate,
         billingDetails,
         shippingDetails,
       }),
     });
 
-    // Check if the response is OK (status in the range 200-299)
     if (!response.ok) {
-      const errorMessage = await response.text(); // Get the error message from the response
+      let errorMessage = "Unable to start checkout.";
+      try {
+        const data = await response.json();
+        errorMessage = data.error || errorMessage;
+      } catch {
+        errorMessage = await response.text();
+      }
       console.error("Error creating checkout session:", errorMessage);
-      return; // Exit if there's an error
+      alert(errorMessage);
+      return;
     }
 
-    // Parse the response as JSON
     const session = await response.json();
 
     const result = await stripe.redirectToCheckout({
@@ -47,6 +45,7 @@ const PaymentButton = ({
 
     if (result.error) {
       console.error(result.error.message);
+      alert(result.error.message);
     }
   };
 

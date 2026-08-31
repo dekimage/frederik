@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +51,7 @@ export default function ImageCard({ image, onUpdate }) {
         formDataWithFile.append("file", newImageFile);
         formDataWithFile.append("imageData", JSON.stringify(formData));
 
-        const uploadResponse = await fetch("/api/admin/images/upload", {
+        const uploadResponse = await adminFetch("/api/admin/images/upload", {
           method: "POST",
           body: formDataWithFile,
         });
@@ -59,7 +62,7 @@ export default function ImageCard({ image, onUpdate }) {
         updatedData.cloudinaryPublicId = cloudinaryPublicId;
       }
 
-      const response = await fetch(`/api/admin/images/${image.id}`, {
+      const response = await adminFetch(`/api/admin/images/${image.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +84,7 @@ export default function ImageCard({ image, onUpdate }) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/images/${image.id}`, {
+      const response = await adminFetch(`/api/admin/images/${image.id}`, {
         method: "DELETE",
       });
 

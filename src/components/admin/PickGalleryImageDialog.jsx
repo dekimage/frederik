@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,7 @@ export default function PickGalleryImageDialog({
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/admin/images");
+        const res = await adminFetch("/api/admin/images");
         const data = await res.json();
         if (!cancelled && data.images) {
           setImages(data.images);
