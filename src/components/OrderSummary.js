@@ -86,7 +86,7 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
               </div>
               <div className="flex justify-between gap-4 font-semibold text-white pt-2 border-t border-gray-700">
                 <span className="text-left shrink leading-snug">
-                  Merchandise including delivery
+                  Merchandise including delivery (amount you pay)
                 </span>
                 <span>{formatCurrencyEUR(merchandiseWithShipping)}</span>
               </div>
@@ -103,13 +103,11 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
         </div>
 
         <div className="flex justify-between text-xl font-semibold py-4 border-t border-gray-700">
-          <span>Merchandise subtotal</span>
+          <span>Amount to pay</span>
           <span>{formatCurrencyEUR(merchandiseWithShipping)}</span>
         </div>
         <p className="text-xs text-gray-500 -mt-2 pb-2 font-sans">
-          VAT / tax is calculated by Stripe at payment based on your shipping
-          address. The final amount may differ slightly from this merchandise
-          subtotal.
+          {t("checkoutTotalIsFinal")}
         </p>
         <p className="text-xs text-gray-500 pb-2 font-sans">
           {t("shippingCoverageOrderSummaryStripeNote")}

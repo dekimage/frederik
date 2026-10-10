@@ -43,7 +43,7 @@ const translations = {
 
     // Legal Pages
     privacyPolicyTitle: "PRIVACY POLICY",
-    privacyPolicyContent: `At https://www.wolfskinphotography.com, we place great value on your privacy. In this privacy policy, we explain what data we collect, why we collect it, and how we protect your data.
+    privacyPolicyContent: `At https://www.wolfskin-photography.com, we place great value on your privacy. In this privacy policy, we explain what data we collect, why we collect it, and how we protect your data.
 
 WHAT DATA DO WE COLLECT?
 - Personal data: such as your name, email address, phone number and address, when you place an order or contact us;
@@ -69,7 +69,7 @@ You have the right to:
 - Withdraw your consent for the use of your data.
 
 COOKIES:
-Our website uses cookies to improve usability. You can refuse cookies through your browser settings. Read more about this in our cookie policy at https://www.wolfskinphotography.com/cookies.
+Our website uses cookies to improve usability. You can refuse cookies through your browser settings. Read more about this in our cookie policy at https://www.wolfskin-photography.com/cookies-policy.
 
 CONTACT
 For questions about this privacy policy or your data, you can contact us at contact@wolfskinphotography.com.
@@ -92,7 +92,7 @@ If you believe your copyrighted work is being used on this website without permi
 - A description of where the material is located on our website.`,
 
     cookiesTitle: "COOKIES",
-    cookiesContent: `At https://www.wolfskinphotography.com we use cookies to improve your experience. In this policy we explain what cookies are, which cookies we use and how you can manage them.
+    cookiesContent: `At https://www.wolfskin-photography.com we use cookies to improve your experience. In this policy we explain what cookies are, which cookies we use and how you can manage them.
 
 WHAT ARE COOKIES?
 Cookies are small text files that are stored on your device when you visit our website. They help us make the website work better and gain insight into how visitors use the site.
@@ -146,7 +146,7 @@ Do you have questions about our use of cookies? Please feel free to contact us a
 
     // Legal Pages
     privacyPolicyTitle: "PRIVACY POLICY",
-    privacyPolicyContent: `Bij https://www.wolfskinphotography.com hechten we veel waarde aan jouw privacy. In dit privacybeleid leggen we uit welke gegevens we verzamelen, waarom we deze verzamelen en hoe we jouw gegevens beschermen.
+    privacyPolicyContent: `Bij https://www.wolfskin-photography.com hechten we veel waarde aan jouw privacy. In dit privacybeleid leggen we uit welke gegevens we verzamelen, waarom we deze verzamelen en hoe we jouw gegevens beschermen.
 
 WELKE GEGEVENS VERZAMELEN WE?
 - Persoonlijke gegevens: zoals je naam, e-mailadres, telefoonnummer en adres, wanneer je een bestelling plaatst of contact met ons opneemt;
@@ -172,7 +172,7 @@ Je hebt het recht om:
 - Je toestemming voor het gebruik van je gegevens in te trekken.
 
 COOKIES:
-Onze website maakt gebruik van cookies om het gebruiksgemak te verbeteren. Je kunt cookies weigeren via de instellingen van je browser. Lees er meer over in ons cookiesbeleid op https://www.wolfskinphotography.com/cookies.
+Onze website maakt gebruik van cookies om het gebruiksgemak te verbeteren. Je kunt cookies weigeren via de instellingen van je browser. Lees er meer over in ons cookiesbeleid op https://www.wolfskin-photography.com/cookies-policy.
 
 CONTACT
 Voor vragen over dit privacybeleid of jouw gegevens kun je contact met ons opnemen via contact@wolfskinphotography.com.
@@ -195,7 +195,7 @@ Als u denkt dat uw auteursrechtelijk beschermde werk zonder toestemming op deze 
 - Een beschrijving van waar het materiaal zich op onze website bevindt.`,
 
     cookiesTitle: "COOKIES",
-    cookiesContent: `Op https://www.wolfskinphotography.com maken we gebruik van cookies om jouw ervaring te verbeteren. In dit beleid leggen we uit wat cookies zijn, welke cookies we gebruiken en hoe je ze kunt beheren.
+    cookiesContent: `Op https://www.wolfskin-photography.com maken we gebruik van cookies om jouw ervaring te verbeteren. In dit beleid leggen we uit wat cookies zijn, welke cookies we gebruiken en hoe je ze kunt beheren.
 
 WAT ZIJN COOKIES?
 Cookies zijn kleine tekstbestanden die worden opgeslagen op jouw apparaat wanneer je onze website bezoekt. Ze helpen ons om de website beter te laten werken en om inzicht te krijgen in hoe bezoekers de site gebruiken.

@@ -206,10 +206,7 @@ export default function ProductPrintOptions({ productId, product }) {
           ) : (
             <>
               <p className="text-xs text-gray-400 mb-2">
-                Shown amounts are{" "}
-                <span className="text-gray-300">per poster</span>. More copies
-                multiply list print price; delivery is added per line at
-                checkout for your destination.
+                {t("pdpPrintPriceNote")}
               </p>
               <div className="flex justify-between text-gray-300">
                 <span>Poster print ({referenceLabel})</span>

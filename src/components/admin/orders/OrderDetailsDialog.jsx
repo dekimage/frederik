@@ -7,6 +7,7 @@ import {
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
+import { KOR_INVOICE_NOTICE } from "@/lib/korVat";
 import {
   formatAddressLines,
   formatCurrencyEUR,
@@ -83,8 +84,10 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     {formatCurrencyEUR(order.amountSubtotal ?? order.subtotal)}
                   </p>
                   <p>
-                    <span className="font-medium">Tax:</span>{" "}
-                    {formatCurrencyEUR(order.amountTax || 0)}
+                    <span className="font-medium">VAT:</span> Not charged (KOR)
+                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {KOR_INVOICE_NOTICE}
                   </p>
                   <p>
                     <span className="font-medium">Total Amount:</span>{" "}

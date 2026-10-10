@@ -1,8 +1,8 @@
 # iDEAL payment setup guide (Stripe + Next.js)
 
-This guide covers **iDEAL** — the Netherlands bank redirect payment method — for WOLFSKIN Photography checkout.
+This guide covers **iDEAL | Wero** — the Netherlands bank redirect payment method — for WOLFSKIN Photography checkout.
 
-**Code status:** iDEAL is wired in the app. NL shipping addresses get `card` + `ideal` on Stripe Checkout; other countries get card only. You still need to **enable iDEAL in the Stripe Dashboard** (test mode first) before it appears at payment.
+**Code status:** iDEAL is wired in the app. NL shipping addresses get `card` + `ideal` on Stripe Checkout; other countries get card only. Stripe's API identifier remains `ideal`, even when the Dashboard or hosted Checkout labels the method **iDEAL | Wero**. You still need to enable it in the correct Stripe mode before it appears at payment.
 
 ---
 
@@ -29,21 +29,22 @@ Before changing code, complete these in external systems:
 
 > Test mode: enable iDEAL in **Test mode** first. Use Stripe test bank flows during development.
 
-### 2. Stripe Tax (already used)
+### 2. Stripe Tax (off — Path KOR)
 
-Your app uses `automatic_tax: { enabled: true }`. For accurate NL VAT:
+The shop uses `automatic_tax: { enabled: false }`. Catalogue totals (print + delivery) are the amount charged. Do **not** enable Stripe Tax collection on these Checkout Sessions or VAT will be added on top of prices that are already what the customer should pay.
 
-1. In Stripe Dashboard → **Settings → Tax**, confirm your business address and tax registrations.
-2. Ensure customer shipping addresses include **postal code** (already added to checkout forms).
-3. Stripe Customer + shipping address are created server-side before Checkout — required for tax accuracy.
+Johannes Kort owns KOR / invoice exemption wording. Official sentence is a placeholder in `src/lib/korVat.js` until he confirms it.
+
 
 ### 3. Webhook endpoint (already implemented)
 
-Ensure production webhook listens to at least:
+Create separate test and live webhook destinations. Each must listen to exactly these events:
 
 | Event | Purpose |
 |-------|---------|
 | `checkout.session.completed` | Create paid order, send emails, store invoice |
+| `checkout.session.async_payment_succeeded` | Fulfill a redirect/delayed payment after it becomes paid |
+| `checkout.session.async_payment_failed` | Mark a redirect/delayed payment failed |
 | `checkout.session.expired` | Clean up abandoned pending orders |
 | `payment_intent.payment_failed` | Mark failed payment attempts |
 | `charge.refunded` | Mark order refunded |
@@ -51,7 +52,7 @@ Ensure production webhook listens to at least:
 
 **Stripe Dashboard → Developers → Webhooks → Add endpoint**
 
-- URL: `https://YOUR_DOMAIN/api/webhooks`
+- Production URL: `https://www.wolfskin-photography.com/api/webhooks`
 - Copy signing secret → `STRIPE_WEBHOOK_SECRET` in production env
 
 ---
@@ -81,7 +82,7 @@ Already implemented: verifies `session_id` before clearing cart (required for iD
 
 ### Step 4 — Webhook ✅
 
-Already handles `checkout.session.completed` for iDEAL payments.
+Handles both immediate and asynchronous Checkout payment results. An unpaid `checkout.session.completed` event is not fulfilled; fulfillment waits for `checkout.session.async_payment_succeeded`.
 
 ### Step 5 — Customer-facing copy ✅
 
@@ -97,7 +98,7 @@ No new env vars are required for iDEAL specifically. Ensure these exist:
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_...
-NEXT_PUBLIC_URL=https://www.wolfskinphotography.com
+NEXT_PUBLIC_URL=https://www.wolfskin-photography.com
 ```
 
 ---
@@ -121,7 +122,7 @@ NEXT_PUBLIC_URL=https://www.wolfskinphotography.com
 ### Live mode (before launch)
 
 - [ ] Switch to live Stripe keys
-- [ ] Live webhook endpoint configured
+- [ ] Live webhook endpoint configured with all seven events listed above
 - [ ] iDEAL enabled in live mode
 - [ ] Real small-value test order end-to-end
 
@@ -135,8 +136,8 @@ NEXT_PUBLIC_URL=https://www.wolfskinphotography.com
 | `payment_method_types` error | Account not eligible for iDEAL | Complete Stripe business verification |
 | Order not created after iDEAL | Webhook missing or wrong secret | Fix webhook URL + `STRIPE_WEBHOOK_SECRET` |
 | Success page says not confirmed | Webhook slower than redirect | Success page already handles 202 “pending fulfillment” — wait for webhook |
-| Tax seems wrong | Missing postal code | Ensure `postalCode` submitted (already required) |
-| Duplicate orders | Webhook replay | Idempotency on `stripeSessionId` already implemented |
+| Tax seems wrong / extra VAT on Checkout | Stripe Tax enabled on the session or in Dashboard | Path KOR: `automatic_tax` must stay **false**; charge must equal column M |
+| Duplicate orders | Concurrent webhook delivery | Investigate immediately; sequential replay is idempotent on `stripeSessionId` |
 
 ---
 
@@ -168,9 +169,9 @@ NEXT_PUBLIC_URL=https://www.wolfskinphotography.com
 
 ## What you need to do manually (outside the codebase)
 
-1. **Stripe Dashboard:** Enable iDEAL (test + live).
+1. **Stripe Dashboard:** Enable iDEAL | Wero separately in test and live mode.
 2. **Stripe Dashboard:** Confirm webhook endpoint and events in production.
-3. **Stripe Dashboard:** Confirm Tax settings for NL/EU.
+3. **Stripe Dashboard:** Path KOR — do not collect VAT on Checkout. Confirm iDEAL separately.
 4. **Firebase Console:** Ensure admin user exists for `/admin/login` with email matching `ADMIN_EMAIL`.
 5. **Local maintenance (optional):** On localhost, open `/admin/dev-tools` once a month and click **Run cleanup now** to remove expired unpaid `pendingOrders`.
 
@@ -186,4 +187,4 @@ Consider also:
 
 ---
 
-*Last updated: May 2026 — matches current checkout architecture in this repository.*
+*Last updated: October 2026 — Path KOR (Stripe Tax off); Resend migration and asynchronous Checkout events included.*

@@ -87,10 +87,19 @@ export function formatAddressLines(details = {}) {
   return [line1, line2, cityLine, country].filter(Boolean);
 }
 
+export function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 export function formatAddressHtml(details = {}) {
   const lines = formatAddressLines(details);
   if (lines.length === 0) return "Address details not available";
-  return lines.join("<br>");
+  return lines.map(escapeHtml).join("<br>");
 }
 
 export function formatCurrencyEUR(value) {

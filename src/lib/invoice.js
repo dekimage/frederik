@@ -1,3 +1,4 @@
+import { KOR_INVOICE_NOTICE } from "@/lib/korVat";
 import { formatAddressHtml, formatCurrencyEUR } from "@/lib/orderUtils";
 
 export function buildInvoiceHtml({
@@ -6,7 +7,6 @@ export function buildInvoiceHtml({
   shippingDetails,
   validatedLineItems = [],
   amountSubtotal,
-  amountTax,
   amountTotal,
   currency = "eur",
   paidAt,
@@ -72,9 +72,9 @@ export function buildInvoiceHtml({
 
   <div class="totals">
     <div><span>Subtotal</span><span>${formatCurrencyEUR(amountSubtotal)}</span></div>
-    <div><span>Tax</span><span>${formatCurrencyEUR(amountTax)}</span></div>
     <div class="grand"><span>Total paid</span><span>${formatCurrencyEUR(amountTotal)}</span></div>
   </div>
+  <p style="margin-top:16px;font-size:13px;color:#444;">${KOR_INVOICE_NOTICE}</p>
 
   ${
     receiptUrl

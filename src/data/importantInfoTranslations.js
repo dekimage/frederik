@@ -11,25 +11,34 @@ export const extendedTranslations = {
     shippingCoveragePdp:
       "Delivery is calculated at checkout for your shipping country. We only ship to countries on our official price list; destinations not on that list cannot be ordered online.",
     shippingCoverageCart:
-      "Print prices use the reference market list. Postal/delivery is added at checkout for supported shipping countries only.",
+      "Print prices are the amounts you pay for the print. Delivery is added at checkout for supported shipping countries. The checkout total is what you pay — no extra tax at payment.",
     shippingCoverageCartCheckout:
-      "At checkout, choose a country from our official price list. We cannot ship to destinations outside that list.",
+      "At checkout, choose a country from our official price list. Print + delivery for that country is the amount you pay. We cannot ship to destinations outside that list.",
     shippingCoverageCheckoutIntro:
-      "Enter your shipping address using a country from our official price list. Print and postal charges for that destination are calculated automatically. We do not offer delivery to countries outside that list — our fulfilment partner has no carrier contract for other destinations.",
+      "Enter your shipping address using a country from our official price list. Print and postal charges for that destination are calculated automatically — that total is what you pay, with no extra VAT at payment. We do not offer delivery to countries outside that list — our fulfilment partner has no carrier contract for other destinations.",
     shippingCoverageOrderSummaryLines:
-      "Line amounts are print list prices. Delivery is added below for supported shipping countries only.",
+      "Line amounts are print prices you pay. Delivery is added below for supported shipping countries only.",
     shippingCoverageOrderSummaryChooseCountry:
-      "Select a shipping country from our official price list to show delivery and the full total.",
+      "Select a shipping country from our official price list to show delivery and the amount you pay.",
     shippingCoverageOrderSummaryUnavailable:
       "One or more items cannot be shipped to this country, or it is not on our official price list. Adjust your cart or choose a supported destination.",
     shippingCoverageOrderSummaryStripeNote:
-      "Payment uses print + postal prices from the official list for your shipping country. We only ship to countries on that list.",
+      "Payment charges print + delivery from the official list for your shipping country. That total is final — no extra tax at Stripe.",
+    checkoutTotalIsFinal:
+      "This is the amount you pay. No extra VAT is added at payment.",
+    shopFromPricePrefix: "From",
+    shopFromPriceVat: "incl. BTW",
+    shopFromPriceMeta: "print price",
+    shopViewDetails: "View Details",
+    shopViewOptions: "View options",
+    pdpPrintPriceNote:
+      "Shown amounts are the print prices you pay (per poster). More copies multiply the print price; delivery is added per line at checkout for your destination. Checkout total is final — no extra tax at payment.",
     checkoutPaymentBlockedUnsupported:
       "This order cannot be completed: the shipping country is not on our official price list (no carrier coverage). Choose a supported country or contact us.",
     checkoutPaymentBlockedMissing:
       "Select a supported shipping country from our official price list to continue to payment.",
     checkoutPaymentMethodsNl:
-      "On the next step you can pay by card or iDEAL (Dutch banks). You will be redirected securely via Stripe.",
+      "On the next step you can pay by card or iDEAL | Wero (Dutch banks). You will be redirected securely via Stripe.",
     checkoutPaymentMethodsDefault:
       "On the next step you can pay by card via Stripe’s secure checkout.",
 
@@ -116,25 +125,34 @@ We only ship to countries on our official price list (the same countries you can
     shippingCoveragePdp:
       "Levering wordt bij het afrekenen berekend voor je verzendland. We verzenden alleen naar landen op onze officiële prijslijst; bestemmingen die niet op die lijst staan kunnen niet online worden besteld.",
     shippingCoverageCart:
-      "Printprijzen gebruiken de referentiemarkt. Post/levering wordt bij het afrekenen toegevoegd, alleen voor ondersteunde verzendlanden.",
+      "Printprijzen zijn wat je voor de print betaalt. Post/levering wordt bij het afrekenen toegevoegd, alleen voor ondersteunde verzendlanden. Het afrekentotaal is wat je betaalt — geen extra belasting bij betaling.",
     shippingCoverageCartCheckout:
-      "Kies bij het afrekenen een land uit onze officiële prijslijst. We kunnen niet verzenden naar bestemmingen buiten die lijst.",
+      "Kies bij het afrekenen een land uit onze officiële prijslijst. Print + levering voor dat land is het bedrag dat je betaalt. We kunnen niet verzenden naar bestemmingen buiten die lijst.",
     shippingCoverageCheckoutIntro:
-      "Vul je verzendadres in met een land uit onze officiële prijslijst. Print- en posttarieven voor die bestemming worden automatisch berekend. We leveren niet in landen buiten die lijst — onze fulfilmentpartner heeft geen vervoerscontract voor andere bestemmingen.",
+      "Vul je verzendadres in met een land uit onze officiële prijslijst. Print- en posttarieven voor die bestemming worden automatisch berekend — dat totaal is wat je betaalt, zonder extra BTW bij betaling. We leveren niet in landen buiten die lijst — onze fulfilmentpartner heeft geen vervoerscontract voor andere bestemmingen.",
     shippingCoverageOrderSummaryLines:
-      "Regelbedragen zijn printprijzen uit de lijst. Levering wordt hieronder toegevoegd, alleen voor ondersteunde verzendlanden.",
+      "Regelbedragen zijn printprijzen die je betaalt. Levering wordt hieronder toegevoegd, alleen voor ondersteunde verzendlanden.",
     shippingCoverageOrderSummaryChooseCountry:
-      "Selecteer een verzendland uit onze officiële prijslijst om levering en het volledige totaal te tonen.",
+      "Selecteer een verzendland uit onze officiële prijslijst om levering en het te betalen bedrag te tonen.",
     shippingCoverageOrderSummaryUnavailable:
       "Een of meer items kunnen niet naar dit land worden verzonden, of het land staat niet op onze officiële prijslijst. Pas je winkelmand aan of kies een ondersteunde bestemming.",
     shippingCoverageOrderSummaryStripeNote:
-      "Betaling gebruikt print- + postprijzen uit de officiële lijst voor je verzendland. We verzenden alleen naar landen op die lijst.",
+      "Betaling rekent print + levering uit de officiële lijst voor je verzendland. Dat totaal is definitief — geen extra belasting bij Stripe.",
+    checkoutTotalIsFinal:
+      "Dit is het bedrag dat je betaalt. Er wordt geen extra BTW toegevoegd bij betaling.",
+    shopFromPricePrefix: "Vanaf",
+    shopFromPriceVat: "incl. BTW",
+    shopFromPriceMeta: "printprijs",
+    shopViewDetails: "Bekijk details",
+    shopViewOptions: "Bekijk opties",
+    pdpPrintPriceNote:
+      "Getoonde bedragen zijn de printprijzen die je betaalt (per poster). Meer exemplaren vermenigvuldigen de printprijs; levering wordt per regel bij het afrekenen toegevoegd voor je bestemming. Het afrekentotaal is definitief — geen extra belasting bij betaling.",
     checkoutPaymentBlockedUnsupported:
       "Deze bestelling kan niet worden afgerond: het verzendland staat niet op onze officiële prijslijst (geen vervoersdekking). Kies een ondersteund land of neem contact op.",
     checkoutPaymentBlockedMissing:
       "Selecteer een ondersteund verzendland uit onze officiële prijslijst om door te gaan naar betaling.",
     checkoutPaymentMethodsNl:
-      "In de volgende stap kun je betalen met kaart of iDEAL (Nederlandse banken). Je wordt veilig doorgestuurd via Stripe.",
+      "In de volgende stap kun je betalen met kaart of iDEAL | Wero (Nederlandse banken). Je wordt veilig doorgestuurd via Stripe.",
     checkoutPaymentMethodsDefault:
       "In de volgende stap kun je met kaart betalen via het beveiligde Stripe-afrekenproces.",
 

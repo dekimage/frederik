@@ -4,6 +4,8 @@
 **Audience:** Business owners, finance, operations (non-technical).  
 **Shop:** WOLFSKIN Photography — physical art prints, EUR, EU shipping.
 
+**Signed path (19 Aug 2026):** **Path KOR** — catalogue columns L/M are the amounts customers pay; Stripe does **not** add VAT. See answers below.
+
 ---
 
 ## How our shop prices work today
@@ -11,98 +13,53 @@
 1. **Each photo** is a product (image + title + description). There is **no per-photo price** in admin.
 2. **Print prices** come from one master table: **material × size × shipping country** (e.g. canvas 60×40 cm to Netherlands).
 3. At checkout, our **server** calculates the amount and sends it to **Stripe**. Customers pay on Stripe’s secure page.
-4. **Stripe Tax** is turned on: VAT is calculated automatically from the customer’s **shipping address**.
+4. **Stripe Tax is off (Path KOR).** The charge equals the catalogue total (print + delivery for the shipping country). No extra VAT at payment.
+
+**Spreadsheet (Frederik, NL columns):**
+
+| Column | Meaning | In the shop |
+|--------|---------|-------------|
+| J | DHL shipping via YourSurprise (VAT already in *his* cost) | `shippingCost` |
+| K | Manufacturing at YourSurprise (VAT he pays them) | manufacturing cost |
+| L | What the customer pays **without** shipping | `priceExShipping` (print price on shop/PDP) |
+| M | What the customer pays **with** shipping | `priceIncShipping` (Stripe charge) |
+| N | Profit after YourSurprise | not shown to customers |
+
+`priceExShipping` means **excluding shipping**, not excluding VAT.
 
 ---
 
-## What customers see (current behaviour — Option A)
+## What customers see (Path KOR — live in code)
 
 | Step | What they see |
 |------|----------------|
-| Shop grid | “From €X” — lowest print price for the reference market (default: Netherlands) |
+| Shop grid | “From €X” — lowest **print** price for the reference market (default: Netherlands). Delivery added at checkout. |
 | Product page | Print price for chosen material & size (reference market); delivery added at checkout |
-| Checkout summary | Merchandise subtotal (print + delivery per line for their country) |
-| Stripe payment page | Line items + **VAT added by Stripe** → **final total** |
+| Checkout summary | Print + delivery for their country = **amount to pay** |
+| Stripe payment page | Same total as checkout. **No extra VAT line.** |
 
-**Important:** The checkout summary is **merchandise only**. VAT appears on the Stripe payment screen. The final charge can be slightly higher than the checkout subtotal.
-
-This is **Option A** — already live in the codebase.
+Storefront does **not** say “incl. BTW” until Johannes confirms that wording is acceptable under KOR (KOR sales are typically VAT-exempt). The **amount** is still column L (print) / M (with shipping).
 
 ---
 
-## VAT options — what to choose
+## VAT options (reference)
 
-### Option A — Merchandise ex-VAT at checkout, Stripe adds VAT *(current)*
+### Path KOR — charge L/M as-is, Stripe Tax off *(signed)*
 
-**How it works**
+- Customer pays column M. Invoice: no VAT amount; it states that the KOR exemption applies, as required by the Dutch Tax Administration.
+- Matches Q4 (KOR applicable) and Frederik’s sheet (L/M = customer prices; J/K = his YourSurprise costs).
 
-- Our catalogue stores **print + shipping** amounts as the business uses them internally (typically **excluding VAT** or as agreed with your accountant).
-- Stripe Tax calculates VAT on top at payment, based on shipping country and product tax category.
+### Option A — Merchandise ex-VAT, Stripe adds VAT *(superseded)*
 
-**Customer experience**
+Was the previous code. Would **overcharge** if L/M are already the customer prices. Do not use.
 
-- Checkout: “€120 merchandise (incl. delivery)”  
-- Stripe: “€120 + €25.20 VAT = **€145.20 total**” (example, 21% NL)
+### Option B — VAT-inclusive + Stripe Tax extracts VAT
 
-**Pros**
-
-- Already implemented; no code change.
-- Stripe handles EU VAT rules, rate changes, and many cross-border cases.
-- Good for mixed EU destinations from one NL/EU business.
-
-**Cons**
-
-- Small “sticker shock” if customers expect the checkout total to be final.
-- You must configure Stripe Tax correctly (business address, VAT registrations, product tax codes).
-
-**Best when:** You want Stripe to own VAT compliance and your catalogue prices are **ex-VAT**.
-
----
-
-### Option B — Show VAT-inclusive prices everywhere *(gross pricing)*
-
-**How it works**
-
-- Catalogue prices are stored **including VAT** for your home market (e.g. Netherlands 21%).
-- Checkout and Stripe line items use those gross amounts.
-- Stripe Tax is configured so it **does not double-charge VAT** (prices treated as tax-inclusive; Stripe extracts/reports VAT).
-
-**Customer experience**
-
-- Shop, cart, checkout, and Stripe all show **the same final-style total** (for NL customers).
-
-**Pros**
-
-- Clearer for Dutch/EU B2C — “what you see is what you pay” (for domestic VAT rate).
-- Fewer support questions about “extra tax at payment”.
-
-**Cons**
-
-- Requires **pricing model + Stripe Tax setup** aligned with your accountant (tax-inclusive mode, correct tax behaviour).
-- Cross-border EU orders may still show small differences (other countries’ VAT rates).
-- Catalogue or import process may need updating if prices are currently ex-VAT.
-
-**Best when:** Almost all customers are NL/EU B2C and marketing wants **inclusive** prices.
-
----
+Only if the shop **leaves KOR** and is VAT-registered. Not the signed path.
 
 ### Option C — Manual VAT in catalogue, Stripe Tax off
 
-**How it works**
-
-- VAT rate baked into your price table per country (or one rate for all).
-- Stripe only charges the fixed total; no automatic tax engine.
-
-**Pros**
-
-- Full control; simplest Stripe configuration.
-
-**Cons**
-
-- **Not recommended** for EU cross-border B2C: you must track rate changes, OSS/IOSS, B2B reverse charge, etc. yourself.
-- High compliance risk as you scale in the EU.
-
-**Best when:** Almost never for this shop unless a tax advisor explicitly requires it.
+Not used. Path KOR is tax-off because of KOR, not because we bake destination VAT into the table.
 
 ---
 
@@ -110,32 +67,26 @@ This is **Option A** — already live in the codebase.
 
 ### Netherlands (primary market)
 
-- Standard VAT **21%** on most physical prints (confirm with your accountant).
-- **iDEAL** is enabled for NL addresses — common and trusted.
-- For **Option A**: ensure Stripe Tax has your **NL VAT registration** and business address.
-- Display on site: many NL shops show “prijzen excl. btw” or show incl. btw — **pick one story and stick to it**.
+- **KOR applies** (Frederik, 19 Aug 2026). Confirm with Johannes that this activity is registered as such.
+- **iDEAL** is wired in code for NL addresses — enable in Stripe Dashboard (test + live).
+- Display: prices are the amount the customer pays. “Incl. BTW” only if Johannes approves.
 
 ### Other EU countries
 
-- Stripe Tax can apply the **destination country VAT** for B2C distance sales (OSS-style reporting when configured).
-- Shipping country on checkout drives tax — postal code is required (already in the shop).
-- Some destinations may have different VAT rates; automatic tax handles most of this if registrations are set up.
-
-### Non-EU
-
-- If you only ship to countries on your price list, confirm with finance whether VAT/export rules apply per destination.
+- YourSurprise ships EU-wide. Shipping country on checkout selects the catalogue row (L/M for that country).
+- Postal code is required.
+- Non-EU rows still exist in the catalogue (e.g. AU, CA, US, GB, CH). Confirm with Johannes whether those stay for sale.
 
 ---
 
-## Recommendation (best practice for this shop)
+## Recommendation (signed)
 
-| Topic | Recommendation |
-|-------|----------------|
-| **Stripe products** | **Do not** create hundreds of products in Stripe. Keep photos in admin; prices in catalogue. *(Already how the app works.)* |
-| **VAT approach** | **Short term:** stay on **Option A** if catalogue is ex-VAT — finish Stripe Tax setup with your accountant. |
-| **Long term (NL-focused B2C):** | Consider **Option B** (VAT-inclusive display) after finance confirms gross prices and Stripe inclusive-tax settings. |
-| **Avoid** | **Option C** unless advised otherwise. |
-| **Legal** | Confirm with your Dutch accountant/bookkeeper: B2C vs B2B, KOR (kleineondernemersregeling), OSS, invoice wording. |
+| Topic | Decision |
+|-------|----------|
+| **Stripe products** | **Do not** create hundreds of products in Stripe. Keep photos in admin; prices in catalogue. |
+| **VAT approach** | **Path KOR.** Charge L/M. Stripe Tax off. |
+| **Avoid** | Adding VAT on top of L/M (old Option A). Textbook Option B while still on KOR. |
+| **Legal** | Johannes Kort owns Stripe Tax / KOR status. The invoice wording in `src/lib/korVat.js` states that the KOR exemption applies and does not list VAT. |
 
 ---
 
@@ -143,23 +94,25 @@ This is **Option A** — already live in the codebase.
 
 **Technical / ops**
 
+- [x] Path KOR in app: `automatic_tax` disabled; checkout copy is the amount to pay  
 - [ ] Live + test API keys in hosting environment  
 - [ ] Webhook: `https://YOUR_DOMAIN/api/webhooks` with signing secret  
 - [ ] iDEAL enabled (test + live) for NL  
 
-**Finance / manager (Stripe → Settings → Tax)**
+**Finance / manager (Johannes Kort)**
 
+- [ ] Confirm KOR is in force for these print sales  
+- [x] KOR exemption sentence included on invoices (`src/lib/korVat.js`)  
+- [ ] Stripe Tax **not** collecting VAT on Checkout  
 - [ ] Business legal name and address (Netherlands)  
-- [ ] VAT number(s) and countries where you’re registered  
-- [ ] Default tax behaviour: **exclusive** (Option A) vs **inclusive** (Option B)  
-- [ ] Product tax category for **physical goods / prints**  
-- [ ] Review first test orders: subtotal, tax, total, invoice PDF  
+- [ ] Approve or reject storefront wording “From €X incl. BTW”  
+- [ ] Review first test orders: total = column M, no VAT line  
 
 **After go-live**
 
 - [ ] One real small order NL (card + iDEAL)  
 - [ ] One EU order (non-NL) if you ship there  
-- [ ] Compare Stripe receipt, order email, and accountant’s expected VAT  
+- [ ] Compare Stripe receipt, order email, and accountant’s expected treatment  
 
 ---
 
@@ -171,24 +124,24 @@ This is **Option A** — already live in the codebase.
 
 ---
 
-## Questions for managers to answer
-
-Please reply with your choices:
+## Questions for managers — answered 19 Aug 2026
 
 1. **Are catalogue prices ex-VAT or incl-VAT today?**  
-   - [ ] Ex-VAT (Option A fits)  
-   - [ ] Incl-VAT (move toward Option B)  
-   - [ ] Unsure — ask accountant  
+   - [x] Incl-VAT in the sense that **L/M are what customers pay** (not a net + Stripe VAT model)  
+   - Path taken: **KOR** (Q4), not textbook Option B  
 
 2. **What should the customer see on the shop?**  
-   - [ ] “From €X” ex-VAT + note at checkout  
-   - [ ] “From €X incl. btw”  
+   - Requested: “From €X incl. BTW”  
+   - **Shipped for now:** “From €X” as the print price you pay (delivery at checkout). “Incl. BTW” waiting on Johannes (KOR wording).  
 
-3. **Primary markets** (rank): NL / BE / DE / other: ___________  
+3. **Primary markets**  
+   - Mostly the Netherlands; other EU via YourSurprise as well.  
 
-4. **KOR / small business VAT scheme?** Yes / No / Unsure  
+4. **KOR / small business VAT scheme?**  
+   - **Yes, KOR is applicable.**  
 
-5. **Who owns Stripe Tax setup?** Name: ___________  
+5. **Who owns Stripe Tax setup?**  
+   - **Johannes Kort**  
 
 ---
 
@@ -196,10 +149,10 @@ Please reply with your choices:
 
 > We sell photo prints with prices set by **material, size, and country**, not per image.  
 > Payments go through **Stripe Checkout**; amounts are calculated **on our server**, not in the browser.  
-> **VAT is calculated by Stripe Tax** from the customer’s shipping address (Option A today: merchandise subtotal + VAT at payment).  
-> We recommend completing **Stripe Tax + accountant review** before heavy marketing.  
-> For a more “Dutch webshop” feel, we can later switch display to **VAT-inclusive prices (Option B)** with finance approval.
+> Customer prices are catalogue **L (print)** and **M (print + shipping)**. Stripe charges **M** and does **not** add VAT (**Path KOR**).  
+> YourSurprise manufacturing and shipping costs (J/K) already include VAT Frederik pays them; that is not a second charge to the customer.  
+> Complete **live iDEAL/Wero + live webhook** and confirm the business remains enrolled in KOR before heavy marketing.
 
 ---
 
-*Document version: June 2026 — matches WOLFSKIN Photography checkout in this repository.*
+*Document version: August 2026 — Path KOR signed from manager answers 19 Aug 2026.*

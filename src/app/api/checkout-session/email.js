@@ -1,39 +1,74 @@
-import mailgun from "mailgun-js";
+import { Resend } from "resend";
+import { KOR_INVOICE_NOTICE } from "@/lib/korVat";
 import {
+  escapeHtml,
   formatAddressHtml,
+  formatAddressLines,
   formatCurrencyEUR,
   ORDER_STATUS_LABELS,
 } from "@/lib/orderUtils";
 
-const mg = mailgun({
-  apiKey: process.env.MAILGUN_API_KEY,
-  domain: process.env.MAILGUN_DOMAIN,
-});
+function getEmailConfig() {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+  const fromName =
+    process.env.RESEND_FROM_NAME?.trim() || "WOLFSKIN Photography";
+  const adminEmails = (process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+
+  const missing = [];
+  if (!apiKey) missing.push("RESEND_API_KEY");
+  if (!fromEmail) missing.push("RESEND_FROM_EMAIL");
+  if (adminEmails.length === 0) missing.push("ADMIN_EMAIL");
+
+  if (missing.length > 0) {
+    throw new Error(`Missing email configuration: ${missing.join(", ")}`);
+  }
+
+  return {
+    adminEmails,
+    apiKey,
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: process.env.RESEND_REPLY_TO?.trim() || undefined,
+  };
+}
 
 export async function sendOrderPaidEmails(order) {
   const customerEmail =
     order.shippingDetails?.email ||
     order.billingDetails?.email ||
     order.customerEmail;
-  const adminEmail = process.env.ADMIN_EMAIL;
 
   if (!customerEmail) {
-    console.error("Customer email missing for paid order", order.id);
-    return;
+    throw new Error(`Customer email missing for paid order ${order.id}`);
   }
 
+  const config = getEmailConfig();
   const customerEmailContent = generateCustomerEmail(order);
   const adminEmailContent = generateAdminEmail(order);
 
-  await sendEmail(
-    customerEmail,
-    `Order confirmation #${order.id}`,
-    customerEmailContent
-  );
+  const [customer, admin] = await Promise.all([
+    sendEmail({
+      config,
+      to: customerEmail,
+      subject: `Order confirmation #${order.id}`,
+      html: customerEmailContent,
+      text: generateCustomerEmailText(order),
+      idempotencyKey: `order/${order.id}/customer-confirmation`,
+    }),
+    sendEmail({
+      config,
+      to: config.adminEmails,
+      subject: `New paid order #${order.id}`,
+      html: adminEmailContent,
+      text: generateAdminEmailText(order),
+      idempotencyKey: `order/${order.id}/admin-notification`,
+    }),
+  ]);
 
-  if (adminEmail) {
-    await sendEmail(adminEmail, `New paid order #${order.id}`, adminEmailContent);
-  }
+  return { customer, admin };
 }
 
 function generateLineItemsTable(validatedLineItems = []) {
@@ -41,8 +76,10 @@ function generateLineItemsTable(validatedLineItems = []) {
     .map(
       (item) => `
     <tr>
-      <td>${item.name || "Item"}</td>
-      <td>${item.material || ""} · ${item.sizeRaw || item.sizeKey || ""}</td>
+      <td>${escapeHtml(item.name || "Item")}</td>
+      <td>${escapeHtml(item.material || "")} · ${escapeHtml(
+        item.sizeRaw || item.sizeKey || ""
+      )}</td>
       <td style="text-align:center;">${item.quantity || 1}</td>
       <td style="text-align:right;">${formatCurrencyEUR(item.lineTotalIncShipping)}</td>
     </tr>`
@@ -53,8 +90,8 @@ function generateLineItemsTable(validatedLineItems = []) {
 function generateTotalsBlock(order) {
   return `
     <p>Subtotal: ${formatCurrencyEUR(order.amountSubtotal)}</p>
-    <p>Tax: ${formatCurrencyEUR(order.amountTax)}</p>
     <p><strong>Total paid: ${formatCurrencyEUR(order.amountTotal)}</strong></p>
+    <p style="font-size:13px;color:#444;">${KOR_INVOICE_NOTICE}</p>
   `;
 }
 
@@ -63,15 +100,15 @@ function generateCustomerEmail(order) {
     ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus || "Processing";
   const trackUrl = `${process.env.NEXT_PUBLIC_URL}/track-order?orderId=${encodeURIComponent(order.id)}`;
   const receiptLink = order.invoice?.receiptUrl
-    ? `<p><a href="${order.invoice.receiptUrl}">Download Stripe receipt</a></p>`
+    ? `<p><a href="${escapeHtml(order.invoice.receiptUrl)}">Download Stripe receipt</a></p>`
     : "";
 
   return `
     <h1>Thank you for your order</h1>
     <p>Your payment was successful. We are preparing your order.</p>
-    <h2>Order ID: ${order.id}</h2>
-    <p><strong>Status:</strong> ${statusLabel}</p>
-    <p><a href="${trackUrl}">Track your order</a></p>
+    <h2>Order ID: ${escapeHtml(order.id)}</h2>
+    <p><strong>Status:</strong> ${escapeHtml(statusLabel)}</p>
+    <p><a href="${escapeHtml(trackUrl)}">Track your order</a></p>
     ${receiptLink}
     <h3>Billing Details</h3>
     <p>${formatAddressHtml(order.billingDetails)}</p>
@@ -94,9 +131,13 @@ function generateCustomerEmail(order) {
 function generateAdminEmail(order) {
   return `
     <h1>New paid order</h1>
-    <h2>Order ID: ${order.id}</h2>
-    <p>Customer: ${order.shippingDetails?.email || order.billingDetails?.email || "N/A"}</p>
-    <p>Status: ${ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus}</p>
+    <h2>Order ID: ${escapeHtml(order.id)}</h2>
+    <p>Customer: ${escapeHtml(
+      order.shippingDetails?.email || order.billingDetails?.email || "N/A"
+    )}</p>
+    <p>Status: ${escapeHtml(
+      ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus
+    )}</p>
     <h3>Billing Details</h3>
     <p>${formatAddressHtml(order.billingDetails)}</p>
     <h3>Shipping Details</h3>
@@ -115,19 +156,94 @@ function generateAdminEmail(order) {
   `;
 }
 
-async function sendEmail(to, subject, content) {
-  if (!to) return;
+function generateLineItemsText(validatedLineItems = []) {
+  return validatedLineItems
+    .map(
+      (item) =>
+        `- ${item.name || "Item"} | ${item.material || ""} ${
+          item.sizeRaw || item.sizeKey || ""
+        } | Qty ${item.quantity || 1} | ${formatCurrencyEUR(
+          item.lineTotalIncShipping
+        )}`
+    )
+    .join("\n");
+}
 
-  const data = {
-    from: `WOLFSKIN Photography <noreply@${process.env.MAILGUN_DOMAIN}>`,
-    to,
-    subject,
-    html: content,
-  };
+function generateCustomerEmailText(order) {
+  const trackUrl = `${process.env.NEXT_PUBLIC_URL}/track-order?orderId=${encodeURIComponent(order.id)}`;
+  const receipt = order.invoice?.receiptUrl
+    ? `\nStripe receipt: ${order.invoice.receiptUrl}`
+    : "";
 
-  try {
-    await mg.messages().send(data);
-  } catch (error) {
-    console.error(`Error sending email to ${to}:`, error.message);
+  return `Thank you for your order.
+
+Your payment was successful and we are preparing your order.
+Order ID: ${order.id}
+Status: ${ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus || "Processing"}
+Track order: ${trackUrl}${receipt}
+
+Shipping address:
+${formatAddressLines(order.shippingDetails).join("\n")}
+
+Order summary:
+${generateLineItemsText(order.validatedLineItems)}
+
+Subtotal: ${formatCurrencyEUR(order.amountSubtotal)}
+Total paid: ${formatCurrencyEUR(order.amountTotal)}
+${KOR_INVOICE_NOTICE}`;
+}
+
+function generateAdminEmailText(order) {
+  return `New paid order
+
+Order ID: ${order.id}
+Customer: ${
+    order.shippingDetails?.email || order.billingDetails?.email || "N/A"
   }
+Status: ${ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus}
+
+Billing address:
+${formatAddressLines(order.billingDetails).join("\n")}
+
+Shipping address:
+${formatAddressLines(order.shippingDetails).join("\n")}
+
+Order summary:
+${generateLineItemsText(order.validatedLineItems)}
+
+Subtotal: ${formatCurrencyEUR(order.amountSubtotal)}
+Total paid: ${formatCurrencyEUR(order.amountTotal)}
+${KOR_INVOICE_NOTICE}`;
+}
+
+async function sendEmail({
+  config,
+  to,
+  subject,
+  html,
+  text,
+  idempotencyKey,
+}) {
+  const resend = new Resend(config.apiKey);
+  const { data, error } = await resend.emails.send(
+    {
+      from: config.from,
+      replyTo: config.replyTo,
+      to,
+      subject,
+      html,
+      text,
+    },
+    { idempotencyKey }
+  );
+
+  if (error) {
+    throw new Error(
+      `Resend rejected email to ${Array.isArray(to) ? to.join(", ") : to}: ${
+        error.message || "unknown error"
+      }`
+    );
+  }
+
+  return data;
 }

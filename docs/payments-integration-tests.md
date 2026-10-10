@@ -25,7 +25,8 @@ Uses [Vitest](https://vitest.dev/) — no browser required. Emails are mocked; S
 
 3. **At least one product** in Firestore with a print option shippable to NL (or set `PAYMENT_TEST_PRODUCT_ID`).
 
-4. **Stripe Tax** — checkout sessions use `automatic_tax`. Your Stripe test account should have tax configured, or session creation may fail. If tests fail on checkout creation, check Stripe Dashboard → Tax.
+4. **Stripe Tax is off** (`automatic_tax.enabled = false`). Tests should **not** require Tax to be configured in the Dashboard. Charged amount must match catalogue column M (print + shipping) with **no** extra VAT.
+
 
 ---
 
@@ -95,7 +96,7 @@ PAYMENT_TEST_PRODUCT_ID=your_product_doc_id
 | Failure | Likely cause |
 |---------|----------------|
 | `No Firestore product found` | Empty `products` collection — seed or set `PAYMENT_TEST_PRODUCT_ID` |
-| Checkout session 500 / tax error | Enable Stripe Tax in test mode or check business address |
+| Checkout session 500 | Stripe key / account issue — Tax is not required (Path KOR) |
 | `Timed out waiting for order` | Webhook handler error — run single test with `vitest run -t "completes card"` |
 | Tests skipped entirely | Missing env vars or live Stripe key |
 

@@ -194,8 +194,15 @@ export async function createCheckoutSession({
       orderRef: orderRef.id,
       ...(testRunId ? { testRunId } : {}),
     },
+    payment_intent_data: {
+      metadata: {
+        orderRef: orderRef.id,
+        ...(testRunId ? { testRunId } : {}),
+      },
+    },
+    // Path KOR: charge catalogue L/M totals as-is. Do not let Stripe add VAT.
     automatic_tax: {
-      enabled: true,
+      enabled: false,
     },
   });
 

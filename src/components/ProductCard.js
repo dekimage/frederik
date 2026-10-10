@@ -1,14 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import RemotePhotoImage from "@/components/RemotePhotoImage";
-import {
-  getCountryLabel,
-  getLowestReferencePrintPrice,
-  PDP_REFERENCE_COUNTRY,
-} from "@/lib/pricingCatalog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProductCard = ({ product }) => {
-  const fromPrice = getLowestReferencePrintPrice();
-  const referenceLabel = getCountryLabel(PDP_REFERENCE_COUNTRY);
+  const { t } = useLanguage();
 
   return (
     <div className="bg-black border border-gray-800 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-600">
@@ -29,28 +26,9 @@ const ProductCard = ({ product }) => {
           <p className="text-gray-400 text-sm mb-4 line-clamp-2">
             {product.description}
           </p>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold text-white">
-              {fromPrice != null ? (
-                <>
-                  From €{fromPrice.toFixed(2)}
-                </>
-              ) : (
-                "View options"
-              )}
-            </span>
-            <span className="text-sm text-gray-400 text-right">
-              {fromPrice != null ? (
-                <>
-                  print · {referenceLabel}
-                  <br />
-                  View Details
-                </>
-              ) : (
-                "View Details"
-              )}
-            </span>
-          </div>
+          <span className="block text-sm text-gray-400 text-right">
+            {t("shopViewDetails")}
+          </span>
         </div>
       </Link>
     </div>

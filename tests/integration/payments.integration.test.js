@@ -236,6 +236,8 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
         "stripeSessionId starts with cs_test_",
 
+        "automatic_tax is off and amount_tax is 0 (Path KOR)",
+
       ],
 
       notTested: [
@@ -252,7 +254,7 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
 
 
-    const { paymentMethodTypes, shippingCountry, pendingOrderId } =
+    const { paymentMethodTypes, shippingCountry, pendingOrderId, session } =
 
       await startCheckout({ country: "NL" });
 
@@ -269,6 +271,10 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
     expect(paymentMethodTypes).toContain("ideal");
 
     expect(paymentMethodTypes).toContain("card");
+
+    expect(session?.automatic_tax?.enabled).toBe(false);
+
+    expect(session?.total_details?.amount_tax ?? 0).toBe(0);
 
 
 
@@ -513,6 +519,77 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
 
     logTestEnd("is idempotent when checkout.session.completed webhook is replayed");
+
+  });
+
+
+
+  it("waits for async payment success before fulfilling an order", async () => {
+
+    logTestStart("waits for async payment success before fulfilling an order", {
+
+      scenario:
+        "Unpaid checkout.session.completed keeps pending order → async success fulfills it",
+
+      asserts: [
+
+        "unpaid completion does not create an order",
+
+        "pending order remains",
+
+        "async success creates the paid order",
+
+      ],
+
+    });
+
+
+
+    const { sessionId, pendingOrderId } = await startCheckout();
+
+    const stripe = getStripeTestClient();
+
+    const unpaidSession = await stripe.checkout.sessions.retrieve(sessionId);
+
+
+
+    const processing = await processStripeWebhookEvent(
+
+      buildStripeEvent("checkout.session.completed", unpaidSession)
+
+    );
+
+
+
+    expect(processing.action).toBe("payment_processing");
+
+    expect(await getOrderBySessionId(sessionId)).toBeNull();
+
+    expect(await getPendingOrder(pendingOrderId)).not.toBeNull();
+
+
+
+    const { completedSession: paidSession } =
+
+      await simulateSuccessfulCheckoutPayment(sessionId);
+
+    const completed = await processStripeWebhookEvent(
+
+      buildStripeEvent("checkout.session.async_payment_succeeded", paidSession)
+
+    );
+
+
+
+    expect(completed.duplicate).toBe(false);
+
+    expect(completed.order.paymentStatus).toBe("paid");
+
+    expect(await getPendingOrder(pendingOrderId)).toBeNull();
+
+
+
+    logTestEnd("waits for async payment success before fulfilling an order");
 
   });
 
