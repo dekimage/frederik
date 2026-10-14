@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/layout/AdminLayout";
 import { adminFetch } from "@/lib/adminFetch";
 import ProductCard from "@/components/admin/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -36,12 +36,15 @@ export default function ProductsPage() {
   }, []);
 
   const fetchProducts = async () => {
+    setError("");
     try {
       const response = await adminFetch("/api/admin/products");
       const data = await response.json();
-      setProducts(data.products);
+      if (!response.ok) throw new Error(data.error || "Unable to load products.");
+      setProducts(data.products || []);
     } catch (error) {
       console.error("Error fetching products:", error);
+      setError(error.message || "Unable to load products.");
     } finally {
       setLoading(false);
     }
@@ -60,8 +63,7 @@ export default function ProductsPage() {
   });
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold">Products</h1>
 
@@ -73,7 +75,6 @@ export default function ProductsPage() {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus:border-zinc-700"
               />
             </div>
 
@@ -83,7 +84,7 @@ export default function ProductsPage() {
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
               >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,7 +104,11 @@ export default function ProductsPage() {
           </Button>
         </div>
 
-        {loading ? (
+        {error ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        ) : loading ? (
           <div>Loading...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -125,7 +130,6 @@ export default function ProductsPage() {
             fetchProducts();
           }}
         />
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

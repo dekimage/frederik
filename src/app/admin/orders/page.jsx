@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/layout/AdminLayout";
 import { DataTable } from "@/components/admin/orders/DataTable";
 import { createColumns } from "@/components/admin/orders/columns";
 import { Button } from "@/components/ui/button";
@@ -13,21 +12,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ORDER_STATUS, ORDER_STATUS_LABELS } from "@/lib/orderUtils";
+import {
+  ORDER_STATUS,
+  ORDER_STATUS_LABELS,
+  STRIPE_MODE,
+  deriveStripeMode,
+} from "@/lib/orderUtils";
 import { adminFetch } from "@/lib/adminFetch";
 
 function OrdersPageContent() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     paymentStatus: "all",
+    stripeMode: "all",
     orderStatus: "all",
     isFulfilled: "all",
     search: "",
   });
 
   const fetchOrders = async () => {
+    setError("");
     try {
       const response = await adminFetch(`/api/admin/orders`);
       const data = await response.json();
@@ -35,6 +42,7 @@ function OrdersPageContent() {
       setOrders(data.orders || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
+      setError(error.message || "Unable to load orders.");
     } finally {
       setLoading(false);
     }
@@ -54,6 +62,7 @@ function OrdersPageContent() {
       fetchOrders();
     } catch (error) {
       console.error("Error updating order:", error);
+      setError(error.message || "Unable to update order.");
     }
   };
 
@@ -67,6 +76,7 @@ function OrdersPageContent() {
       fetchOrders();
     } catch (error) {
       console.error("Error updating order status:", error);
+      setError(error.message || "Unable to update order status.");
     }
   };
 
@@ -74,6 +84,9 @@ function OrdersPageContent() {
     const matchesPaymentStatus =
       filters.paymentStatus === "all" ||
       order.paymentStatus === filters.paymentStatus;
+    const matchesStripeMode =
+      filters.stripeMode === "all" ||
+      deriveStripeMode(order) === filters.stripeMode;
     const matchesOrderStatus =
       filters.orderStatus === "all" || order.orderStatus === filters.orderStatus;
     const matchesFulfillment =
@@ -90,6 +103,7 @@ function OrdersPageContent() {
 
     return (
       matchesPaymentStatus &&
+      matchesStripeMode &&
       matchesOrderStatus &&
       matchesFulfillment &&
       matchesSearch
@@ -156,6 +170,23 @@ function OrdersPageContent() {
           </Select>
 
           <Select
+            value={filters.stripeMode}
+            onValueChange={(value) =>
+              setFilters({ ...filters, stripeMode: value })
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Stripe mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stripe modes</SelectItem>
+              <SelectItem value={STRIPE_MODE.LIVE}>LIVE orders</SelectItem>
+              <SelectItem value={STRIPE_MODE.TEST}>TEST orders</SelectItem>
+              <SelectItem value={STRIPE_MODE.UNKNOWN}>Unknown mode</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
             value={filters.isFulfilled}
             onValueChange={(value) =>
               setFilters({ ...filters, isFulfilled: value })
@@ -173,14 +204,18 @@ function OrdersPageContent() {
         </div>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : loading ? (
         <div className="text-center py-4">Loading orders...</div>
       ) : (
         <>
           <DataTable columns={columns} data={paginatedOrders} />
 
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Page {page} of {totalPages}
             </div>
             <div className="space-x-2">
@@ -209,9 +244,5 @@ function OrdersPageContent() {
 }
 
 export default function OrdersPage() {
-  return (
-    <AdminLayout>
-      <OrdersPageContent />
-    </AdminLayout>
-  );
+  return <OrdersPageContent />;
 }

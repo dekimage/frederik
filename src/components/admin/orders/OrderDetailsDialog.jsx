@@ -12,6 +12,8 @@ import {
   formatAddressLines,
   formatCurrencyEUR,
   ORDER_STATUS_LABELS,
+  STRIPE_MODE,
+  deriveStripeMode,
 } from "@/lib/orderUtils";
 
 const formatDate = (dateString) => {
@@ -36,6 +38,7 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function OrderDetailsDialog({ order, open, onOpenChange }) {
+  const stripeMode = deriveStripeMode(order);
   const fullName = (details) => {
     if (!details) return "N/A";
     return (
@@ -76,9 +79,42 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     {order.paymentStatus || "pending"}
                   </p>
                   <p>
+                    <span className="font-medium">Stripe mode:</span>{" "}
+                    <span
+                      className={
+                        stripeMode === STRIPE_MODE.LIVE
+                          ? "font-bold text-green-700 dark:text-green-400"
+                          : stripeMode === STRIPE_MODE.TEST
+                            ? "font-bold text-amber-700 dark:text-amber-400"
+                            : "font-bold text-muted-foreground"
+                      }
+                    >
+                      {stripeMode.toUpperCase()}
+                    </span>
+                  </p>
+                  <p>
                     <span className="font-medium">Order Status:</span>{" "}
                     {ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus || "N/A"}
                   </p>
+                  <p>
+                    <span className="font-medium">Order emails:</span>{" "}
+                    <span
+                      className={
+                        order.emailDelivery?.status === "sent"
+                          ? "font-medium text-green-700 dark:text-green-400"
+                          : order.emailDelivery?.status === "failed"
+                            ? "font-medium text-destructive"
+                            : "text-muted-foreground"
+                      }
+                    >
+                      {(order.emailDelivery?.status || "not recorded").toUpperCase()}
+                    </span>
+                  </p>
+                  {order.emailDelivery?.lastError ? (
+                    <p className="text-xs text-destructive">
+                      Email error: {order.emailDelivery.lastError}
+                    </p>
+                  ) : null}
                   <p>
                     <span className="font-medium">Subtotal:</span>{" "}
                     {formatCurrencyEUR(order.amountSubtotal ?? order.subtotal)}
@@ -86,7 +122,7 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                   <p>
                     <span className="font-medium">VAT:</span> Not charged (KOR)
                   </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {KOR_INVOICE_NOTICE}
                   </p>
                   <p>
@@ -190,7 +226,7 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                   <p>
                     <a
                       href={order.invoice.receiptUrl}
-                      className="text-blue-600 underline"
+                      className="text-primary underline"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -198,7 +234,7 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                     </a>
                   </p>
                 ) : null}
-                <p className="text-gray-500 mt-2">
+                <p className="text-muted-foreground mt-2">
                   HTML invoice stored in Firestore on {formatTimestamp(order.invoice.createdAt)}
                 </p>
               </div>
@@ -219,7 +255,7 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
             ) : null}
 
             {order.stripeSessionId && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 <span className="font-medium">Stripe Session ID:</span>{" "}
                 {order.stripeSessionId}
               </div>

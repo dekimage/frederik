@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ImageIcon } from "lucide-react";
+import CategorySelect from "./CategorySelect";
 
 export default function AddImageDialog({ open, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -118,6 +119,16 @@ export default function AddImageDialog({ open, onClose, onSuccess }) {
               setFormData({ ...formData, description: e.target.value })
             }
           />
+
+          <div className="space-y-2">
+            <span className="text-sm font-medium">Category</span>
+            <CategorySelect
+              value={formData.category}
+              onValueChange={(category) =>
+                setFormData({ ...formData, category })
+              }
+            />
+          </div>
 
           <div className="flex items-center space-x-2">
             <Switch

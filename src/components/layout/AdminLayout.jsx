@@ -1,13 +1,12 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import AdminSidebar from "./AdminSidebar";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 
 export default function AdminLayout({ children }) {
   return (
     <AdminAuthGuard>
-      <div className="min-h-screen bg-black font-mono">
+      <div className="min-h-screen bg-background text-foreground font-mono">
         <div className="flex h-screen">
           <div className="w-64 flex-shrink-0">
             <AdminSidebar />

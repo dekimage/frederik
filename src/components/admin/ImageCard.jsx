@@ -88,10 +88,14 @@ export default function ImageCard({ image, onUpdate }) {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete image");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete image");
+      }
       onUpdate();
     } catch (error) {
       console.error("Error deleting image:", error);
+      alert(error.message);
     } finally {
       setLoading(false);
       setIsDeleting(false);
@@ -182,6 +186,17 @@ export default function ImageCard({ image, onUpdate }) {
                 />
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id={`featured-${image.id}`}
+                  checked={Boolean(formData.featured)}
+                  onCheckedChange={(featured) =>
+                    setFormData({ ...formData, featured })
+                  }
+                />
+                <Label htmlFor={`featured-${image.id}`}>Featured</Label>
+              </div>
+
               <div className="flex justify-end space-x-2">
                 <Button
                   variant="outline"
@@ -203,13 +218,16 @@ export default function ImageCard({ image, onUpdate }) {
           ) : (
             <>
               <h3 className="font-semibold">{image.name}</h3>
-              <p className="text-sm text-gray-500">{image.description}</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">{image.description}</p>
+              <p className="text-sm text-muted-foreground">
                 Category: {image.category || "Not set"}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Display Order: {image.index || "0"}
               </p>
+              {image.featured ? (
+                <p className="text-sm font-medium text-primary">Featured</p>
+              ) : null}
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsEditing(true)}>
                   <EditIcon className="h-4 w-4" />

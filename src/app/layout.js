@@ -34,15 +34,16 @@ export default function RootLayout({ children }) {
   );
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head></head>
-      <body className={`${lato.variable} font-sans bg-black antialiased`}>
+      <body className={`${lato.variable} font-sans bg-background text-foreground antialiased`}>
         <LanguageProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
-            enableSystem={false}
-            forcedTheme="dark"
+            enableSystem={shouldExclude}
+            forcedTheme={shouldExclude ? undefined : "dark"}
+            disableTransitionOnChange
           >
             {!shouldExclude && <Header categories={categories} />}
             {children}

@@ -119,6 +119,8 @@ async function finalizePaidOrder(session) {
     currency: session.currency || "eur",
     stripeSessionId: session.id,
     stripePaymentIntentId: session.payment_intent || null,
+    stripeMode: session.livemode ? "live" : "test",
+    stripeLivemode: Boolean(session.livemode),
     paidAt: new Date(),
     isFulfilled: false,
     statusHistory: [

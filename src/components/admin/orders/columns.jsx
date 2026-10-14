@@ -16,6 +16,8 @@ import {
   formatCurrencyEUR,
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
+  STRIPE_MODE,
+  deriveStripeMode,
 } from "@/lib/orderUtils";
 
 function OrderActions({ order, onFulfillmentChange, onOrderStatusChange }) {
@@ -79,6 +81,24 @@ export const createColumns = (onFulfillmentChange, onOrderStatusChange) => [
       return (
         `${shipping.firstName || billing.firstName || ""} ${shipping.lastName || billing.lastName || ""}`.trim() ||
         "N/A"
+      );
+    },
+  },
+  {
+    accessorKey: "stripeMode",
+    header: "Stripe mode",
+    cell: ({ row }) => {
+      const mode = deriveStripeMode(row.original);
+      const className =
+        mode === STRIPE_MODE.LIVE
+          ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
+          : mode === STRIPE_MODE.TEST
+            ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"
+            : "bg-muted text-muted-foreground";
+      return (
+        <span className={`px-2 py-1 rounded-full text-xs font-bold ${className}`}>
+          {mode.toUpperCase()}
+        </span>
       );
     },
   },

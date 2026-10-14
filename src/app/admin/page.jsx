@@ -3,7 +3,6 @@
 import { adminFetch } from "@/lib/adminFetch";
 
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/layout/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2Icon, PlusCircleIcon } from "lucide-react";
@@ -28,6 +27,7 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
   useEffect(() => {
@@ -35,12 +35,15 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchCategories = async () => {
+    setError("");
     try {
       const response = await adminFetch("/api/admin/categories");
       const data = await response.json();
-      setCategories(data.categories);
+      if (!response.ok) throw new Error(data.error || "Unable to load categories.");
+      setCategories(data.categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      setError(error.message || "Unable to load categories.");
     } finally {
       setLoading(false);
     }
@@ -65,6 +68,7 @@ export default function AdminDashboard() {
       fetchCategories();
     } catch (error) {
       console.error("Error adding category:", error);
+      setError(error.message || "Unable to add category.");
     }
   };
 
@@ -74,18 +78,22 @@ export default function AdminDashboard() {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete category");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete category");
+      }
 
       setDeleteDialog({ open: false, id: null });
       fetchCategories();
     } catch (error) {
       console.error("Error deleting category:", error);
+      setError(error.message || "Unable to delete category.");
+      setDeleteDialog({ open: false, id: null });
     }
   };
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10">
         <div className="grid gap-8">
           {/* Categories Section */}
           <Card>
@@ -96,6 +104,11 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {error ? (
+                <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              ) : null}
               <form onSubmit={handleAddCategory} className="flex gap-4 mb-6">
                 <div className="flex-1 max-w-sm">
                   <Label htmlFor="newCategory">New Category Name</Label>
@@ -183,7 +196,6 @@ export default function AdminDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

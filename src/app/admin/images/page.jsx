@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/layout/AdminLayout";
 import { adminFetch } from "@/lib/adminFetch";
 import ImageCard from "@/components/admin/ImageCard";
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,7 @@ export default function ImagesPage() {
   const [images, setImages] = useState([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -45,12 +45,15 @@ export default function ImagesPage() {
   }, []);
 
   const fetchImages = async () => {
+    setError("");
     try {
       const response = await adminFetch("/api/admin/images");
       const data = await response.json();
-      setImages(data.images);
+      if (!response.ok) throw new Error(data.error || "Unable to load images.");
+      setImages(data.images || []);
     } catch (error) {
       console.error("Error fetching images:", error);
+      setError(error.message || "Unable to load images.");
     } finally {
       setLoading(false);
     }
@@ -71,8 +74,7 @@ export default function ImagesPage() {
   });
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold">Images</h1>
 
@@ -84,7 +86,6 @@ export default function ImagesPage() {
                 placeholder="Search images..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus:border-zinc-700"
               />
             </div>
 
@@ -94,7 +95,7 @@ export default function ImagesPage() {
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
               >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,7 +115,11 @@ export default function ImagesPage() {
           </Button>
         </div>
 
-        {loading ? (
+        {error ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        ) : loading ? (
           <div>Loading...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -132,7 +137,6 @@ export default function ImagesPage() {
             fetchImages();
           }}
         />
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

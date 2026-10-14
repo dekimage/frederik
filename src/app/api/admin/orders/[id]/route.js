@@ -39,13 +39,21 @@ export async function PUT(request, { params }) {
       historyEntry.note = isFulfilled ? "Marked fulfilled" : "Marked unfulfilled";
     }
 
-    if (orderStatus && ALLOWED_ORDER_STATUSES.has(orderStatus)) {
+    if (orderStatus && !ALLOWED_ORDER_STATUSES.has(orderStatus)) {
+      return Response.json({ error: "Invalid order status" }, { status: 400 });
+    }
+
+    if (orderStatus) {
       updates.orderStatus = orderStatus;
       if (orderStatus === ORDER_STATUS.SHIPPED || orderStatus === ORDER_STATUS.DELIVERED) {
         updates.isFulfilled = true;
       }
       historyEntry.status = orderStatus;
       historyEntry.note = `Status set to ${orderStatus}`;
+    }
+
+    if (typeof isFulfilled !== "boolean" && !orderStatus) {
+      return Response.json({ error: "No valid order update supplied" }, { status: 400 });
     }
 
     updates.statusHistory = [...(current.statusHistory || []), historyEntry];

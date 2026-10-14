@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { adminFetch } from "@/lib/adminFetch";
 import { isLocalhostHostname } from "@/lib/localhost";
@@ -56,22 +55,22 @@ function DevToolsContent() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">Dev tools</h1>
-      <p className="text-sm text-gray-400 mb-8">
+      <p className="text-sm text-muted-foreground mb-8">
         Localhost only. Run maintenance tasks manually when needed — for example
         once a month to remove abandoned checkout sessions that were never paid.
       </p>
 
-      <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 space-y-6">
+      <div className="bg-card text-card-foreground border rounded-lg p-6 space-y-6">
         <div>
           <h2 className="text-lg font-semibold mb-2">Pending checkout cleanup</h2>
-          <p className="text-sm text-gray-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Deletes expired rows from Firestore <code>pendingOrders</code> (unpaid
             Stripe sessions past their 24-hour expiry). Paid orders in{" "}
             <code>orders</code> are not touched.
           </p>
 
           {loadingStats ? (
-            <p className="text-sm text-gray-500">Loading counts…</p>
+            <p className="text-sm text-muted-foreground">Loading counts…</p>
           ) : stats ? (
             <ul className="text-sm space-y-1 mb-4 tabular-nums">
               <li>Total pending checkouts: {stats.total}</li>
@@ -85,9 +84,9 @@ function DevToolsContent() {
           </Button>
 
           {result ? (
-            <p className="text-sm text-green-400 mt-4">{result.message}</p>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-4">{result.message}</p>
           ) : null}
-          {error ? <p className="text-sm text-red-400 mt-4">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive mt-4">{error}</p> : null}
         </div>
       </div>
     </div>
@@ -109,15 +108,11 @@ export default function DevToolsPage() {
 
   if (!allowed) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         Dev tools are only available on localhost.
       </div>
     );
   }
 
-  return (
-    <AdminLayout>
-      <DevToolsContent />
-    </AdminLayout>
-  );
+  return <DevToolsContent />;
 }

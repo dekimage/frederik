@@ -37,7 +37,33 @@ export async function DELETE(request, context) {
     try {
       const { id } = context.params;
       const docSnap = await firestore.collection("images").doc(id).get();
+      if (!docSnap.exists) {
+        return Response.json({ error: "Image not found" }, { status: 404 });
+      }
       const imageData = docSnap.data();
+
+      const linkedProducts = imageData.cloudinaryPublicId
+        ? await firestore
+            .collection("products")
+            .where("cloudinaryPublicId", "==", imageData.cloudinaryPublicId)
+            .get()
+        : await firestore
+            .collection("products")
+            .where("image", "==", imageData.url || "__missing__")
+            .get();
+
+      const activeReferences = linkedProducts.docs.filter(
+        (product) => product.data().sharedGalleryImage
+      );
+      if (activeReferences.length > 0) {
+        return Response.json(
+          {
+            error: `This image is used by ${activeReferences.length} product(s). Change those product images before deleting it.`,
+          },
+          { status: 409 }
+        );
+      }
+
       await deleteStoredImageFromDoc(imageData, IMAGE_KEYS);
       await firestore.collection("images").doc(id).delete();
       return Response.json({ success: true });

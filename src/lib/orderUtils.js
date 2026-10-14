@@ -22,6 +22,25 @@ export const ORDER_STATUS_LABELS = {
   [ORDER_STATUS.EXPIRED]: "Expired",
 };
 
+export const STRIPE_MODE = {
+  LIVE: "live",
+  TEST: "test",
+  UNKNOWN: "unknown",
+};
+
+export function deriveStripeMode(order = {}) {
+  if (order.stripeMode === STRIPE_MODE.LIVE || order.stripeMode === STRIPE_MODE.TEST) {
+    return order.stripeMode;
+  }
+  if (typeof order.stripeLivemode === "boolean") {
+    return order.stripeLivemode ? STRIPE_MODE.LIVE : STRIPE_MODE.TEST;
+  }
+  const sessionId = String(order.stripeSessionId || "");
+  if (sessionId.startsWith("cs_live_")) return STRIPE_MODE.LIVE;
+  if (sessionId.startsWith("cs_test_")) return STRIPE_MODE.TEST;
+  return STRIPE_MODE.UNKNOWN;
+}
+
 /** Normalize flat checkout form values into one schema for Firestore, emails, and Stripe. */
 export function normalizeAddressFormValues(values = {}) {
   const firstName = (values.firstName || "").trim();
@@ -135,7 +154,7 @@ export function deriveOrderStatusFromFulfillment(orderStatus, isFulfilled) {
     orderStatus === ORDER_STATUS.SHIPPED ||
     orderStatus === ORDER_STATUS.DELIVERED
   ) {
-    return orderStatus;
+    return ORDER_STATUS.PROCESSING;
   }
   return ORDER_STATUS.PROCESSING;
 }

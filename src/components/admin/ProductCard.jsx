@@ -186,7 +186,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                 />
               </div>
 
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Pricing is set in the print catalogue (material × size ×
                 country), not on this product.
               </p>
@@ -251,11 +251,11 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
           ) : (
             <>
               <h3 className="font-semibold">{product.name}</h3>
-              <p className="text-sm text-gray-500">{product.description}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-muted-foreground">{product.description}</p>
+              <p className="text-xs text-muted-foreground">
                 Print prices: material × size × country catalogue
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Category: {product.category || "Not set"}
               </p>
               {product.bestseller && (
@@ -263,7 +263,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                   ⭐ Bestseller
                 </p>
               )}
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Display Order: {product.index || "0"}
               </p>
               <div className="flex justify-end space-x-2">

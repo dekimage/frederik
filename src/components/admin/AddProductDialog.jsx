@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageIcon } from "lucide-react";
+import CategorySelect from "./CategorySelect";
 
 export default function AddProductDialog({ open, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,16 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
             required
           />
 
+          <div className="space-y-2">
+            <span className="text-sm font-medium">Category</span>
+            <CategorySelect
+              value={formData.category}
+              onValueChange={(category) =>
+                setFormData({ ...formData, category })
+              }
+            />
+          </div>
+
           <DialogFooter>
             <Button
               type="button"
@@ -139,7 +150,10 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !imageFile}>
+            <Button
+              type="submit"
+              disabled={loading || !imageFile || !formData.category}
+            >
               {loading ? "Creating..." : "Create Product"}
             </Button>
           </DialogFooter>

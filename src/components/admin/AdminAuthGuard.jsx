@@ -4,21 +4,31 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ModeToggle } from "@/components/ui/themeButton";
+import {
+  hasVerifiedAdminSession,
+  markAdminSessionVerified,
+  verifyAdminSessionOnce,
+} from "@/lib/adminSessionClient";
 
 export default function AdminAuthGuard({ children }) {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
+  const [checking, setChecking] = useState(() => !hasVerifiedAdminSession());
+  const [authorized, setAuthorized] = useState(() => hasVerifiedAdminSession());
 
   useEffect(() => {
     let cancelled = false;
     const checkSession = async () => {
+      if (hasVerifiedAdminSession()) {
+        setAuthorized(true);
+        setChecking(false);
+        return;
+      }
+
       try {
-        const response = await fetch("/api/admin/auth/verify", {
-          cache: "no-store",
-        });
+        const isAuthorized = await verifyAdminSessionOnce();
         if (cancelled) return;
-        if (!response.ok) {
+        if (!isAuthorized) {
           setAuthorized(false);
           router.replace("/admin/login");
           return;
@@ -42,7 +52,7 @@ export default function AdminAuthGuard({ children }) {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         Checking admin access…
       </div>
     );
@@ -78,15 +88,7 @@ export function AdminLoginForm() {
         return;
       }
 
-      const response = await fetch("/api/admin/auth/verify", {
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        setError("The admin session could not be verified.");
-        return;
-      }
-
+      markAdminSessionVerified();
       router.replace("/admin/orders");
       router.refresh();
     } catch {
@@ -97,13 +99,16 @@ export function AdminLoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 relative">
+      <div className="absolute right-6 top-6">
+        <ModeToggle />
+      </div>
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-8 space-y-4"
+        className="w-full max-w-md bg-card text-card-foreground border rounded-lg p-8 space-y-4 shadow-sm"
       >
         <h1 className="text-2xl font-bold">Admin login</h1>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Sign in with the admin email and password configured for this shop.
         </p>
         <Input
@@ -112,7 +117,6 @@ export function AdminLoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="bg-gray-800 border-gray-600"
         />
         <Input
           type="password"
@@ -120,9 +124,8 @@ export function AdminLoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="bg-gray-800 border-gray-600"
         />
-        {error ? <p className="text-red-400 text-sm">{error}</p> : null}
+        {error ? <p className="text-destructive text-sm">{error}</p> : null}
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Signing in…" : "Sign in"}
         </Button>

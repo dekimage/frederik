@@ -1,8 +1,7 @@
 import { firestore } from "@/app/firebaseAdmin";
 import { requireAdmin } from "@/lib/adminAuth";
 import {
-  ORDER_STATUS,
-  deriveOrderStatusFromFulfillment,
+  deriveStripeMode,
 } from "@/lib/orderUtils";
 
 export async function GET(request) {
@@ -26,12 +25,16 @@ export async function GET(request) {
 
     const ordersSnapshot = await query.get();
 
-    let orders = ordersSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.().toISOString() || null,
-      paidAt: doc.data().paidAt?.toDate?.().toISOString() || null,
-    }));
+    let orders = ordersSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        stripeMode: deriveStripeMode(data),
+        createdAt: data.createdAt?.toDate?.().toISOString() || null,
+        paidAt: data.paidAt?.toDate?.().toISOString() || null,
+      };
+    });
 
     if (search) {
       const searchLower = search.toLowerCase();
