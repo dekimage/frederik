@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
+import { signInWithCustomToken, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +70,19 @@ export function AdminLoginForm() {
     setError("");
 
     try {
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const loginResponse = await fetch("/api/admin/auth/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const loginResult = await loginResponse.json().catch(() => ({}));
+
+      if (!loginResponse.ok || !loginResult.token) {
+        setError(loginResult.error || "Invalid email or password.");
+        return;
+      }
+
+      const credential = await signInWithCustomToken(auth, loginResult.token);
       const token = await credential.user.getIdToken();
       const response = await fetch("/api/admin/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
@@ -98,7 +110,7 @@ export function AdminLoginForm() {
       >
         <h1 className="text-2xl font-bold">Admin login</h1>
         <p className="text-sm text-gray-400">
-          Sign in with the Firebase admin account listed in `ADMIN_EMAIL`.
+          Sign in with the admin email and password configured for this shop.
         </p>
         <Input
           type="email"

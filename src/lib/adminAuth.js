@@ -1,6 +1,6 @@
 import { auth } from "@/app/firebaseAdmin";
 
-function getAllowedAdminEmails() {
+export function getAllowedAdminEmails() {
   const raw = process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || "";
   return raw
     .split(",")

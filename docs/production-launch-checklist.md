@@ -30,10 +30,11 @@ RESEND_FROM_EMAIL=orders@mail.wolfskin-photography.com
 RESEND_FROM_NAME=WOLFSKIN Photography
 RESEND_REPLY_TO=YOUR_MONITORED_INBOX
 ADMIN_EMAIL=THE_EMAIL_ALLOWED_TO_SIGN_IN_TO_ADMIN
+ADMIN_PASSWORD=A_LONG_RANDOM_PASSWORD_OF_AT_LEAST_12_CHARACTERS
 NEXT_PUBLIC_URL=https://www.wolfskin-photography.com
 ```
 
-`ADMIN_EMAIL` may be a comma-separated list. Every address in it receives the paid-order admin email; the same list controls access to `/admin`. Old `MAILGUN_API_KEY` and `MAILGUN_DOMAIN` variables are no longer used and can be removed after deployment.
+`ADMIN_EMAIL` may be a comma-separated list. Every address in it receives the paid-order admin email; the same list controls access to `/admin`. `ADMIN_PASSWORD` is a server-only secret used by the shop's admin login and must be at least 12 characters. Old `MAILGUN_API_KEY` and `MAILGUN_DOMAIN` variables are no longer used and can be removed after deployment.
 
 ## 2. Stripe test-mode replica — MUST DO in Stripe
 
