@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { ArchiveIcon, DownloadIcon } from "lucide-react";
 import {
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
@@ -24,19 +25,22 @@ function OrdersPageContent() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [archivingTests, setArchivingTests] = useState(false);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     paymentStatus: "all",
     stripeMode: "all",
     orderStatus: "all",
     isFulfilled: "all",
+    archiveStatus: "active",
     search: "",
   });
 
   const fetchOrders = async () => {
     setError("");
     try {
-      const response = await adminFetch(`/api/admin/orders`);
+      const response = await adminFetch(`/api/admin/orders?limit=500&archive=all`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to fetch orders");
       setOrders(data.orders || []);
@@ -51,6 +55,10 @@ function OrdersPageContent() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   const handleFulfillmentChange = async (orderId, isFulfilled) => {
     try {
@@ -80,6 +88,52 @@ function OrdersPageContent() {
     }
   };
 
+  const handleRestore = async (orderId) => {
+    try {
+      const response = await adminFetch(`/api/admin/orders/${orderId}`, {
+        method: "PUT",
+        body: JSON.stringify({ isArchived: false }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Failed to restore order");
+      setNotice("Order restored.");
+      fetchOrders();
+    } catch (error) {
+      setError(error.message || "Unable to restore order.");
+    }
+  };
+
+  const handleArchiveTestOrders = async () => {
+    if (
+      !window.confirm(
+        "Archive every active TEST order? They will be hidden from Active orders but remain recoverable under Archived."
+      )
+    ) {
+      return;
+    }
+
+    setArchivingTests(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await adminFetch("/api/admin/orders/archive-tests", {
+        method: "POST",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Unable to archive test orders.");
+      setNotice(
+        data.archived
+          ? `${data.archived} TEST order(s) archived. No order data was deleted.`
+          : "There are no active TEST orders to archive."
+      );
+      fetchOrders();
+    } catch (error) {
+      setError(error.message || "Unable to archive test orders.");
+    } finally {
+      setArchivingTests(false);
+    }
+  };
+
   const filteredOrders = orders.filter((order) => {
     const matchesPaymentStatus =
       filters.paymentStatus === "all" ||
@@ -92,6 +146,11 @@ function OrdersPageContent() {
     const matchesFulfillment =
       filters.isFulfilled === "all" ||
       order.isFulfilled === (filters.isFulfilled === "true");
+    const matchesArchive =
+      filters.archiveStatus === "all" ||
+      (filters.archiveStatus === "archived"
+        ? Boolean(order.archivedAt)
+        : !order.archivedAt);
     const searchTerm = filters.search.toLowerCase();
     const matchesSearch =
       !filters.search ||
@@ -106,6 +165,7 @@ function OrdersPageContent() {
       matchesStripeMode &&
       matchesOrderStatus &&
       matchesFulfillment &&
+      matchesArchive &&
       matchesSearch
     );
   });
@@ -117,12 +177,34 @@ function OrdersPageContent() {
     page * itemsPerPage
   );
 
-  const columns = createColumns(handleFulfillmentChange, handleOrderStatusChange);
+  const columns = createColumns(
+    handleFulfillmentChange,
+    handleOrderStatusChange,
+    handleRestore
+  );
 
   return (
     <div className="container mx-auto py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-4">Orders</h1>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">Orders</h1>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <a href="/api/admin/orders/export">
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Export active CSV
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleArchiveTestOrders}
+              disabled={archivingTests}
+            >
+              <ArchiveIcon className="mr-2 h-4 w-4" />
+              {archivingTests ? "Archiving…" : "Archive TEST orders"}
+            </Button>
+          </div>
+        </div>
 
         <div className="flex flex-wrap gap-4 mb-4">
           <Input
@@ -147,6 +229,22 @@ function OrdersPageContent() {
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
               <SelectItem value="refunded">Refunded</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.archiveStatus}
+            onValueChange={(value) =>
+              setFilters({ ...filters, archiveStatus: value })
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Archive status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active orders</SelectItem>
+              <SelectItem value="archived">Archived orders</SelectItem>
+              <SelectItem value="all">Active + archived</SelectItem>
             </SelectContent>
           </Select>
 
@@ -203,6 +301,12 @@ function OrdersPageContent() {
           </Select>
         </div>
       </div>
+
+      {notice ? (
+        <div className="mb-4 rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300">
+          {notice}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">

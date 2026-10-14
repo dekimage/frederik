@@ -56,7 +56,10 @@ export default function ImageCard({ image, onUpdate }) {
           body: formDataWithFile,
         });
 
-        if (!uploadResponse.ok) throw new Error("Failed to upload new image");
+        if (!uploadResponse.ok) {
+          const data = await uploadResponse.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to upload new image");
+        }
         const { url, cloudinaryPublicId } = await uploadResponse.json();
         updatedData.url = url;
         updatedData.cloudinaryPublicId = cloudinaryPublicId;
@@ -76,6 +79,7 @@ export default function ImageCard({ image, onUpdate }) {
       setNewImageFile(null);
     } catch (error) {
       console.error("Error updating image:", error);
+      alert(error.message);
     } finally {
       setLoading(false);
     }
@@ -116,7 +120,7 @@ export default function ImageCard({ image, onUpdate }) {
               <div className="text-center p-4">
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
                   onChange={handleFileChange}
                   className="hidden"
                   id={`file-upload-${image.id}`}

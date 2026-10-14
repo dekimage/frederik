@@ -9,6 +9,40 @@ export const CLOUDINARY_FOLDER_IMAGES =
 export const CLOUDINARY_FOLDER_PRODUCTS =
   process.env.CLOUDINARY_FOLDER_PRODUCTS || "portfolio/products";
 
+export const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+export const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+]);
+
+export function validateImageUpload(file) {
+  if (!file || typeof file.arrayBuffer !== "function") {
+    const error = new Error("No image file uploaded.");
+    error.status = 400;
+    throw error;
+  }
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+    const error = new Error(
+      "Unsupported image type. Upload JPEG, PNG, WebP, AVIF, or GIF."
+    );
+    error.status = 415;
+    throw error;
+  }
+  if (!Number.isFinite(file.size) || file.size <= 0) {
+    const error = new Error("The uploaded image is empty.");
+    error.status = 400;
+    throw error;
+  }
+  if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+    const error = new Error("Image is too large. Maximum upload size is 10 MB.");
+    error.status = 413;
+    throw error;
+  }
+}
+
 function ensureCloudinaryConfigured() {
   const hasTriple =
     process.env.CLOUDINARY_CLOUD_NAME &&

@@ -15,22 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const SEASON_IDS = ["spring", "summer", "autumn", "winter"];
-
 /** Docs like `hero`, `about`, `home` usually have no seasonal `category` — they aren't gallery rows. */
 function imageCategoryBucket(image) {
-  const c = typeof image.category === "string" ? image.category.trim().toLowerCase() : "";
-  return SEASON_IDS.includes(c) ? c : "site-slot";
+  const c = typeof image.category === "string" ? image.category.trim() : "";
+  return c || "site-slot";
 }
-
-const CATEGORIES = [
-  { id: "all", label: "All" },
-  { id: "site-slot", label: "Site slots (hero, about, …)" },
-  { id: "spring", label: "Spring" },
-  { id: "summer", label: "Summer" },
-  { id: "autumn", label: "Autumn" },
-  { id: "winter", label: "Winter" },
-];
 
 export default function ImagesPage() {
   const [images, setImages] = useState([]);
@@ -39,10 +28,31 @@ export default function ImagesPage() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchImages();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await adminFetch("/api/admin/categories");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to load categories.");
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error("Error fetching image categories:", error);
+    }
+  };
+
+  const categoryFilters = [
+    { id: "all", label: "All" },
+    { id: "site-slot", label: "Site slots (hero, about, …)" },
+    ...categories
+      .filter((category) => category.id !== "site-slot")
+      .map((category) => ({ id: category.id, label: category.name })),
+  ];
 
   const fetchImages = async () => {
     setError("");
@@ -99,7 +109,7 @@ export default function ImagesPage() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((category) => (
+                  {categoryFilters.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.label}
                     </SelectItem>

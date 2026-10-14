@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
 import { KOR_INVOICE_NOTICE } from "@/lib/korVat";
 import {
@@ -222,6 +223,24 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
             {order.invoice ? (
               <div className="text-sm">
                 <h3 className="font-semibold mb-2">Invoice / Receipt</h3>
+                {order.invoice.hasHtml ? (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <a
+                        href={`/api/admin/orders/${order.id}/invoice`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open HTML invoice
+                      </a>
+                    </Button>
+                    <Button asChild size="sm" variant="outline">
+                      <a href={`/api/admin/orders/${order.id}/invoice?download=1`}>
+                        Download HTML
+                      </a>
+                    </Button>
+                  </div>
+                ) : null}
                 {order.invoice.receiptUrl ? (
                   <p>
                     <a

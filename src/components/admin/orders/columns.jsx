@@ -20,32 +20,50 @@ import {
   deriveStripeMode,
 } from "@/lib/orderUtils";
 
-function OrderActions({ order, onFulfillmentChange, onOrderStatusChange }) {
+function OrderActions({
+  order,
+  onFulfillmentChange,
+  onOrderStatusChange,
+  onRestore,
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="flex items-center space-x-4">
-      <Switch
-        checked={order.isFulfilled || false}
-        onCheckedChange={(checked) => {
-          onFulfillmentChange(order.id, checked);
-        }}
-      />
-      <Select
-        value={order.orderStatus || ORDER_STATUS.PROCESSING}
-        onValueChange={(value) => onOrderStatusChange(order.id, value)}
-      >
-        <SelectTrigger className="w-[150px] h-8">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.values(ORDER_STATUS).map((status) => (
-            <SelectItem key={status} value={status}>
-              {ORDER_STATUS_LABELS[status]}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {order.archivedAt ? (
+        <>
+          <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
+            ARCHIVED
+          </span>
+          <Button variant="outline" size="sm" onClick={() => onRestore(order.id)}>
+            Restore
+          </Button>
+        </>
+      ) : (
+        <>
+          <Switch
+            checked={order.isFulfilled || false}
+            onCheckedChange={(checked) => {
+              onFulfillmentChange(order.id, checked);
+            }}
+          />
+          <Select
+            value={order.orderStatus || ORDER_STATUS.PROCESSING}
+            onValueChange={(value) => onOrderStatusChange(order.id, value)}
+          >
+            <SelectTrigger className="w-[150px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(ORDER_STATUS).map((status) => (
+                <SelectItem key={status} value={status}>
+                  {ORDER_STATUS_LABELS[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      )}
       <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
         View Details
       </Button>
@@ -66,7 +84,11 @@ const formatDate = (dateString) => {
   }
 };
 
-export const createColumns = (onFulfillmentChange, onOrderStatusChange) => [
+export const createColumns = (
+  onFulfillmentChange,
+  onOrderStatusChange,
+  onRestore
+) => [
   {
     accessorKey: "id",
     header: "Order ID",
@@ -147,6 +169,7 @@ export const createColumns = (onFulfillmentChange, onOrderStatusChange) => [
         order={row.original}
         onFulfillmentChange={onFulfillmentChange}
         onOrderStatusChange={onOrderStatusChange}
+        onRestore={onRestore}
       />
     ),
   },

@@ -2,6 +2,7 @@ import { firestore, admin } from "@/app/firebaseAdmin";
 import {
   uploadImageBuffer,
   CLOUDINARY_FOLDER_PRODUCTS,
+  validateImageUpload,
 } from "@/lib/cloudinaryMedia";
 
 import { withAdminRoute } from "@/lib/withAdminRoute";
@@ -24,12 +25,11 @@ export async function POST(request) {
     const file = data.get("file");
     const productDataString = data.get("productData");
 
-    if (!file) {
-      throw new Error("No file uploaded");
-    }
+    validateImageUpload(file);
 
     const productData = JSON.parse(productDataString);
     delete productData.price;
+    productData.published = productData.published === true;
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(buffer, {
@@ -41,6 +41,7 @@ export async function POST(request) {
       image: imageUrl,
       cloudinaryPublicId,
       sharedGalleryImage: false,
+      published: productData.published,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -52,7 +53,10 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("Product creation error:", error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(
+      { error: error.message },
+      { status: error.status || 500 }
+    );
   }
   });
 }

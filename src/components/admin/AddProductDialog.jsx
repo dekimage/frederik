@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { ImageIcon } from "lucide-react";
 import CategorySelect from "./CategorySelect";
 
@@ -23,6 +24,7 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
     name: "",
     description: "",
     category: "",
+    published: false,
   });
 
   const handleFileChange = (e) => {
@@ -73,6 +75,7 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
       name: "",
       description: "",
       category: "",
+      published: false,
     });
   };
 
@@ -102,9 +105,27 @@ export default function AddProductDialog({ open, onClose, onSuccess }) {
             )}
             <Input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
               onChange={handleFileChange}
               className="mt-2"
+            />
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, WebP, AVIF, or GIF. Maximum 10 MB.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div>
+              <p className="text-sm font-medium">Published</p>
+              <p className="text-xs text-muted-foreground">
+                Draft products are hidden from the shop and cannot be purchased.
+              </p>
+            </div>
+            <Switch
+              checked={formData.published}
+              onCheckedChange={(published) =>
+                setFormData({ ...formData, published })
+              }
             />
           </div>
 

@@ -15,7 +15,26 @@ export async function GET(request) {
 export async function POST(request) {
   return withAdminRoute(request, async () => {
     try {
-      const { name } = await request.json();
+      const body = await request.json();
+      const name = String(body.name || "").trim();
+      if (!name || name.length > 60) {
+        return Response.json(
+          { error: "Category name must be between 1 and 60 characters." },
+          { status: 400 }
+        );
+      }
+
+      const existing = await firestore.collection("categories").get();
+      const duplicate = existing.docs.some(
+        (doc) => String(doc.data().name || "").trim().toLowerCase() === name.toLowerCase()
+      );
+      if (duplicate) {
+        return Response.json(
+          { error: "A category with this name already exists." },
+          { status: 409 }
+        );
+      }
+
       const docRef = await firestore.collection("categories").add({
         name,
         createdAt: new Date(),
@@ -23,7 +42,7 @@ export async function POST(request) {
       return Response.json({ id: docRef.id });
     } catch (error) {
       console.error("Error creating category:", error);
-      return Response.json({ error: error.message }, { status: 500 });
+      return Response.json({ error: "Unable to create category." }, { status: 500 });
     }
   });
 }

@@ -1,5 +1,51 @@
-import { firestore } from "@/app/firebaseAdmin";
+import { firestore, admin } from "@/app/firebaseAdmin";
 import { withAdminRoute } from "@/lib/withAdminRoute";
+
+export async function PUT(request, context) {
+  return withAdminRoute(request, async () => {
+    try {
+      const { id } = context.params;
+      const body = await request.json();
+      const name = String(body.name || "").trim();
+      if (!name || name.length > 60) {
+        return Response.json(
+          { error: "Category name must be between 1 and 60 characters." },
+          { status: 400 }
+        );
+      }
+
+      const categoryRef = firestore.collection("categories").doc(id);
+      const [category, allCategories] = await Promise.all([
+        categoryRef.get(),
+        firestore.collection("categories").get(),
+      ]);
+      if (!category.exists) {
+        return Response.json({ error: "Category not found." }, { status: 404 });
+      }
+
+      const duplicate = allCategories.docs.some(
+        (doc) =>
+          doc.id !== id &&
+          String(doc.data().name || "").trim().toLowerCase() === name.toLowerCase()
+      );
+      if (duplicate) {
+        return Response.json(
+          { error: "A category with this name already exists." },
+          { status: 409 }
+        );
+      }
+
+      await categoryRef.update({
+        name,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return Response.json({ success: true, id, name });
+    } catch (error) {
+      console.error("Error renaming category:", error);
+      return Response.json({ error: "Unable to rename category." }, { status: 500 });
+    }
+  });
+}
 
 export async function DELETE(request, context) {
   return withAdminRoute(request, async () => {

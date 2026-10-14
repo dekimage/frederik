@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { EditIcon, TrashIcon, SaveIcon, ImageIcon, Link2 } from "lucide-react";
 import {
   Dialog,
@@ -73,7 +74,10 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
           body: formDataWithFile,
         });
 
-        if (!uploadResponse.ok) throw new Error("Failed to upload new image");
+        if (!uploadResponse.ok) {
+          const data = await uploadResponse.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to upload new image");
+        }
         const { url, cloudinaryPublicId } = await uploadResponse.json();
         updatedData.image = url;
         updatedData.cloudinaryPublicId = cloudinaryPublicId;
@@ -132,7 +136,7 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
               <div className="text-center p-2 space-y-2">
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
                   onChange={handleFileChange}
                   className="hidden"
                   id={`file-upload-${product.id}`}
@@ -214,6 +218,22 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
                 />
               </div>
 
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <Label htmlFor={`published-${product.id}`}>Published</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Drafts are hidden and blocked at checkout.
+                  </p>
+                </div>
+                <Switch
+                  id={`published-${product.id}`}
+                  checked={formData.published !== false}
+                  onCheckedChange={(published) =>
+                    setFormData({ ...formData, published })
+                  }
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor={`index-${product.id}`}>Display Order</Label>
                 <Input
@@ -251,6 +271,15 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
           ) : (
             <>
               <h3 className="font-semibold">{product.name}</h3>
+              <span
+                className={
+                  product.published !== false
+                    ? "inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800 dark:bg-green-950 dark:text-green-300"
+                    : "inline-flex rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground"
+                }
+              >
+                {product.published !== false ? "PUBLISHED" : "DRAFT"}
+              </span>
               <p className="text-sm text-muted-foreground">{product.description}</p>
               <p className="text-xs text-muted-foreground">
                 Print prices: material × size × country catalogue

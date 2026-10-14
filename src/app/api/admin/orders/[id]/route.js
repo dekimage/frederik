@@ -1,4 +1,4 @@
-import { firestore } from "@/app/firebaseAdmin";
+import { firestore, admin } from "@/app/firebaseAdmin";
 import { requireAdmin } from "@/lib/adminAuth";
 import {
   ORDER_STATUS,
@@ -14,7 +14,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = params;
     const body = await request.json();
-    const { isFulfilled, orderStatus } = body;
+    const { isFulfilled, orderStatus, isArchived } = body;
 
     const docRef = firestore.collection("orders").doc(id);
     const doc = await docRef.get();
@@ -28,6 +28,7 @@ export async function PUT(request, { params }) {
       at: new Date().toISOString(),
       source: `admin:${authResult.admin.email}`,
     };
+    let hasStatusUpdate = false;
 
     if (typeof isFulfilled === "boolean") {
       updates.isFulfilled = isFulfilled;
@@ -37,6 +38,7 @@ export async function PUT(request, { params }) {
       );
       historyEntry.status = updates.orderStatus;
       historyEntry.note = isFulfilled ? "Marked fulfilled" : "Marked unfulfilled";
+      hasStatusUpdate = true;
     }
 
     if (orderStatus && !ALLOWED_ORDER_STATUSES.has(orderStatus)) {
@@ -50,13 +52,28 @@ export async function PUT(request, { params }) {
       }
       historyEntry.status = orderStatus;
       historyEntry.note = `Status set to ${orderStatus}`;
+      hasStatusUpdate = true;
     }
 
-    if (typeof isFulfilled !== "boolean" && !orderStatus) {
+    if (typeof isArchived === "boolean") {
+      if (isArchived) {
+        updates.archivedAt = admin.firestore.FieldValue.serverTimestamp();
+        updates.archivedBy = authResult.admin.email;
+        updates.archiveReason = "admin:manual";
+      } else {
+        updates.archivedAt = admin.firestore.FieldValue.delete();
+        updates.archivedBy = admin.firestore.FieldValue.delete();
+        updates.archiveReason = admin.firestore.FieldValue.delete();
+      }
+    }
+
+    if (!hasStatusUpdate && typeof isArchived !== "boolean") {
       return Response.json({ error: "No valid order update supplied" }, { status: 400 });
     }
 
-    updates.statusHistory = [...(current.statusHistory || []), historyEntry];
+    if (hasStatusUpdate) {
+      updates.statusHistory = [...(current.statusHistory || []), historyEntry];
+    }
 
     await docRef.update(updates);
 
@@ -79,11 +96,19 @@ export async function GET(request, { params }) {
       return Response.json({ error: "Order not found" }, { status: 404 });
     }
 
+    const data = doc.data();
+    const invoice = data.invoice
+      ? { ...data.invoice, hasHtml: Boolean(data.invoice.html) }
+      : null;
+    if (invoice) delete invoice.html;
+
     const order = {
       id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.().toISOString() || null,
-      paidAt: doc.data().paidAt?.toDate?.().toISOString() || null,
+      ...data,
+      invoice,
+      createdAt: data.createdAt?.toDate?.().toISOString() || null,
+      paidAt: data.paidAt?.toDate?.().toISOString() || null,
+      archivedAt: data.archivedAt?.toDate?.().toISOString() || null,
     };
 
     return Response.json(order);

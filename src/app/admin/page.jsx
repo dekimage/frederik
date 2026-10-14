@@ -5,7 +5,13 @@ import { adminFetch } from "@/lib/adminFetch";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2Icon, PlusCircleIcon } from "lucide-react";
+import {
+  Trash2Icon,
+  PlusCircleIcon,
+  PencilIcon,
+  SaveIcon,
+  XIcon,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -22,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatCurrencyEUR } from "@/lib/orderUtils";
 
 export default function AdminDashboard() {
   const [categories, setCategories] = useState([]);
@@ -29,10 +36,25 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     fetchCategories();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await adminFetch("/api/admin/dashboard");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to load dashboard statistics.");
+      setStats(data.stats);
+    } catch (error) {
+      console.error("Error fetching dashboard statistics:", error);
+      setError(error.message || "Unable to load dashboard statistics.");
+    }
+  };
 
   const fetchCategories = async () => {
     setError("");
@@ -62,13 +84,36 @@ export default function AdminDashboard() {
         body: JSON.stringify({ name: newCategory }),
       });
 
-      if (!response.ok) throw new Error("Failed to add category");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to add category");
+      }
 
       setNewCategory("");
       fetchCategories();
+      fetchStats();
     } catch (error) {
       console.error("Error adding category:", error);
       setError(error.message || "Unable to add category.");
+    }
+  };
+
+  const handleRenameCategory = async () => {
+    if (!editingCategory?.name.trim()) return;
+    try {
+      const response = await adminFetch(
+        `/api/admin/categories/${editingCategory.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ name: editingCategory.name }),
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Failed to rename category");
+      setEditingCategory(null);
+      fetchCategories();
+    } catch (error) {
+      setError(error.message || "Unable to rename category.");
     }
   };
 
@@ -85,6 +130,7 @@ export default function AdminDashboard() {
 
       setDeleteDialog({ open: false, id: null });
       fetchCategories();
+      fetchStats();
     } catch (error) {
       console.error("Error deleting category:", error);
       setError(error.message || "Unable to delete category.");
@@ -134,19 +180,62 @@ export default function AdminDashboard() {
                       key={category.id}
                       className="flex items-center justify-between p-4 border rounded-lg"
                     >
-                      <span>{category.name}</span>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() =>
-                          setDeleteDialog({
-                            open: true,
-                            id: category.id,
-                          })
-                        }
-                      >
-                        <Trash2Icon className="w-4 h-4" />
-                      </Button>
+                      {editingCategory?.id === category.id ? (
+                        <Input
+                          value={editingCategory.name}
+                          onChange={(event) =>
+                            setEditingCategory({
+                              ...editingCategory,
+                              name: event.target.value,
+                            })
+                          }
+                          className="max-w-sm"
+                          autoFocus
+                        />
+                      ) : (
+                        <span>{category.name}</span>
+                      )}
+                      <div className="flex gap-2">
+                        {editingCategory?.id === category.id ? (
+                          <>
+                            <Button size="icon" onClick={handleRenameCategory}>
+                              <SaveIcon className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setEditingCategory(null)}
+                            >
+                              <XIcon className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              setEditingCategory({
+                                id: category.id,
+                                name: category.name,
+                              })
+                            }
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() =>
+                            setDeleteDialog({
+                              open: true,
+                              id: category.id,
+                            })
+                          }
+                        >
+                          <Trash2Icon className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -154,17 +243,30 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Categories</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{categories.length}</p>
-              </CardContent>
-            </Card>
-            {/* Add more stat cards as needed */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[
+              ["Live paid revenue", formatCurrencyEUR(stats?.livePaidRevenue || 0)],
+              ["Live orders", stats?.liveOrders ?? "—"],
+              ["Pending fulfillment", stats?.pendingFulfillment ?? "—"],
+              ["Email failures", stats?.emailFailures ?? "—"],
+              ["Active TEST orders", stats?.testOrders ?? "—"],
+              ["All active orders", stats?.activeOrders ?? "—"],
+              [
+                "Products",
+                stats ? `${stats.products} (${stats.draftProducts} draft)` : "—",
+              ],
+              ["Images", stats?.images ?? "—"],
+              ["Categories", stats?.categories ?? categories.length],
+            ].map(([label, value]) => (
+              <Card key={label}>
+                <CardHeader className="pb-2">
+                  <CardDescription>{label}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{value}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 

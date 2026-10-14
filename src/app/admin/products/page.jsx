@@ -15,14 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const CATEGORIES = [
-  { id: "all", label: "All" },
-  { id: "spring", label: "Spring" },
-  { id: "summer", label: "Summer" },
-  { id: "autumn", label: "Autumn" },
-  { id: "winter", label: "Winter" },
-];
-
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -30,10 +22,29 @@ export default function ProductsPage() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [publicationStatus, setPublicationStatus] = useState("all");
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await adminFetch("/api/admin/categories");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to load categories.");
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error("Error fetching product categories:", error);
+    }
+  };
+
+  const categoryFilters = [
+    { id: "all", label: "All" },
+    ...categories.map((category) => ({ id: category.id, label: category.name })),
+  ];
 
   const fetchProducts = async () => {
     setError("");
@@ -58,8 +69,13 @@ export default function ProductsPage() {
 
     const matchesCategory =
       selectedCategory === "all" || product.category === selectedCategory;
+    const matchesPublication =
+      publicationStatus === "all" ||
+      (publicationStatus === "published"
+        ? product.published !== false
+        : product.published === false);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesPublication;
   });
 
   return (
@@ -88,11 +104,27 @@ export default function ProductsPage() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((category) => (
+                  {categoryFilters.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.label}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-40">
+              <Select
+                value={publicationStatus}
+                onValueChange={setPublicationStatus}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Publication" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All products</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Drafts</SelectItem>
                 </SelectContent>
               </Select>
             </div>

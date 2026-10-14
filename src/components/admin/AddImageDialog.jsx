@@ -52,12 +52,16 @@ export default function AddImageDialog({ open, onClose, onSuccess }) {
         body: formDataToSend,
       });
 
-      if (!response.ok) throw new Error("Failed to upload image");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to upload image");
+      }
 
       onSuccess();
       handleReset();
     } catch (error) {
       console.error("Error uploading image:", error);
+      alert(error.message);
     } finally {
       setLoading(false);
     }
@@ -100,10 +104,13 @@ export default function AddImageDialog({ open, onClose, onSuccess }) {
             )}
             <Input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
               onChange={handleFileChange}
               className="mt-2"
             />
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, WebP, AVIF, or GIF. Maximum 10 MB.
+            </p>
           </div>
 
           <Input

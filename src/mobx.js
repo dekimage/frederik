@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { db } from "./firebase";
 import { getPdpQuote } from "@/lib/pricingCatalog";
+import { isProductPublished } from "@/lib/productVisibility";
 import {
   clampLineQuantity,
   MAX_LINE_QUANTITY,
@@ -21,7 +22,6 @@ import {
   getDocs,
   where,
   orderBy,
-  limit,
 } from "firebase/firestore";
 
 class Store {
@@ -172,13 +172,13 @@ class Store {
 
   // Fetch limited products (e.g., for home page or shop)
   async fetchLimitedProducts() {
-    const productsQuery = query(collection(db, "products"), limit(10));
+    const productsQuery = query(collection(db, "products"));
 
     const productsSnapshot = await getDocs(productsQuery);
-    const productsList = productsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const productsList = productsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter(isProductPublished)
+      .slice(0, 10);
 
     runInAction(() => {
       this.cacheProducts(productsList); // Cache products
@@ -193,10 +193,9 @@ class Store {
     const productsQuery = query(collection(db, "products"));
 
     const productsSnapshot = await getDocs(productsQuery);
-    const productsList = productsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const productsList = productsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter(isProductPublished);
 
     runInAction(() => {
       this.cacheProducts(productsList); // Cache products
@@ -213,10 +212,9 @@ class Store {
     );
 
     const productsSnapshot = await getDocs(productQuery);
-    const productsList = productsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const productsList = productsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter(isProductPublished);
 
     runInAction(() => {
       this.cacheProducts(productsList); // Cache products
@@ -233,10 +231,9 @@ class Store {
     );
 
     const bestSellersSnapshot = await getDocs(bestSellerQuery);
-    const bestSellersList = bestSellersSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const bestSellersList = bestSellersSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter(isProductPublished);
 
     runInAction(() => {
       this.cacheProducts(bestSellersList); // Cache products
@@ -251,6 +248,7 @@ class Store {
       const productDoc = await getDoc(doc(db, "products", id));
       if (productDoc.exists()) {
         const productData = { id, ...productDoc.data() };
+        if (!isProductPublished(productData)) return null;
         runInAction(() => {
           this.cachedProducts[id] = productData; // Cache the fetched product
         });
@@ -276,6 +274,7 @@ class Store {
       let product = null;
       if (productSnap.exists()) {
         product = { id: productId, ...productSnap.data() };
+        if (!isProductPublished(product)) product = null;
         runInAction(() => {
           this.cachedProducts[productId] = product;
         });
@@ -427,7 +426,9 @@ class Store {
       productIds.map(async (id) => {
         const productRef = doc(db, "products", id);
         const productSnap = await getDoc(productRef);
-        return productSnap.exists() ? { id, ...productSnap.data() } : null;
+        if (!productSnap.exists()) return null;
+        const product = { id, ...productSnap.data() };
+        return isProductPublished(product) ? product : null;
       })
     );
 

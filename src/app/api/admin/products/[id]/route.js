@@ -29,8 +29,12 @@ export async function PUT(request, context) {
       const { id } = context.params;
       const data = await request.json();
       delete data.price;
+      if ("published" in data) data.published = data.published === true;
       const docRef = firestore.collection("products").doc(id);
       const prevSnap = await docRef.get();
+      if (!prevSnap.exists) {
+        return Response.json({ error: "Product not found" }, { status: 404 });
+      }
       const previous = prevSnap.data() || {};
 
       await docRef.update({

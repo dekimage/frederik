@@ -10,6 +10,7 @@ import {
   ORDER_STATUS,
   toStripeAddress,
 } from "@/lib/orderUtils";
+import { isProductPublished } from "@/lib/productVisibility";
 import {
   getStripeCheckoutLocale,
   getStripePaymentMethodTypes,
@@ -103,6 +104,12 @@ export async function createCheckoutSession({
     }
 
     const productData = productDoc.data();
+    if (!isProductPublished(productData)) {
+      throw new CheckoutSessionError(
+        `Product ${productId} is not currently available.`,
+        400
+      );
+    }
     const row = getQuote(shippingCountry, material, sizeKey);
 
     if (!row || !row.available) {
