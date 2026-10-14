@@ -1,6 +1,9 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { auth } from "@/app/firebaseAdmin";
 import { getAllowedAdminEmails } from "@/lib/adminAuth";
+import {
+  createAdminSession,
+  getAdminSessionCookie,
+} from "@/lib/adminSession";
 
 export const runtime = "nodejs";
 
@@ -41,10 +44,10 @@ function passwordsMatch(received, expected) {
   return timingSafeEqual(receivedHash, expectedHash);
 }
 
-function json(body, status) {
+function json(body, status, headers = {}) {
   return Response.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...headers },
   });
 }
 
@@ -89,23 +92,11 @@ export async function POST(request) {
     return json({ error: "Invalid email or password." }, 401);
   }
 
-  try {
-    let user;
-    try {
-      user = await auth.getUserByEmail(email);
-    } catch (error) {
-      if (error?.code !== "auth/user-not-found") throw error;
-      user = await auth.createUser({ email, emailVerified: true });
-    }
-
-    if (user.disabled) {
-      return json({ error: "This admin account is disabled." }, 403);
-    }
-
-    const token = await auth.createCustomToken(user.uid);
-    attemptStore.delete(clientKey);
-    return json({ token }, 200);
-  } catch {
-    return json({ error: "Unable to start the admin session." }, 500);
-  }
+  const token = createAdminSession(email);
+  attemptStore.delete(clientKey);
+  return json(
+    { ok: true, email },
+    200,
+    { "Set-Cookie": getAdminSessionCookie(token) }
+  );
 }

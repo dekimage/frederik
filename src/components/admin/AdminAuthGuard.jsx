@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithCustomToken, onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -13,35 +11,33 @@ export default function AdminAuthGuard({ children }) {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setAuthorized(false);
-        setChecking(false);
-        router.replace("/admin/login");
-        return;
-      }
-
+    let cancelled = false;
+    const checkSession = async () => {
       try {
-        const token = await user.getIdToken();
         const response = await fetch("/api/admin/auth/verify", {
-          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
+        if (cancelled) return;
         if (!response.ok) {
-          await signOut(auth);
           setAuthorized(false);
           router.replace("/admin/login");
           return;
         }
         setAuthorized(true);
       } catch {
+        if (cancelled) return;
         setAuthorized(false);
         router.replace("/admin/login");
       } finally {
-        setChecking(false);
+        if (!cancelled) setChecking(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    checkSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   if (checking) {
@@ -77,24 +73,22 @@ export function AdminLoginForm() {
       });
       const loginResult = await loginResponse.json().catch(() => ({}));
 
-      if (!loginResponse.ok || !loginResult.token) {
+      if (!loginResponse.ok || !loginResult.ok) {
         setError(loginResult.error || "Invalid email or password.");
         return;
       }
 
-      const credential = await signInWithCustomToken(auth, loginResult.token);
-      const token = await credential.user.getIdToken();
       const response = await fetch("/api/admin/auth/verify", {
-        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
       });
 
       if (!response.ok) {
-        await signOut(auth);
-        setError("This account is not authorized for admin access.");
+        setError("The admin session could not be verified.");
         return;
       }
 
       router.replace("/admin/orders");
+      router.refresh();
     } catch {
       setError("Invalid email or password.");
     } finally {

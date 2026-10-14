@@ -1,4 +1,9 @@
 import { auth } from "@/app/firebaseAdmin";
+import {
+  ADMIN_SESSION_COOKIE,
+  readCookie,
+  verifyAdminSession,
+} from "@/lib/adminSession";
 
 export function getAllowedAdminEmails() {
   const raw = process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || "";
@@ -9,6 +14,18 @@ export function getAllowedAdminEmails() {
 }
 
 export async function verifyAdminRequest(request) {
+  const session = verifyAdminSession(
+    readCookie(request, ADMIN_SESSION_COOKIE)
+  );
+  if (session) {
+    const email = session.email.toLowerCase();
+    const allowed = getAllowedAdminEmails();
+    if (allowed.includes(email)) {
+      return { ok: true, email, session: true };
+    }
+    return { ok: false, status: 403, error: "Not authorized for admin access." };
+  }
+
   const authHeader = request.headers.get("authorization") || "";
   const bearer = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
