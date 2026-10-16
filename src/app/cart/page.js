@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import MobxStore from "@/mobx";
 import Link from "next/link";
-import { materialLabel, getCountryLabel, PDP_REFERENCE_COUNTRY } from "@/lib/pricingCatalog";
+import { ArrowLeft, ArrowRight, LockKeyhole, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
+import { formatCurrencyEUR } from "@/lib/orderUtils";
+import shared from "@/app/checkout/checkout.module.css";
+import styles from "./cart.module.css";
+import { materialLabel } from "@/lib/pricingCatalog";
 import { clampLineQuantity, MAX_LINE_QUANTITY, MAX_ORDER_TOTAL_QUANTITY } from "@/lib/cartLimits";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -41,193 +45,114 @@ const CartPage = observer(() => {
     (acc, item) => acc + Number(item.price) * item.quantity,
     0
   );
-  const refLabel = getCountryLabel(PDP_REFERENCE_COUNTRY);
+  const itemCount = cartProducts.reduce((count, item) => count + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 mt-32">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-8 text-center">
-          Shopping Cart
-        </h1>
+    <main className={styles.cart}>
+      <div className={shared.container}>
+        <Link href="/shop" className={shared.backLink}>
+          <ArrowLeft size={16} aria-hidden="true" /> Continue shopping
+        </Link>
+        <div className={shared.heading}>
+          <h1>Your cart <span className={styles.count}>{itemCount}</span></h1>
+          <span className={shared.secure}><LockKeyhole size={15} aria-hidden="true" /> Secure payment with Stripe</span>
+        </div>
+        <p className={styles.intro}>Review your prints, then add your delivery details at checkout.</p>
 
         {cartProducts.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-4">🛒</div>
-            <p className="text-xl mb-6 text-gray-300">
-              Your cart is currently empty.
-            </p>
-            <Link href="/shop">
-              <button className="bg-white text-black py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors">
-                Continue Shopping
-              </button>
-            </Link>
-          </div>
+          <section className={styles.empty}>
+            <span className={styles.emptyIcon}><ShoppingBag size={30} aria-hidden="true" /></span>
+            <h2>Your cart is empty</h2>
+            <p>Find a photograph you love and choose a print for your space.</p>
+            <Link href="/shop" className={shared.primaryAction}>Explore prints <ArrowRight size={18} aria-hidden="true" /></Link>
+          </section>
         ) : (
-          <div className="space-y-8">
-            <div className="hidden md:block bg-gray-900 rounded-lg overflow-hidden">
-              <table className="w-full text-left">
-                <thead className="bg-gray-800">
-                  <tr>
-                    <th className="px-6 py-4 font-medium text-gray-300">
-                      Product
-                    </th>
-                    <th className="px-6 py-4 font-medium text-gray-300">
-                      Size
-                    </th>
-                    <th className="px-6 py-4 font-medium text-gray-300">
-                      Material
-                    </th>
-                    <th className="px-4 py-4 font-medium text-gray-300 text-right">
-                      Print ea. ({refLabel})
-                    </th>
-                    <th className="px-4 py-4 font-medium text-gray-300">
-                      Qty
-                    </th>
-                    <th className="px-4 py-4 font-medium text-gray-300 text-right">
-                      Line total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cartProducts.map((item) => {
-                    const linePrint = Number(item.price) * item.quantity;
-                    return (
-                      <tr
-                        key={`${item.productId}-${item.sizeKey}-${item.material}`}
-                        className="border-b border-gray-700 hover:bg-gray-800 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-4">
-                            <button
-                              className="text-red-500 hover:text-red-400 text-xl font-bold"
-                              onClick={() =>
-                                removeFromCart(
-                                  item.productId,
-                                  item.sizeKey,
-                                  item.material
-                                )
-                              }
-                            >
-                              ×
+          <div className={styles.layout}>
+            <section aria-labelledby="cart-items-heading" className={styles.items}>
+              <div className={styles.sectionHeading}>
+                <h2 id="cart-items-heading">Your prints</h2>
+                <span>{itemCount} {itemCount === 1 ? "item" : "items"}</span>
+              </div>
+              <ul className={styles.itemList}>
+                {cartProducts.map((item) => {
+                  const linePrint = Number(item.price) * item.quantity;
+                  const itemLabel = `${item.name}, ${materialLabel(item.material)}, ${item.size}`;
+                  return (
+                    <li key={`${item.productId}-${item.sizeKey}-${item.material}`} className={styles.item}>
+                      <div className={styles.imageFrame}>
+                        {/* Keep the existing image delivery URL and native image behavior. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={cloudinaryMaxQualityDeliveryUrl(item.image)} alt={item.name} className={styles.image} />
+                      </div>
+                      <div className={styles.product}>
+                        <h3>{item.name}</h3>
+                        <p>{materialLabel(item.material)}</p>
+                        <p className={styles.size}>{item.size}</p>
+                        <span className={styles.unitPrice}>{formatCurrencyEUR(Number(item.price))} each</span>
+                      </div>
+                      <div className={styles.lineTotal}>
+                        <span>Line total</span>
+                        <strong>{formatCurrencyEUR(linePrint)}</strong>
+                      </div>
+                      <div className={styles.itemControls}>
+                        <div className={styles.quantityBlock}>
+                          <span aria-hidden="true">Quantity</span>
+                          <div className={styles.quantity}>
+                            <button type="button" aria-label={`Decrease quantity for ${itemLabel}`}
+                              onClick={() => item.quantity <= 1
+                                ? removeFromCart(item.productId, item.sizeKey, item.material)
+                                : handleQuantityChange(item.productId, item.sizeKey, item.material, item.quantity - 1)}>
+                              <Minus size={16} aria-hidden="true" />
                             </button>
-                            <img
-                              src={cloudinaryMaxQualityDeliveryUrl(item.image)}
-                              alt={item.name}
-                              className="w-16 h-16 object-cover rounded-lg"
-                            />
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              <p className="text-sm text-gray-400">
-                                {materialLabel(item.material)} · {item.size}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-300">{item.size}</td>
-                        <td className="px-6 py-4 text-gray-300">
-                          {materialLabel(item.material)}
-                        </td>
-                        <td className="px-4 py-4 text-right text-gray-300 text-sm tabular-nums">
-                          €{Number(item.price).toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition-colors"
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.sizeKey,
-                                  item.material,
-                                  clampLineQuantity(item.quantity - 1)
-                                )
-                              }
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              min="1"
-                              max={MAX_LINE_QUANTITY}
-                              className="w-12 text-center bg-gray-800 border border-gray-600 rounded py-1"
-                              onChange={(e) => {
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.sizeKey,
-                                  item.material,
-                                  clampLineQuantity(e.target.value)
-                                );
-                              }}
-                            />
-                            <button
-                              className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition-colors"
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.sizeKey,
-                                  item.material,
-                                  clampLineQuantity(item.quantity + 1)
-                                )
-                              }
-                            >
-                              +
+                            <input type="number" aria-label={`Quantity for ${itemLabel}`} value={item.quantity} min="1" max={MAX_LINE_QUANTITY}
+                              onChange={(e) => handleQuantityChange(item.productId, item.sizeKey, item.material, clampLineQuantity(e.target.value))} />
+                            <button type="button" aria-label={`Increase quantity for ${itemLabel}`} disabled={item.quantity >= MAX_LINE_QUANTITY || itemCount >= MAX_ORDER_TOTAL_QUANTITY}
+                              onClick={() => handleQuantityChange(item.productId, item.sizeKey, item.material, clampLineQuantity(item.quantity + 1))}>
+                              <Plus size={16} aria-hidden="true" />
                             </button>
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-right align-top tabular-nums font-medium text-white">
-                          €{linePrint.toFixed(2)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                        <button type="button" className={styles.remove} aria-label={`Remove ${itemLabel} from cart`}
+                          onClick={() => removeFromCart(item.productId, item.sizeKey, item.material)}>
+                          <Trash2 size={15} aria-hidden="true" /> Remove
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className={styles.limit}>Up to {MAX_LINE_QUANTITY} per print · {MAX_ORDER_TOTAL_QUANTITY} items per order</p>
+            </section>
 
-            <div className="flex justify-end">
-              <div className="w-full max-w-md bg-gray-900 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">Cart subtotal</h3>
-                <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                  {t("shippingCoverageCart")}
-                </p>
-                <div className="space-y-2 text-sm tabular-nums">
-                  <div className="flex justify-between gap-4 text-gray-300">
-                    <span className="text-left shrink">Poster print (Σ qty)</span>
-                    <span className="font-medium">
-                      €{printSubtotal.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="border-t border-gray-700 pt-3 mt-2">
-                    <div className="flex justify-between gap-4 font-semibold text-white">
-                      <span>Due at payment (preview)</span>
-                      <span className="text-gray-400 font-normal text-sm">
-                        After checkout address
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      {t("shippingCoverageCartCheckout")}
-                    </p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-gray-500 mt-2">
-                  Max {MAX_LINE_QUANTITY} per line · {MAX_ORDER_TOTAL_QUANTITY}{" "}
-                  items per order
-                </p>
-                <div className="mt-6">
-                  <Link href="/checkout">
-                    <button className="w-full bg-white text-black py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors">
-                      Proceed to Checkout
-                    </button>
-                  </Link>
+            <aside className={styles.sidebar} aria-label="Cart summary">
+              <div className={styles.summary}>
+                <h2>Order summary</h2>
+                <div className={styles.summaryRow}><span>Prints ({itemCount})</span><span>{formatCurrencyEUR(printSubtotal)}</span></div>
+                <div className={styles.summaryRow}><span>Delivery</span><span className={styles.deliveryEstimate}>Calculated at checkout</span></div>
+                <div className={styles.subtotal} aria-live="polite" aria-atomic="true"><span>Print subtotal</span><strong>{formatCurrencyEUR(printSubtotal)}</strong></div>
+                <p className={styles.totalNote}>Delivery is added after you select your shipping country.</p>
+                <div className={styles.nextStep}>
+                  <Link href="/checkout" className={shared.primaryAction}>Continue to checkout <ArrowRight size={18} aria-hidden="true" /></Link>
+                  <p>Next: add your delivery details and review the final total.</p>
+                  <span className={styles.secureNote}><LockKeyhole size={13} aria-hidden="true" /> Payment comes after your address details</span>
                 </div>
               </div>
-            </div>
+              <details className={styles.deliveryInfo}>
+                <summary><Truck size={18} aria-hidden="true" /> Delivery & pricing information</summary>
+                <p>{t("shippingCoverageCart")}</p>
+                <p>{t("shippingCoverageCartCheckout")}</p>
+              </details>
+            </aside>
+          </div>
+        )}
+        {cartProducts.length > 0 && (
+          <div className={styles.mobileAction}>
+            <div><span>Print subtotal <strong>{formatCurrencyEUR(printSubtotal)}</strong></span><small>Delivery calculated at checkout</small></div>
+            <Link href="/checkout" className={shared.primaryAction}>Continue to checkout <ArrowRight size={18} aria-hidden="true" /></Link>
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 });
 

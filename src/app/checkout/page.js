@@ -1,37 +1,73 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, Check, LockKeyhole } from "lucide-react";
+import styles from "./checkout.module.css";
 import { observer } from "mobx-react-lite";
 import BillingDetailsForm from "@/components/BillingDetailsForm";
 import OrderSummary from "@/components/OrderSummary";
 import PaymentButton from "@/components/PaymentButton";
+import { addressIsSaved, restoreCheckoutDraft, readCheckoutDraft, writeCheckoutDraft } from "@/lib/checkoutDraft";
+import { normalizeAddressFormValues } from "@/lib/orderUtils";
 import MobxStore from "@/mobx";
 import { quoteOrderForShippingCountry, isSupportedShippingCountry } from "@/lib/pricingCatalog";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const CheckoutForm = observer(() => {
-  const [isShippingDifferent, setIsShippingDifferent] = useState(false);
-  const [shippingDetails, setShippingDetails] = useState({});
-  const [billingDetails, setBillingDetails] = useState({});
+  const [draft, setDraft] = useState(() => restoreCheckoutDraft(null));
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [cartItems, setCartItems] = useState([]);
-  const [shippingCountryEstimate, setShippingCountryEstimate] = useState("");
-
-  const { setIsShippingDifferent: setMobxIsShippingDifferent } = MobxStore;
+  const [cartLoading, setCartLoading] = useState(true);
+  const [cartError, setCartError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [paymentPending, setPaymentPending] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const paymentLock = useRef(false);
   const { t } = useLanguage();
+  const cartKey = JSON.stringify(MobxStore.cartItems);
 
   useEffect(() => {
-    const fetchCartProducts = async () => {
-      const products = await MobxStore.getCartProducts();
-      setCartItems(products);
-    };
-
-    fetchCartProducts();
+    setDraft(readCheckoutDraft());
+    setDraftLoaded(true);
   }, []);
 
-  const effectiveShippingCountry =
-    (shippingDetails.country || shippingCountryEstimate || "")
-      .toString()
-      .trim()
-      .toUpperCase() || "";
+  useEffect(() => {
+    if (draftLoaded) writeCheckoutDraft(draft);
+  }, [draft, draftLoaded]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCartLoading(true);
+    setCartError("");
+    MobxStore.getCartProducts().then((products) => {
+      if (!cancelled) {
+        if (products.length !== JSON.parse(cartKey).length) {
+          setCartError("Some prints could not be loaded. Please review your cart before continuing.");
+        }
+        setCartItems(products);
+      }
+    }).catch(() => {
+      if (!cancelled) setCartError("We couldn’t load your order. Please try again. Your address details are retained.");
+    }).finally(() => {
+      if (!cancelled) setCartLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [cartKey, retry]);
+
+  const updateShipping = useCallback((values) => {
+    setDraft((previous) => JSON.stringify(previous.shipping) === JSON.stringify(values)
+      ? previous : { ...previous, shipping: values, savedShipping: null });
+    setPaymentError("");
+  }, []);
+  const updateBilling = useCallback((values) => {
+    setDraft((previous) => JSON.stringify(previous.billing) === JSON.stringify(values)
+      ? previous : { ...previous, billing: values, savedBilling: null });
+    setPaymentError("");
+  }, []);
+  const isShippingDifferent = draft.isShippingDifferent;
+  const effectiveShippingCountry = draft.shipping.country.toString().trim().toUpperCase();
+  const shippingDetails = normalizeAddressFormValues(draft.shipping);
+  const billingDetails = normalizeAddressFormValues(draft.billing);
 
   const quotedCheckout = useMemo(() => {
     const lines = cartItems.map((item) => ({
@@ -42,125 +78,145 @@ const CheckoutForm = observer(() => {
     return quoteOrderForShippingCountry(lines, effectiveShippingCountry);
   }, [cartItems, effectiveShippingCountry]);
 
-  const paymentReady =
+  const shippingSaved = addressIsSaved(draft.shipping, draft.savedShipping);
+  const billingSaved = addressIsSaved(draft.billing, draft.savedBilling);
+  const detailsSaved = shippingSaved && (!isShippingDifferent || billingSaved);
+  const paymentReady = detailsSaved && !cartLoading && !cartError && cartItems.length > 0 &&
     effectiveShippingCountry.length === 2 && quotedCheckout?.ok;
 
   const handleShippingDifferentChange = (e) => {
-    const newValue = e.target.checked;
-    setIsShippingDifferent(newValue);
-    setMobxIsShippingDifferent(newValue);
-    if (!newValue) {
-      MobxStore.setBillingDetailsCompleted(true);
-    } else {
-      MobxStore.setBillingDetailsCompleted(false);
-    }
+    const checked = e.target.checked;
+    setDraft((previous) => ({ ...previous, isShippingDifferent: checked }));
+    setPaymentError("");
+  };
+  const handleShippingSubmit = (values) => {
+    setDraft((previous) => ({ ...previous, shipping: values, savedShipping: { ...values } }));
+  };
+  const handleBillingSubmit = (values) => {
+    setDraft((previous) => ({ ...previous, billing: values, savedBilling: { ...values } }));
   };
 
-  const handleShippingSubmit = (details) => {
-    setShippingDetails(details);
-    if (details?.country) {
-      setShippingCountryEstimate(
-        details.country.toString().trim().toUpperCase()
-      );
-    }
-    MobxStore.setShippingDetailsCompleted(true);
-    if (!isShippingDifferent) {
-      setBillingDetails(details);
-      MobxStore.setBillingDetailsCompleted(true);
-    }
-  };
+  const nextForm = shippingSaved ? "billing-details" : "shipping-details";
+  const nextLabel = shippingSaved ? "Save billing details" : "Save shipping details";
+  const nextDescription = detailsSaved
+    ? paymentReady
+      ? "Your details are saved. Continue to secure payment to place your order."
+      : "Your details are saved. Check the delivery availability below before payment."
+    : shippingSaved
+      ? "Shipping saved. Complete and save your billing address next."
+      : "Enter your delivery address, then save your shipping details.";
 
-  const handleBillingSubmit = (details) => {
-    setBillingDetails(details);
-    MobxStore.setBillingDetailsCompleted(true);
-  };
+  const nextAction = cartLoading || !draftLoaded ? (
+    <button className={styles.primaryAction} disabled>Loading checkout…</button>
+  ) : cartError ? (
+    <button className={styles.primaryAction} onClick={() => setRetry((value) => value + 1)}>Retry loading order</button>
+  ) : cartItems.length === 0 ? (
+    <Link href="/shop" className={styles.primaryAction}>Browse prints <ArrowRight size={18} aria-hidden="true" /></Link>
+  ) : detailsSaved ? (
+    <PaymentButton
+      cartItems={cartItems}
+      billingDetails={isShippingDifferent ? billingDetails : shippingDetails}
+      shippingDetails={shippingDetails}
+      disabled={!paymentReady}
+      pending={paymentPending}
+      setPending={setPaymentPending}
+      setError={setPaymentError}
+      paymentLock={paymentLock}
+    />
+  ) : (
+    <button type="submit" form={nextForm} className={styles.primaryAction}>
+      {nextLabel} <ArrowRight size={18} aria-hidden="true" />
+    </button>
+  );
 
   return (
-    <div className="bg-black text-white mt-16 p-8 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-3 text-center">Checkout</h1>
-        <p className="text-center text-sm text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-sans">
-          {t("shippingCoverageCheckoutIntro")}
-        </p>
-        <div className="flex gap-8 flex-col lg:flex-row mt-8">
-          <BillingDetailsForm
-            formTitle="Shipping Details"
-            isShipping={true}
-            onSubmit={handleShippingSubmit}
-            onCountryChange={(cc) =>
-              setShippingCountryEstimate(
-                (cc || "").toString().trim().toUpperCase()
-              )
-            }
-          />
-
-          <div className="w-full">
-            <div className="bg-gray-900 rounded-lg p-6 mb-6">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mr-3 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                  checked={isShippingDifferent}
-                  onChange={handleShippingDifferentChange}
-                />
-                <span className="text-gray-300">
-                  Use different billing address
-                </span>
-              </label>
-            </div>
-
-            {isShippingDifferent && (
-              <div className="mt-6">
-                <BillingDetailsForm
-                  formTitle="Billing Details"
-                  isShipping={false}
-                  onSubmit={handleBillingSubmit}
-                />
-              </div>
-            )}
-          </div>
+    <main className={styles.checkout}>
+      <div className={styles.container}>
+        <Link href="/cart" className={styles.backLink}>
+          <ArrowLeft size={16} aria-hidden="true" /> Back to cart
+        </Link>
+        <div className={styles.heading}>
+          <h1>Checkout</h1>
+          <span className={styles.secure}><LockKeyhole size={15} aria-hidden="true" /> Secure payment with Stripe</span>
         </div>
-
-        {/* Order Summary */}
-        <div className="mt-8">
-          <OrderSummary
-            cartItems={cartItems}
-            shippingCountryCode={effectiveShippingCountry}
-          />
-        </div>
-
-        {/* Payment Button */}
-        {MobxStore.canProceedToPayment && (
-          <div className="mt-8 flex flex-col items-stretch max-w-md mx-auto">
-            {!paymentReady && (
-              <p className="text-center text-amber-400 text-sm mb-3 leading-relaxed font-sans">
-                {effectiveShippingCountry.length === 2 &&
-                !isSupportedShippingCountry(effectiveShippingCountry)
-                  ? t("checkoutPaymentBlockedUnsupported")
-                  : effectiveShippingCountry.length === 2 && !quotedCheckout?.ok
-                    ? t("shippingCoverageOrderSummaryUnavailable")
-                    : t("checkoutPaymentBlockedMissing")}
-              </p>
-            )}
-            {paymentReady && (
-              <p className="text-center text-gray-400 text-sm mb-3 leading-relaxed font-sans">
-                {effectiveShippingCountry === "NL"
-                  ? t("checkoutPaymentMethodsNl")
-                  : t("checkoutPaymentMethodsDefault")}
-              </p>
-            )}
-            <PaymentButton
-              cartItems={cartItems}
-              billingDetails={
-                isShippingDifferent ? billingDetails : shippingDetails
-              }
-              shippingDetails={shippingDetails}
-              disabled={!paymentReady}
+        <ol className={styles.steps} aria-label="Checkout progress">
+          {[
+            { label: "Shipping details", done: shippingSaved, active: !shippingSaved },
+            { label: "Billing details", done: detailsSaved, active: shippingSaved && !detailsSaved },
+            { label: "Secure payment", done: false, active: detailsSaved },
+          ].map((step, index) => (
+            <li key={step.label} aria-current={step.active ? "step" : undefined} data-active={step.active} data-done={step.done}>
+              <span>{step.done ? <Check size={16} aria-hidden="true" /> : index + 1}</span>{step.label}
+            </li>
+          ))}
+        </ol>
+        {!draftLoaded || cartLoading ? (
+          <div className={styles.billing} role="status">Loading your checkout…</div>
+        ) : cartError ? (
+          <div className={styles.billing}><p role="alert">{cartError}</p>{nextAction}</div>
+        ) : cartItems.length === 0 ? (
+          <section className={styles.billing}><h2>Your cart is empty</h2><p>Add a print to continue to checkout. Your address draft will be here when you return.</p>{nextAction}</section>
+        ) : <div className={styles.layout}>
+          <div className={styles.details}>
+            <BillingDetailsForm
+              formTitle="Shipping details"
+              isShipping={true}
+              onSubmit={handleShippingSubmit}
+              initialValues={draft.shipping}
+              onChange={updateShipping}
+              completed={shippingSaved}
+              paymentPending={paymentPending}
+              nextStep={nextDescription}
             />
+            <section className={styles.billing} aria-labelledby="billing-heading">
+              <div className={styles.sectionHeading}><h2 id="billing-heading">Billing address</h2><span>02</span></div>
+              <p>By default, we use your shipping address for billing.</p>
+              <label className={styles.checkbox}>
+                <input type="checkbox" checked={isShippingDifferent} disabled={paymentPending} onChange={handleShippingDifferentChange} />
+                Use a different billing address
+              </label>
+              {isShippingDifferent && (
+                <BillingDetailsForm
+                  formTitle="Billing details" isShipping={false} onSubmit={handleBillingSubmit}
+                  initialValues={draft.billing} onChange={updateBilling} completed={billingSaved}
+                  paymentPending={paymentPending} nextStep={nextDescription}
+                />
+              )}
+            </section>
+            <p className={styles.coverage}>{t("shippingCoverageCheckoutIntro")}</p>
           </div>
-        )}
+          <aside className={styles.sidebar} aria-label="Order review and next step">
+            <div className={styles.nextStep}>
+              <p className={styles.eyebrow}>{detailsSaved && paymentReady ? "READY WHEN YOU ARE" : "YOUR NEXT STEP"}</p>
+              <h2>{detailsSaved ? "Continue to payment" : shippingSaved ? "Save your billing address" : "Add your shipping details"}</h2>
+              <p role="status" aria-live="polite">{nextDescription}</p>
+              <div className={styles.desktopAction}>{nextAction}</div>
+              {!detailsSaved && <div className={styles.paymentPreview}><LockKeyhole size={16} aria-hidden="true" /><span>Then: continue to secure payment<br /><small>Available after you save your {shippingSaved ? "billing" : "address"} details.</small></span></div>}
+              {paymentError && <p className={styles.warning} role="alert">{paymentError}</p>}
+              {paymentPending && <p role="status">Opening Stripe. Please wait…</p>}
+              {detailsSaved && !paymentReady && (
+                <p className={styles.warning} role="alert">
+                  {effectiveShippingCountry.length === 2 && !isSupportedShippingCountry(effectiveShippingCountry)
+                    ? t("checkoutPaymentBlockedUnsupported")
+                    : effectiveShippingCountry.length === 2 && !quotedCheckout?.ok
+                      ? t("shippingCoverageOrderSummaryUnavailable")
+                      : t("checkoutPaymentBlockedMissing")}
+                </p>
+              )}
+              {detailsSaved && paymentReady && (
+                <p className={styles.paymentNote}>{effectiveShippingCountry === "NL" ? t("checkoutPaymentMethodsNl") : t("checkoutPaymentMethodsDefault")}</p>
+              )}
+            </div>
+            <OrderSummary cartItems={cartItems} shippingCountryCode={effectiveShippingCountry} />
+          </aside>
+        </div>}
+        <div className={styles.mobileAction}>
+          <p>{cartLoading ? "Loading your order" : cartError ? "Your order needs attention" : cartItems.length === 0 ? "Add a print to get started" : detailsSaved ? (paymentReady ? "Details saved · Next: secure payment" : "Check delivery availability above") : shippingSaved ? "Next: save your billing address" : "Step 1 of 3 · Save your delivery address"}</p>
+          {paymentError && <p role="alert">{paymentError}</p>}
+          {nextAction}
+        </div>
       </div>
-    </div>
+    </main>
   );
 });
 

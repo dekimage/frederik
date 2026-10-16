@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import styles from "@/app/checkout/checkout.module.css";
 import {
   materialLabel,
   quoteOrderForShippingCountry,
@@ -45,8 +47,8 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
     quoted.unavailable.length > 0;
 
   return (
-    <div className="bg-gray-900 p-6 rounded-lg text-white border border-gray-700">
-      <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
+    <section className={styles.orderSummary} aria-labelledby="order-summary-heading">
+      <div className={styles.summaryHeading}><h2 id="order-summary-heading">Your order</h2><Link href="/cart">Edit cart</Link></div>
       <div className="space-y-4">
         {(cartItems || []).map((item) => (
           <div
@@ -62,7 +64,7 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
             </span>
           </div>
         ))}
-        <p className="text-xs text-gray-500 font-sans">
+        <p className="text-xs text-gray-400 font-sans">
           {t("shippingCoverageOrderSummaryLines")}
         </p>
         <div className="border-t border-gray-700 my-4"></div>
@@ -72,7 +74,7 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
         <div className="space-y-2 text-sm text-gray-300 mb-4 tabular-nums">
           <div className="flex justify-between gap-4">
             <span className="text-left shrink leading-snug">
-              Poster print (Σ qty)
+              Prints
             </span>
             <span>{formatCurrencyEUR(posterSubtotal)}</span>
           </div>
@@ -80,15 +82,9 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
             <>
               <div className="flex justify-between gap-4">
                 <span className="text-left shrink">
-                  Postal / delivery ({getCountryLabel(cc)})
+                  Delivery ({getCountryLabel(cc)})
                 </span>
                 <span>{formatCurrencyEUR(Number(shippingSubtotal))}</span>
-              </div>
-              <div className="flex justify-between gap-4 font-semibold text-white pt-2 border-t border-gray-700">
-                <span className="text-left shrink leading-snug">
-                  Merchandise including delivery (amount you pay)
-                </span>
-                <span>{formatCurrencyEUR(merchandiseWithShipping)}</span>
               </div>
             </>
           ) : (
@@ -103,17 +99,17 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
         </div>
 
         <div className="flex justify-between text-xl font-semibold py-4 border-t border-gray-700">
-          <span>Amount to pay</span>
+          <span>{quoted?.ok ? "Total" : "Print subtotal"}</span>
           <span>{formatCurrencyEUR(merchandiseWithShipping)}</span>
         </div>
-        <p className="text-xs text-gray-500 -mt-2 pb-2 font-sans">
-          {t("checkoutTotalIsFinal")}
+        <p className="text-xs text-gray-400 -mt-2 pb-2 font-sans">
+          {quoted?.ok ? t("checkoutTotalIsFinal") : "Delivery is calculated after you select your country."}
         </p>
-        <p className="text-xs text-gray-500 pb-2 font-sans">
+        <p className="text-xs text-gray-400 pb-2 font-sans">
           {t("shippingCoverageOrderSummaryStripeNote")}
         </p>
       </div>
-    </div>
+    </section>
   );
 };
 

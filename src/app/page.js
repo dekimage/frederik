@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import styles from "@/components/storefront.module.css";
 import springImage from "../../assets/spring.png";
 import summerImage from "../../assets/summer.png";
 import autumnImage from "../../assets/autumn.png";
@@ -399,7 +400,7 @@ const HomePage = observer(() => {
   }, []);
 
   return (
-    <div className="bg-black text-white min-h-screen pt-16">
+    <div className={`bg-black text-white min-h-screen ${styles.home}`}>
       {/* Hero Section */}
       <div className="relative h-[60vh] min-h-[400px] max-h-[600px] overflow-hidden">
         {loading ? (

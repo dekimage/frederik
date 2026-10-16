@@ -1,3 +1,6 @@
+import { startClientCheckout } from "@/lib/payments/startClientCheckout";
+import { ArrowRight } from "lucide-react";
+import styles from "@/app/checkout/checkout.module.css";
 import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "./ui/button";
 
@@ -8,50 +11,29 @@ const PaymentButton = ({
   billingDetails,
   shippingDetails,
   disabled = false,
+  pending, setPending, setError, paymentLock,
 }) => {
   const handlePayment = async () => {
-    if (disabled) return;
-    const stripe = await stripePromise;
-    const response = await fetch("/api/checkout-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cartItems,
-        billingDetails,
-        shippingDetails,
-      }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = "Unable to start checkout.";
-      try {
-        const data = await response.json();
-        errorMessage = data.error || errorMessage;
-      } catch {
-        errorMessage = await response.text();
-      }
-      console.error("Error creating checkout session:", errorMessage);
-      alert(errorMessage);
-      return;
-    }
-
-    const session = await response.json();
-
-    const result = await stripe.redirectToCheckout({
-      sessionId: session.id,
-    });
-
-    if (result.error) {
-      console.error(result.error.message);
-      alert(result.error.message);
+    if (disabled || paymentLock.current) return;
+    paymentLock.current = true;
+    setPending(true);
+    setError("");
+    try {
+      const stripe = await stripePromise;
+      await startClientCheckout(stripe, { cartItems, billingDetails, shippingDetails });
+    } catch (error) {
+      setError(error instanceof TypeError
+        ? "Could not connect to payment. Check your connection and try again. Your details are retained."
+        : error.message || "Unable to open payment. Please try again. Your details are retained.");
+    } finally {
+      paymentLock.current = false;
+      setPending(false);
     }
   };
 
   return (
-    <Button onClick={handlePayment} disabled={disabled}>
-      Proceed to Payment
+    <Button className={styles.primaryAction} onClick={handlePayment} disabled={disabled || pending} aria-busy={pending}>
+      {pending ? "Opening secure payment…" : <>Continue to payment <ArrowRight size={18} aria-hidden="true" /></>}
     </Button>
   );
 };

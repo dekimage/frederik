@@ -1,0 +1,86 @@
+.checkout { background: #000; color: #f9fafb; min-height: 100vh; padding: 164px 32px 72px; }
+.container { max-width: 1180px; margin: 0 auto; }
+.backLink { display: inline-flex; align-items: center; gap: 8px; color: #b9bec8; font-size: 14px; margin-bottom: 28px; }
+.backLink:hover, .summaryHeading a:hover { color: white; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.heading h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.2; font-weight: 700; margin-top: 8px; }
+.eyebrow { color: #c4b5fd; font-size: 11px; letter-spacing: .16em; font-weight: 700; }
+.secure { display: inline-flex; align-items: center; gap: 8px; color: #adb5c3; font-size: 13px; }
+.steps { display: flex; margin: 30px 0; padding: 20px 0; border-block: 1px solid #252b36; gap: 28px; }
+.steps li { display: flex; gap: 10px; align-items: center; color: #a1a8b6; font-size: 14px; }
+.steps li > span { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid #454d5b; border-radius: 50%; font-size: 12px; flex-shrink: 0; }
+.steps li[data-active="true"] { color: white; font-weight: 700; }
+.steps li[data-active="true"] > span { background: #7c3aed; border-color: #a78bfa; }
+.steps li[data-done="true"] > span { background: #18382e; border-color: #37775d; color: #a7f3d0; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(340px, 1fr); gap: 32px; align-items: start; }
+.details { min-width: 0; display: grid; gap: 20px; }
+.addressForm, .billing, .orderSummary { background: #101722; border: 1px solid #29313e; border-radius: 14px; padding: 26px; }
+.addressForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; scroll-margin-top: 154px; }
+.addressForm > div { min-width: 0; gap: 7px; }
+.addressForm > div:has([name="country"]), .addressForm > div:has([name="streetAddress1"]), .addressForm > div:has([name="streetAddress2"]), .addressForm > div:has([name="email"]), .formIntro, .formFooter, .formErrors { grid-column: 1 / -1; }
+.sectionHeading, .summaryHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sectionHeading h2, .summaryHeading h2 { font-size: 20px; font-weight: 700; }
+.sectionHeading > span { color: #8b95a6; font-size: 12px; }
+.formIntro > p, .billing > p { color: #abb4c3; font-size: 13px; line-height: 1.6; margin-top: 8px; }
+.addressForm label { color: #e5e7eb; font-size: 13px; font-weight: 400; }
+.addressForm input, .addressForm select { width: 100%; min-width: 0; min-height: 46px; border-radius: 7px; border: 1px solid #4b5563; background: #1b2432; padding: 11px 12px; color: #fff; font-size: 16px; scroll-margin-top: 154px; }
+.addressForm input:focus, .addressForm select:focus { outline: 2px solid #a78bfa; outline-offset: 2px; border-color: #a78bfa; }
+.addressForm input[aria-invalid="true"], .addressForm select[aria-invalid="true"] { border-color: #fb7185; }
+.addressForm [id$="-error"] { color: #fda4af; font-size: 12px; }
+.addressForm label + p { color: #a1aab9; }
+.formFooter { border-top: 1px solid #303846; padding-top: 20px; margin-top: 4px; }
+.formFooter > p { color: #b7c0ce; font-size: 13px; line-height: 1.6; margin-top: 10px; }
+.primaryAction { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 50px; height: auto; padding: 13px 16px; border: 1px solid #a78bfa; border-radius: 8px; background: #7c3aed; color: #fff; font-size: 15px; font-weight: 700; white-space: normal; text-align: center; transition: background .15s; }
+.primaryAction:hover { background: #6d28d9; }
+.primaryAction:focus-visible, .checkout a:focus-visible, .checkbox input:focus-visible { outline: 2px solid #ddd6fe; outline-offset: 4px; }
+.primaryAction:disabled { opacity: .55; cursor: not-allowed; }
+.checkbox { display: flex; align-items: center; gap: 12px; padding: 17px 0 0; font-size: 14px; cursor: pointer; }
+.checkbox input { width: 18px; height: 18px; accent-color: #8b5cf6; }
+.billing .addressForm { margin-top: 24px; padding: 0; border: 0; }
+.coverage { color: #9ca7b8; font-size: 12px; line-height: 1.7; padding: 0 4px; }
+.sidebar { position: sticky; top: 152px; display: grid; gap: 20px; min-width: 0; }
+.nextStep { padding: 24px; border: 1px solid #6c4d9b; border-radius: 14px; background: linear-gradient(135deg, #211632, #131925); }
+.nextStep h2 { font-size: 23px; font-weight: 700; line-height: 1.3; margin: 9px 0; }
+.nextStep > p:not(.eyebrow) { font-size: 14px; color: #c3c8d4; line-height: 1.6; }
+.desktopAction { margin-top: 20px; }
+.nextStep .warning { color: #fcd34d !important; margin-top: 14px; }
+.nextStep .paymentNote { font-size: 12px !important; margin-top: 12px; }
+.summaryHeading { margin-bottom: 20px; }
+.summaryHeading a { color: #c4b5fd; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.orderSummary { font-size: 14px; }
+.orderSummary span { overflow-wrap: anywhere; }
+.formErrors { background: #351d27; border: 1px solid #9f5367; color: #fecdd3; padding: 14px; border-radius: 8px; font-size: 13px; }
+.formErrors ul { margin-top: 8px; display: grid; gap: 5px; }
+.formErrors a { text-decoration: underline; text-underline-offset: 3px; }
+.mobileAction { display: none; }
+@media (max-width: 1023px) {
+  .checkout { padding-top: 144px; }
+  .layout { grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr); gap: 20px; }
+  .addressForm, .billing, .orderSummary, .nextStep { padding: 20px; }
+  .sidebar { top: 132px; }
+}
+@media (max-width: 767px) {
+  .checkout { padding: 116px 18px 150px; }
+  .heading { display: block; }
+  .secure { margin-top: 16px; }
+  .backLink { margin-bottom: 20px; }
+  .steps { gap: 12px; margin: 24px 0; justify-content: space-between; }
+  .steps li { flex-direction: column; gap: 8px; font-size: 11px; text-align: center; flex: 1; }
+  .layout { display: flex; flex-direction: column; gap: 20px; }
+  .details, .sidebar { width: 100%; }
+  .sidebar { position: static; }
+  .addressForm, .billing, .orderSummary, .nextStep { padding: 18px; }
+  .desktopAction { display: none; }
+  .mobileAction { display: block; position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: #10151ff5; border-top: 1px solid #514467; box-shadow: 0 -8px 30px #0005; padding: 12px 18px max(14px, env(safe-area-inset-bottom)); }
+  .mobileAction > p { font-size: 12px; color: #d3ccdf; margin-bottom: 8px; text-align: center; }
+  .addressForm, .addressForm input, .addressForm select { scroll-margin-top: 120px; }
+}
+@media (max-width: 374px) {
+  .addressForm { grid-template-columns: minmax(0, 1fr); }
+}
+
+.backLink { padding: 11px 16px; border: 1px solid #4b5563; border-radius: 8px; color: #f3f4f6; background: #151c28; min-height: 44px; }
+.backLink:hover { background: #252e3c; border-color: #a78bfa; }
+.paymentPreview { display: flex; gap: 10px; align-items: flex-start; margin-top: 18px; padding-top: 16px; border-top: 1px solid #4b3b60; color: #e2d9f3; font-size: 13px; }
+.paymentPreview small { color: #b9b1c5; font-size: 12px; line-height: 1.6; }
+.billing > .primaryAction { margin-top: 20px; max-width: 320px; }

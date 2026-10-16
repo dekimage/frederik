@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { observer } from "mobx-react-lite";
+import { clearCheckoutDraft } from "@/lib/checkoutDraft";
 import MobxStore from "@/mobx";
 import { Button } from "@/components/ui/button";
 import { formatCurrencyEUR, ORDER_STATUS_LABELS } from "@/lib/orderUtils";
@@ -49,6 +50,7 @@ function SuccessContent() {
             order: null,
           });
           MobxStore.clearCart();
+          clearCheckoutDraft();
           return;
         }
 
@@ -71,6 +73,7 @@ function SuccessContent() {
           order: data.order,
         });
         MobxStore.clearCart();
+        clearCheckoutDraft();
       } catch {
         setState({
           loading: false,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import MobxStore from "@/mobx";
+import styles from "@/components/storefront.module.css";
 import ProductCard from "@/components/ProductCard";
 import { ChevronLeft } from "lucide-react";
 
@@ -19,13 +20,13 @@ const AllProductsPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 mt-32">
-      <Link href={`/shop`} className="flex items-center mb-8">
+    <div className={styles.page}>
+      <Link href={`/shop`} className={styles.back}>
         <ChevronLeft size={32} /> BACK
       </Link>
-      <h1 className="text-4xl font-bold mb-8 text-center">All Products</h1>
+      <h1 className={styles.sectionTitle}>All Products</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className={styles.productGrid}>
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}

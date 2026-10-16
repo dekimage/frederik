@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./product-detail.module.css";
 import { useEffect, useMemo, useState } from "react";
 import {
   Select,
@@ -112,18 +113,18 @@ export default function ProductPrintOptions({ productId, product }) {
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6 space-y-6">
-      <p className="text-xs text-gray-400 leading-relaxed border border-gray-700 rounded-md p-3">
+    <div className={styles.options}>
+      <p className={styles.notice}>
         List prices use <span className="text-gray-300">{referenceLabel}</span>{" "}
         ({PDP_REFERENCE_COUNTRY}) as the reference market. {t("shippingCoveragePdp")}
       </p>
 
       <div>
-        <label className="block text-sm font-medium mb-3 text-gray-300">
+        <label htmlFor="print-material">
           Material / finish
         </label>
         <Select value={material} onValueChange={setMaterial}>
-          <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
+          <SelectTrigger id="print-material" className={styles.select}>
             <SelectValue placeholder="Select material" />
           </SelectTrigger>
           <SelectContent>
@@ -137,11 +138,11 @@ export default function ProductPrintOptions({ productId, product }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-3 text-gray-300">
+        <label htmlFor="print-size">
           Size
         </label>
         <Select value={sizeKey} onValueChange={setSizeKey}>
-          <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
+          <SelectTrigger id="print-size" className={styles.select}>
             <SelectValue placeholder="Select size" />
           </SelectTrigger>
           <SelectContent>
@@ -155,10 +156,10 @@ export default function ProductPrintOptions({ productId, product }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-3 text-gray-300">
+        <label htmlFor="print-quantity">
           Quantity
         </label>
-        <div className="flex items-center space-x-3">
+        <div className={styles.quantity}>
           <Button
             variant="outline"
             size="icon"
@@ -169,12 +170,12 @@ export default function ProductPrintOptions({ productId, product }) {
             -
           </Button>
           <input
+            id="print-quantity"
             type="number"
             value={quantity}
             onChange={(e) =>
               setQuantity(clampLineQuantity(e.target.value))
             }
-            className="w-16 text-center bg-gray-800 border border-gray-600 rounded-lg p-2 text-white"
             min={1}
             max={MAX_LINE_QUANTITY}
           />
@@ -190,14 +191,14 @@ export default function ProductPrintOptions({ productId, product }) {
             +
           </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-2">
+        <p className={styles.limit}>
           Max {MAX_LINE_QUANTITY} per line · {MAX_ORDER_TOTAL_QUANTITY} items
           per order
         </p>
       </div>
 
       {quote && (
-        <div className="border-t border-gray-700 pt-4 space-y-2 text-sm">
+        <div className={styles.quote}>
           {!quote.available ? (
             <p className="text-amber-400">
               Not available for {referenceLabel} in this catalogue (see
@@ -205,25 +206,25 @@ export default function ProductPrintOptions({ productId, product }) {
             </p>
           ) : (
             <>
-              <p className="text-xs text-gray-400 mb-2">
+              <p className={styles.priceNote}>
                 {t("pdpPrintPriceNote")}
               </p>
-              <div className="flex justify-between text-gray-300">
+              <div className={styles.priceRow}>
                 <span>Poster print ({referenceLabel})</span>
                 <span>€{Number(quote.priceExShipping).toFixed(2)} / each</span>
               </div>
-              <div className="flex justify-between text-xs text-gray-500 pt-1">
+              <div className={styles.delivery}>
                 <span>Delivery</span>
                 <span>Added at checkout from your address</span>
               </div>
-              <div className="flex justify-between text-lg font-semibold text-white pt-2 border-t border-gray-800">
+              <div className={styles.total}>
                 <span>This line × {quantity} (print only)</span>
                 <span>
                   €{Number(quote.priceExShipping * quantity).toFixed(2)}
                 </span>
               </div>
               {(quote.discountPercent || quote.marginLabel) && (
-                <p className="text-xs text-gray-500 pt-1">
+                <p className={styles.studio}>
                   Studio reference: wholesale discount {quote.discountPercent || ""}{" "}
                   · margin indicator {quote.marginLabel || ""}
                 </p>
@@ -237,7 +238,7 @@ export default function ProductPrintOptions({ productId, product }) {
         type="button"
         onClick={addToCart}
         disabled={!quote?.available}
-        className="w-full bg-white text-black hover:bg-gray-100 font-medium py-3 text-lg"
+        className={styles.addToCart}
       >
         Add to Cart
       </Button>

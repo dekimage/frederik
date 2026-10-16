@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { categories } from "../page";
 import MobxStore from "@/mobx";
+import styles from "@/components/storefront.module.css";
 import ProductCard from "@/components/ProductCard";
 import { CategoriesSection } from "../page";
 
@@ -29,15 +30,17 @@ const ShopPage = () => {
 
   return (
     <div className="min-h-screen bg-black text-white p-8 mt-16">
-      {/* <h1 className="text-4xl font-bold mb-8 text-center">Shop</h1> */}
+      {/* <h1 className={styles.sectionTitle}>Shop</h1> */}
 
       {/* Replace the Shop by Category Section with CategoriesSection */}
       <CategoriesSection categories={categories} isFromShop={true} />
 
+      <div className="max-w-[1360px] mx-auto">
+
       {/* Best Sellers Section */}
-      <div className="mb-12">
-        <h2 className="text-4xl font-bold mb-6 text-center">Best Sellers</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Best Sellers</h2>
+        <div className={`${styles.productGrid} ${styles.featuredGrid}`}>
           {bestSellers.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -45,21 +48,20 @@ const ShopPage = () => {
       </div>
 
       {/* All Products Section with View All Button */}
-      <div className="my-12">
-        <h2 className="text-4xl font-bold mb-6 text-center">All Products</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>All Products</h2>
+        <div className={styles.productGrid}>
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
 
         <div className="text-center mt-8">
-          <Link href="/shop/all">
-            <button className="bg-white text-black py-2 px-6 rounded">
-              View All Products
-            </button>
+          <Link href="/shop/all" className={styles.viewAll}>
+            View All Products
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "@/components/product-detail.module.css";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MobxStore from "@/mobx";
@@ -43,42 +44,43 @@ const ProductDetailsPage = observer(({ params }) => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 mt-24">
-      <div className="max-w-6xl mx-auto">
+    <div className={styles.page}>
+      <div className={styles.container}>
         <button
           onClick={() => router.back()}
-          className="flex items-center my-8 text-gray-300 hover:text-white transition-colors"
+          className={styles.back}
         >
           <ChevronLeft size={24} className="mr-2" />
           <span className="text-lg">Back</span>
         </button>
-        <div className="flex flex-col lg:flex-row gap-12">
-          <div className="lg:w-1/2">
-            <div className="bg-gray-900 rounded-lg p-4">
+        <div className={styles.layout}>
+          <div className={styles.gallery}>
+            <div className={styles.imageFrame}>
+              <button type="button" className={styles.imageButton} onClick={() => setIsFullScreen(true)}>
               <RemotePhotoImage
                 src={product.image}
                 alt={product.name}
                 width={500}
                 height={500}
-                className="w-full h-auto object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                className="hover:opacity-90 transition-opacity"
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                onClick={() => setIsFullScreen(true)}
               />
-              <p className="text-sm text-gray-400 mt-2 text-center">
+              </button>
+              <p>
                 Click to enlarge
               </p>
             </div>
           </div>
-          <div className="lg:w-1/2 space-y-6">
+          <div className={styles.details}>
             <div>
-              <h1 className="text-3xl font-semibold mb-4">{product.name}</h1>
+              <h1>{product.name}</h1>
             </div>
 
             <ProductPrintOptions productId={product_id} product={product} />
 
             <Link
               href="/cart"
-              className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+              className={styles.cartLink}
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
               View Shopping Cart
@@ -88,9 +90,9 @@ const ProductDetailsPage = observer(({ params }) => {
         </div>
 
         {/* Product Description - Full Width Section */}
-        <div className="mt-16 bg-gray-900 rounded-lg p-8">
-          <h2 className="text-2xl font-semibold mb-6">Product Description</h2>
-          <p className="text-lg text-gray-300 leading-relaxed">
+        <div className={styles.description}>
+          <h2>Product Description</h2>
+          <p>
             {product.description}
           </p>
         </div>
@@ -143,17 +145,7 @@ const ProductDetailsPage = observer(({ params }) => {
         </div>
       )}
 
-      <div className="fixed bottom-8 right-8">
-        <Link href="/cart">
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full w-16 h-16"
-          >
-            <ShoppingCart className="h-6 w-6 text-black" />
-          </Button>
-        </Link>
-      </div>
+
     </div>
   );
 });

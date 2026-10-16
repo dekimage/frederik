@@ -1,0 +1,42 @@
+.page { min-height: 100vh; background: #000; color: #f5f5f6; padding: 152px 24px 72px; }
+.container { max-width: 1280px; margin: auto; }
+.back { display: inline-flex; gap: 4px; align-items: center; min-height: 44px; margin-bottom: 22px; color: #b8c0cd; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; gap: 40px; }
+.gallery { position: sticky; top: 156px; min-width: 0; }
+.imageFrame { background: #0c1017; border: 1px solid #29313e; border-radius: 14px; overflow: hidden; padding: 22px; }
+.imageButton { display: flex; width: 100%; align-items: center; justify-content: center; min-height: 300px; aspect-ratio: 5 / 4; cursor: zoom-in; }
+.imageButton img { width: 100%; height: 100%; max-height: 580px; object-fit: contain; }
+.imageFrame p { font-size: 12px; text-align: center; color: #a7b1c1; margin: 16px 0 0; }
+.details { min-width: 0; }
+.details h1 { font-size: clamp(26px, 2.6vw, 36px); line-height: 1.25; letter-spacing: -.025em; font-weight: 700; margin: 0 0 18px; overflow-wrap: anywhere; }
+.options { padding: 22px; border: 1px solid #353243; border-radius: 14px; background: #101722; display: grid; gap: 16px; }
+.notice { color: #aeb8c8; font-size: 12px; line-height: 1.6; padding-bottom: 16px; border-bottom: 1px solid #ffffff14; }
+.options label { display: block; font-size: 13px; font-weight: 700; color: #dce0e8; margin-bottom: 8px; }
+.select { width: 100%; min-height: 48px; height: auto; padding: 12px 14px; background: #1b2432; border-color: #485061; color: #f3f2f6; border-radius: 8px; text-align: left; line-height: 1.5; gap: 10px; }
+.select > span { white-space: normal; overflow-wrap: anywhere; }
+.select:hover { border-color: #94869f; }
+.quantity { display: inline-flex; align-items: center; border: 1px solid #485061; border-radius: 8px; background: #1b2432; overflow: hidden; }
+.quantity button { width: 44px; height: 44px; border: 0; border-radius: 0; background: transparent; color: #e8e0f0; }
+.quantity button:hover { background: #392c49; }
+.quantity input { width: 52px; height: 44px; background: transparent; color: white; text-align: center; border-left: 1px solid #ffffff14; border-right: 1px solid #ffffff14; font-size: 16px; appearance: textfield; -moz-appearance: textfield; }
+.quantity input::-webkit-inner-spin-button, .quantity input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.limit { font-size: 12px; color: #9da9ba; margin-top: 8px; line-height: 1.5; }
+.quote { border-top: 1px solid #353b49; padding-top: 16px; display: grid; gap: 8px; font-size: 13px; }
+.priceNote { font-size: 12px; color: #aeb8c8; line-height: 1.55; }
+.priceRow, .delivery, .total { display: flex; justify-content: space-between; gap: 16px; color: #d3d9e2; font-variant-numeric: tabular-nums; }
+.priceRow > :last-child { white-space: nowrap; }
+.delivery { color: #a7b1c1; font-size: 12px; line-height: 1.5; }
+.delivery > :last-child { text-align: right; max-width: 65%; }
+.total { border-top: 1px solid #353b49; padding-top: 12px; align-items: baseline; font-size: 15px; font-weight: 700; color: #fafafa; }
+.total > :last-child { font-size: 24px; white-space: nowrap; }
+.studio { font-size: 11px; line-height: 1.6; color: #9da9ba; }
+.addToCart { height: auto; min-height: 50px; width: 100%; border: 1px solid #e2d9ec; border-radius: 8px; background: #f3eef8; color: #17121d; font-size: 15px; font-weight: 700; box-shadow: 0 4px 16px #0003; }
+.addToCart:hover { background: #dfd5eb; }
+.cartLink { display: flex; width: fit-content; align-items: center; gap: 8px; min-height: 44px; margin: 14px 0 0 auto; font-size: 13px; color: #c5bbd3; }
+.cartLink:hover { color: #fff; }
+.description { margin-top: 48px; padding: 28px 0; border-top: 1px solid #29313e; }
+.description h2 { font-size: 20px; font-weight: 700; margin-bottom: 14px; }
+.description p { max-width: 780px; color: #b8c1cf; font-size: 15px; line-height: 1.8; }
+.page button:focus-visible, .page a:focus-visible, .page input:focus-visible { outline: 2px solid #ddd6fe; outline-offset: 4px; }
+@media (max-width: 1023px) { .page { padding-top: 132px; } .layout { gap: 26px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .gallery { top: 136px; } .options { padding: 20px; } .imageFrame { padding: 16px; } .imageButton { min-height: 0; } }
+@media (max-width: 767px) { .page { padding: 104px 20px 48px; } .layout { grid-template-columns: minmax(0, 1fr); gap: 28px; } .gallery { position: static; } .imageButton { aspect-ratio: 5 / 4; } .details h1 { margin-bottom: 20px; } .options { gap: 20px; } .description { margin-top: 32px; } }
