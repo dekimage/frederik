@@ -1,4 +1,7 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
+import { useParams } from "next/navigation";
+
 import { useState, useEffect } from "react";
 
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -9,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/firebase";
+import MobxStore from "@/mobx";
+import { categoryAliases, categoryLabel } from "@/lib/catalog";
 
 const ImageSkeleton = () => (
   <div className="relative w-full h-[600px] bg-gray-800 animate-pulse rounded-lg">
@@ -18,9 +23,11 @@ const ImageSkeleton = () => (
   </div>
 );
 
-const CategoryPage = ({ params }) => {
-  const { id } = params;
+const CategoryPage = () => {
+  const { t: tr } = useStorefrontLanguage();
+  const { id } = useParams();
   const category = id;
+  const [categoryInfo, setCategoryInfo] = useState({ name: id });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [images, setImages] = useState([]);
@@ -30,18 +37,21 @@ const CategoryPage = ({ params }) => {
     const fetchImages = async () => {
       try {
         // Normalize the category (lowercase and trim)
-        const normalizedCategory = category.toLowerCase().trim();
+        await MobxStore.fetchCategories();
+        const entry = MobxStore.categories.find(
+          (item) =>
+            item.id === category ||
+            item.name.toLowerCase() === category.toLowerCase(),
+        );
+        setCategoryInfo(entry || { name: category });
+        setImages([]);
 
         const imagesRef = collection(db, "images");
         // Use case-insensitive query if your database supports it
         // or query for both cases
         const q = query(
           imagesRef,
-          where("category", "in", [
-            normalizedCategory,
-            normalizedCategory.charAt(0).toUpperCase() +
-              normalizedCategory.slice(1),
-          ])
+          where("category", "in", categoryAliases(entry, category)),
         );
 
         const querySnapshot = await getDocs(q);
@@ -87,17 +97,18 @@ const CategoryPage = ({ params }) => {
 
   const handlePreviousImage = () => {
     setActiveImageIndex(
-      (prevIndex) => (prevIndex - 1 + images.length) % images.length
+      (prevIndex) => (prevIndex - 1 + images.length) % images.length,
     );
   };
 
   return (
     <div className="bg-black text-white min-h-[1000px] pt-16 flex flex-col justify-center items-center">
       <div className="flex flex-col justify-center items-center px-4 sm:px-8 mt-16">
-        <LargeTitle title={category?.toUpperCase()} />
+        <LargeTitle title={categoryLabel(categoryInfo, tr).toUpperCase()} />
         <Link href={`/shop/${category}`}>
           <Button className="my-8 h-[55px] w-[200px] text-lg bg-white text-black hover:bg-gray-400">
-            BUY IMAGES <ShoppingBag size={24} className="ml-2" />
+            {tr("BUY IMAGES")}
+            <ShoppingBag size={24} className="ml-2" />
           </Button>
         </Link>
 
@@ -109,7 +120,9 @@ const CategoryPage = ({ params }) => {
           ) : images.length === 0 ? (
             // Show message if no images found
             <div className="col-span-2 text-center py-20">
-              <p className="text-xl">No images found for this category</p>
+              <p className="text-xl">
+                {tr("No images found for this category")}
+              </p>
             </div>
           ) : (
             // Show actual images
@@ -155,7 +168,7 @@ const CategoryPage = ({ params }) => {
               {/* Active Image */}
               <RemotePhotoImage
                 src={images[activeImageIndex].url}
-                alt="Active Image"
+                alt={tr("Active Image")}
                 className="w-full h-auto object-contain"
                 width={600}
                 height={600}
@@ -164,28 +177,34 @@ const CategoryPage = ({ params }) => {
               />
 
               {/* Left Arrow */}
-              <div
+              <button
+                type="button"
+                aria-label={tr("Previous image")}
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-300 hover:text-white"
                 onClick={handlePreviousImage}
               >
                 <FaArrowLeft size={40} />
-              </div>
+              </button>
 
               {/* Right Arrow */}
-              <div
+              <button
+                type="button"
+                aria-label={tr("Next image")}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-300 hover:text-white"
                 onClick={handleNextImage}
               >
                 <FaArrowRight size={40} />
-              </div>
+              </button>
 
               {/* Close Modal */}
-              <div
+              <button
+                type="button"
+                aria-label={tr("Close image")}
                 className="absolute top-4 right-4 text-white cursor-pointer text-3xl"
                 onClick={() => setIsModalOpen(false)}
               >
                 ×
-              </div>
+              </button>
             </div>
           </div>
         )}

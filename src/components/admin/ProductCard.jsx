@@ -1,4 +1,5 @@
 "use client";
+import { validateImageUpload } from "@/lib/imageUpload";
 
 import { useState, useEffect } from "react";
 import { adminFetch } from "@/lib/adminFetch";
@@ -37,6 +38,13 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      try {
+        validateImageUpload(file);
+      } catch (error) {
+        alert(error.message);
+        e.target.value = "";
+        return;
+      }
       setNewImageFile(file);
       setFormData((prev) => ({ ...prev, sharedGalleryImage: false }));
       const reader = new FileReader();
@@ -127,7 +135,11 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
       <Card className="overflow-hidden">
         <div className="relative aspect-square">
           <img
-            src={imagePreview || formData.image || "https://via.placeholder.com/400"}
+            src={
+              imagePreview ||
+              formData.image ||
+              "https://via.placeholder.com/400"
+            }
             alt={formData.name}
             className="object-cover w-full h-full"
           />
@@ -280,7 +292,9 @@ export default function ProductCard({ product, onUpdate, onDelete }) {
               >
                 {product.published !== false ? "PUBLISHED" : "DRAFT"}
               </span>
-              <p className="text-sm text-muted-foreground">{product.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {product.description}
+              </p>
               <p className="text-xs text-muted-foreground">
                 Print prices: material × size × country catalogue
               </p>

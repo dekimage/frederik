@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public catalogue only. Every write goes through authenticated server routes.
+    match /products/{id} { allow read: if true; }
+    match /images/{id} { allow read: if true; }
+    match /categories/{id} { allow read: if true; }
+    match /reels/{id} { allow read: if true; }
+    match /shopConfig/{id} { allow read: if true; }
+    // Orders, pending orders, email history and everything else are server-only.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

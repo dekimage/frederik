@@ -1,15 +1,10 @@
 import { Suspense } from "react";
 import TrackOrderClient from "./TrackOrderClient";
+import StorefrontLoading from "@/components/StorefrontLoading";
 
 export default function TrackOrderPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="bg-black text-white min-h-screen flex items-center justify-center">
-          Loading…
-        </div>
-      }
-    >
+    <Suspense fallback={<StorefrontLoading />}>
       <TrackOrderClient />
     </Suspense>
   );

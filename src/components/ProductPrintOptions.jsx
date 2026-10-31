@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
 
 import styles from "./product-detail.module.css";
 import { useEffect, useMemo, useState } from "react";
@@ -29,6 +30,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ProductPrintOptions({ productId, product }) {
+  const { t: tr, language } = useStorefrontLanguage();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [material, setMaterial] = useState("");
@@ -36,11 +38,11 @@ export default function ProductPrintOptions({ productId, product }) {
   const [quantity, setQuantity] = useState(1);
 
   const mats = useMemo(() => listMaterials(), []);
-  const referenceLabel = getCountryLabel(PDP_REFERENCE_COUNTRY);
+  const referenceLabel = getCountryLabel(PDP_REFERENCE_COUNTRY, language);
 
   const sizeOptions = useMemo(
     () => (material ? listSizesForMaterial(material) : []),
-    [material]
+    [material],
   );
 
   useEffect(() => {
@@ -63,9 +65,11 @@ export default function ProductPrintOptions({ productId, product }) {
   const addToCart = () => {
     if (!quote || !quote.available || !Number.isFinite(quote.priceExShipping)) {
       toast({
-        title: "Not available",
-        description:
+        title: tr("Not available"),
+        description: tr(
           "This combination is not available in the catalogue for the reference market.",
+        ),
+
         variant: "destructive",
       });
       return;
@@ -82,31 +86,33 @@ export default function ProductPrintOptions({ productId, product }) {
 
     if (result?.ok === false) {
       toast({
-        title: "Order limit reached",
-        description: result.error,
+        title: tr("Order limit reached"),
+        description: tr(result.error),
         variant: "destructive",
       });
       return;
     }
     toast({
-      title: "Added to Cart",
+      title: tr("Added to Cart"),
       description: (
         <div className="flex flex-col gap-2">
           <p className="font-medium">
             {quantity} × {product.name}
           </p>
           <p className="text-sm text-gray-400">
-            {materialLabel(material)}, {quote.sizeRaw}
+            {materialLabel(material, language)}, {quote.sizeRaw}
           </p>
         </div>
       ),
+
       duration: 5000,
       action: (
         <Link
           href="/cart"
           className="bg-white text-black px-3 py-1 rounded-md text-sm font-medium hover:bg-gray-100"
         >
-          View Cart
+          {" "}
+          {tr("View Cart")}{" "}
         </Link>
       ),
     });
@@ -115,22 +121,23 @@ export default function ProductPrintOptions({ productId, product }) {
   return (
     <div className={styles.options}>
       <p className={styles.notice}>
-        List prices use <span className="text-gray-300">{referenceLabel}</span>{" "}
-        ({PDP_REFERENCE_COUNTRY}) as the reference market. {t("shippingCoveragePdp")}
+        {" "}
+        {tr("List prices use")}{" "}
+        <span className="text-gray-300">{referenceLabel}</span> (
+        {PDP_REFERENCE_COUNTRY} {tr(") as the reference market.")}{" "}
+        {t("shippingCoveragePdp")}
       </p>
 
       <div>
-        <label htmlFor="print-material">
-          Material / finish
-        </label>
+        <label htmlFor="print-material"> {tr("Material / finish")} </label>
         <Select value={material} onValueChange={setMaterial}>
           <SelectTrigger id="print-material" className={styles.select}>
-            <SelectValue placeholder="Select material" />
+            <SelectValue placeholder={tr("Select material")} />
           </SelectTrigger>
           <SelectContent>
             {mats.map((m) => (
               <SelectItem key={m} value={m}>
-                {materialLabel(m)}
+                {materialLabel(m, language)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -138,12 +145,10 @@ export default function ProductPrintOptions({ productId, product }) {
       </div>
 
       <div>
-        <label htmlFor="print-size">
-          Size
-        </label>
+        <label htmlFor="print-size"> {tr("Size")} </label>
         <Select value={sizeKey} onValueChange={setSizeKey}>
           <SelectTrigger id="print-size" className={styles.select}>
-            <SelectValue placeholder="Select size" />
+            <SelectValue placeholder={tr("Select size")} />
           </SelectTrigger>
           <SelectContent>
             {sizeOptions.map((s) => (
@@ -156,9 +161,7 @@ export default function ProductPrintOptions({ productId, product }) {
       </div>
 
       <div>
-        <label htmlFor="print-quantity">
-          Quantity
-        </label>
+        <label htmlFor="print-quantity"> {tr("Quantity")} </label>
         <div className={styles.quantity}>
           <Button
             variant="outline"
@@ -173,27 +176,25 @@ export default function ProductPrintOptions({ productId, product }) {
             id="print-quantity"
             type="number"
             value={quantity}
-            onChange={(e) =>
-              setQuantity(clampLineQuantity(e.target.value))
-            }
+            onChange={(e) => setQuantity(clampLineQuantity(e.target.value))}
             min={1}
             max={MAX_LINE_QUANTITY}
           />
+
           <Button
             variant="outline"
             size="icon"
             type="button"
-            onClick={() =>
-              setQuantity((q) => clampLineQuantity(q + 1))
-            }
+            onClick={() => setQuantity((q) => clampLineQuantity(q + 1))}
             className="bg-gray-800 border-gray-600 hover:bg-gray-700"
           >
             +
           </Button>
         </div>
         <p className={styles.limit}>
-          Max {MAX_LINE_QUANTITY} per line · {MAX_ORDER_TOTAL_QUANTITY} items
-          per order
+          {" "}
+          {tr("Max")} {MAX_LINE_QUANTITY} {tr("per line \xB7")}{" "}
+          {MAX_ORDER_TOTAL_QUANTITY} {tr("items per order")}{" "}
         </p>
       </div>
 
@@ -201,32 +202,42 @@ export default function ProductPrintOptions({ productId, product }) {
         <div className={styles.quote}>
           {!quote.available ? (
             <p className="text-amber-400">
-              Not available for {referenceLabel} in this catalogue (see
-              Important information).
+              {" "}
+              {tr("Not available for")} {referenceLabel}{" "}
+              {tr("in this catalogue (see Important information).")}{" "}
             </p>
           ) : (
             <>
-              <p className={styles.priceNote}>
-                {t("pdpPrintPriceNote")}
-              </p>
+              <p className={styles.priceNote}>{t("pdpPrintPriceNote")}</p>
               <div className={styles.priceRow}>
-                <span>Poster print ({referenceLabel})</span>
-                <span>€{Number(quote.priceExShipping).toFixed(2)} / each</span>
+                <span>
+                  {" "}
+                  {tr("Poster print (")} {referenceLabel})
+                </span>
+                <span>
+                  €{Number(quote.priceExShipping).toFixed(2)}{" "}
+                  {tr("/ each")}{" "}
+                </span>
               </div>
               <div className={styles.delivery}>
-                <span>Delivery</span>
-                <span>Added at checkout from your address</span>
+                <span> {tr("Delivery")} </span>
+                <span> {tr("Added at checkout from your address")} </span>
               </div>
               <div className={styles.total}>
-                <span>This line × {quantity} (print only)</span>
+                <span>
+                  {" "}
+                  {tr("This line \xD7")} {quantity} {tr("(print only)")}{" "}
+                </span>
                 <span>
                   €{Number(quote.priceExShipping * quantity).toFixed(2)}
                 </span>
               </div>
               {(quote.discountPercent || quote.marginLabel) && (
                 <p className={styles.studio}>
-                  Studio reference: wholesale discount {quote.discountPercent || ""}{" "}
-                  · margin indicator {quote.marginLabel || ""}
+                  {" "}
+                  {tr("Studio reference: wholesale discount")}{" "}
+                  {quote.discountPercent || ""} {tr("\xB7 margin indicator")}{" "}
+                  {quote.marginLabel || ""}
                 </p>
               )}
             </>
@@ -240,7 +251,8 @@ export default function ProductPrintOptions({ productId, product }) {
         disabled={!quote?.available}
         className={styles.addToCart}
       >
-        Add to Cart
+        {" "}
+        {tr("Add to Cart")}{" "}
       </Button>
     </div>
   );

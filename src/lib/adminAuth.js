@@ -14,16 +14,18 @@ export function getAllowedAdminEmails() {
 }
 
 export async function verifyAdminRequest(request) {
-  const session = verifyAdminSession(
-    readCookie(request, ADMIN_SESSION_COOKIE)
-  );
+  const session = verifyAdminSession(readCookie(request, ADMIN_SESSION_COOKIE));
   if (session) {
     const email = session.email.toLowerCase();
     const allowed = getAllowedAdminEmails();
     if (allowed.includes(email)) {
       return { ok: true, email, session: true };
     }
-    return { ok: false, status: 403, error: "Not authorized for admin access." };
+    return {
+      ok: false,
+      status: 403,
+      error: "Not authorized for admin access.",
+    };
   }
 
   const authHeader = request.headers.get("authorization") || "";
@@ -45,8 +47,12 @@ export async function verifyAdminRequest(request) {
     const email = (decoded.email || "").toLowerCase();
     const allowed = getAllowedAdminEmails();
 
-    if (!email || (allowed.length > 0 && !allowed.includes(email))) {
-      return { ok: false, status: 403, error: "Not authorized for admin access." };
+    if (!email || !allowed.includes(email)) {
+      return {
+        ok: false,
+        status: 403,
+        error: "Not authorized for admin access.",
+      };
     }
 
     return { ok: true, email, uid: decoded.uid };
@@ -59,7 +65,10 @@ export async function requireAdmin(request) {
   const result = await verifyAdminRequest(request);
   if (!result.ok) {
     return {
-      response: Response.json({ error: result.error }, { status: result.status }),
+      response: Response.json(
+        { error: result.error },
+        { status: result.status },
+      ),
     };
   }
   return { admin: result };

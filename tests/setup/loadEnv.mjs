@@ -3,6 +3,8 @@ import path from "node:path";
 import { config as loadEnv } from "dotenv";
 
 const root = process.cwd();
+// Automated payment simulations don't complete a Checkout-owned invoice.
+process.env.STRIPE_INVOICE_CREATION_ENABLED = "false";
 const envLocal = path.join(root, ".env.local");
 const envFile = path.join(root, ".env");
 
@@ -30,8 +32,11 @@ for (const key of required) {
   }
 }
 
-if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.startsWith("sk_test_")) {
+if (
+  process.env.STRIPE_SECRET_KEY &&
+  !process.env.STRIPE_SECRET_KEY.startsWith("sk_test_")
+) {
   throw new Error(
-    "Payment integration tests require Stripe TEST keys (sk_test_...). Aborting."
+    "Payment integration tests require Stripe TEST keys (sk_test_...). Aborting.",
   );
 }

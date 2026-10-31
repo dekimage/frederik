@@ -24,23 +24,26 @@ async function findOrderByStripeSessionId(sessionId) {
 }
 
 async function deliverOrderEmails(orderDocRef, order) {
+  if (
+    order.emailDelivery?.status === "sent" &&
+    !order.emailDelivery.customer &&
+    !order.emailDelivery.admin
+  )
+    return order.emailDelivery;
   try {
     await sendOrderPaidEmails(order);
-    const emailDelivery = {
-      provider: "resend",
-      status: "sent",
-      sentAt: new Date(),
-    };
-    await orderDocRef.update({ emailDelivery });
-    return emailDelivery;
+    await orderDocRef.update({
+      "emailDelivery.provider": "resend",
+      "emailDelivery.status": "sent",
+      "emailDelivery.sentAt": new Date(),
+    });
+    return (await orderDocRef.get()).data().emailDelivery;
   } catch (error) {
     await orderDocRef.update({
-      emailDelivery: {
-        provider: "resend",
-        status: "failed",
-        lastAttemptAt: new Date(),
-        lastError: error.message,
-      },
+      "emailDelivery.provider": "resend",
+      "emailDelivery.status": "failed",
+      "emailDelivery.lastAttemptAt": new Date(),
+      "emailDelivery.lastError": error.message,
     });
     throw error;
   }
@@ -49,22 +52,12 @@ async function deliverOrderEmails(orderDocRef, order) {
 async function finalizePaidOrder(session) {
   if (session.payment_status !== "paid") {
     throw new Error(
-      `Refusing to fulfill unpaid Checkout Session ${session.id} (${session.payment_status})`
+      `Refusing to fulfill unpaid Checkout Session ${session.id} (${session.payment_status})`,
     );
   }
 
   const stripe = getStripeClient();
   const existingRecord = await findOrderByStripeSessionId(session.id);
-  if (existingRecord) {
-    const { ref, order } = existingRecord;
-    if (
-      order.paymentStatus === "paid" &&
-      order.emailDelivery?.status !== "sent"
-    ) {
-      order.emailDelivery = await deliverOrderEmails(ref, order);
-    }
-    return { duplicate: true, order };
-  }
 
   const orderRefId = session.metadata?.orderRef;
   if (!orderRefId) {
@@ -73,23 +66,28 @@ async function finalizePaidOrder(session) {
 
   const pendingRef = firestore.collection("pendingOrders").doc(orderRefId);
   const pendingDoc = await pendingRef.get();
+  const deterministicRecord = await firestore
+    .collection("orders")
+    .doc(orderRefId)
+    .get();
 
-  if (!pendingDoc.exists) {
+  if (!pendingDoc.exists && !existingRecord && !deterministicRecord.exists) {
     throw new Error("Pending order not found");
   }
 
-  const pendingData = pendingDoc.data();
+  const pendingData = pendingDoc.data() || {};
 
   let receiptUrl = null;
   if (session.payment_intent) {
     try {
       const paymentIntent = await stripe.paymentIntents.retrieve(
         session.payment_intent,
-        { expand: ["latest_charge"] }
+        { expand: ["latest_charge"] },
       );
       receiptUrl = paymentIntent.latest_charge?.receipt_url || null;
     } catch (error) {
       console.error("Unable to fetch Stripe receipt URL:", error.message);
+      throw error; // Let Stripe retry instead of permanently emailing missing documents.
     }
   }
 
@@ -102,7 +100,7 @@ async function finalizePaidOrder(session) {
       "Stripe reported tax on a KOR checkout (automatic_tax is off). amountTax:",
       amountTax,
       "session:",
-      session.id
+      session.id,
     );
   }
 
@@ -132,40 +130,74 @@ async function finalizePaidOrder(session) {
     ],
   };
 
-  const orderDocRef = await firestore.collection("orders").add(orderPayload);
+  // The pending order ID is the stable identity across concurrent Stripe events.
+  // Keep legacy orders at their existing IDs, including on retry.
+  const orderDocRef =
+    existingRecord?.ref || firestore.collection("orders").doc(orderRefId);
+  const duplicate = await firestore.runTransaction(async (tx) => {
+    const current = await tx.get(orderDocRef);
+    if (current.exists) return true;
+    tx.create(orderDocRef, orderPayload);
+    return false;
+  });
   const orderId = orderDocRef.id;
+  const storedOrder = (await orderDocRef.get()).data();
+
+  let stripeInvoice = null;
+  // Checkout can attach its invoice after the completed event was emitted.
+  if (session.invoice_creation?.enabled || session.invoice) {
+    const latest = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ["invoice"],
+    });
+    stripeInvoice =
+      typeof latest.invoice === "string"
+        ? await stripe.invoices.retrieve(latest.invoice)
+        : latest.invoice;
+    if (!stripeInvoice?.hosted_invoice_url || !stripeInvoice?.invoice_pdf) {
+      throw new Error("Stripe invoice is not ready yet; retry this webhook.");
+    }
+  }
 
   const invoiceHtml = buildInvoiceHtml({
     orderId,
-    billingDetails: orderPayload.billingDetails,
-    shippingDetails: orderPayload.shippingDetails,
-    validatedLineItems: orderPayload.validatedLineItems || [],
+    billingDetails: storedOrder.billingDetails,
+    shippingDetails: storedOrder.shippingDetails,
+    validatedLineItems: storedOrder.validatedLineItems || [],
     amountSubtotal,
     amountTotal,
     currency: orderPayload.currency,
-    paidAt: orderPayload.paidAt,
+    paidAt: storedOrder.paidAt?.toDate?.() || storedOrder.paidAt,
     receiptUrl,
   });
 
   const invoice = {
-    receiptUrl,
-    html: invoiceHtml,
+    ...storedOrder.invoice,
+    receiptUrl: receiptUrl || storedOrder.invoice?.receiptUrl || null,
+    stripeInvoiceId:
+      stripeInvoice?.id || storedOrder.invoice?.stripeInvoiceId || null,
+    hostedInvoiceUrl:
+      stripeInvoice?.hosted_invoice_url ||
+      storedOrder.invoice?.hostedInvoiceUrl ||
+      null,
+    invoicePdf:
+      stripeInvoice?.invoice_pdf || storedOrder.invoice?.invoicePdf || null,
+    html: storedOrder.invoice?.html || invoiceHtml,
     amountSubtotal,
     amountTax,
     amountTotal,
     currency: orderPayload.currency,
-    createdAt: new Date(),
+    createdAt: storedOrder.invoice?.createdAt || new Date(),
   };
 
   await orderDocRef.update({ invoice });
 
   await pendingRef.delete();
 
-  const order = { id: orderId, ...orderPayload, invoice };
+  const order = { id: orderId, ...storedOrder, invoice };
 
   order.emailDelivery = await deliverOrderEmails(orderDocRef, order);
 
-  return { duplicate: false, order };
+  return { duplicate, order };
 }
 
 async function deletePendingOrder(orderRefId) {
@@ -210,18 +242,30 @@ async function markOrderRefunded(charge) {
   if (snapshot.empty) return;
 
   const doc = snapshot.docs[0];
-  await doc.ref.update({
-    paymentStatus: "refunded",
-    orderStatus: ORDER_STATUS.REFUNDED,
-    refundedAt: new Date(),
-    statusHistory: [
-      ...(doc.data().statusHistory || []),
-      {
-        status: ORDER_STATUS.REFUNDED,
-        at: new Date().toISOString(),
-        source: "webhook:charge.refunded",
-      },
-    ],
+  const fullyRefunded =
+    charge.refunded === true ||
+    (charge.amount > 0 && charge.amount_refunded >= charge.amount);
+  await firestore.runTransaction(async (tx) => {
+    const current = await tx.get(doc.ref);
+    const previous = current.data();
+    if (previous.amountRefunded >= (charge.amount_refunded || 0) / 100) return;
+    tx.update(doc.ref, {
+      paymentStatus: fullyRefunded ? "refunded" : "partially_refunded",
+      orderStatus: fullyRefunded ? ORDER_STATUS.REFUNDED : previous.orderStatus,
+      amountRefunded: (charge.amount_refunded || 0) / 100,
+      refundedAt: new Date(),
+      statusHistory: [
+        ...(previous.statusHistory || []),
+        {
+          status: fullyRefunded ? ORDER_STATUS.REFUNDED : previous.orderStatus,
+          note: fullyRefunded
+            ? "Fully refunded in Stripe"
+            : "Partially refunded in Stripe",
+          at: new Date().toISOString(),
+          source: "webhook:charge.refunded",
+        },
+      ],
+    });
   });
 }
 
@@ -255,7 +299,7 @@ export async function processStripeWebhookEvent(event) {
         await markPendingPaymentState(
           session.metadata?.orderRef,
           session.payment_status || "processing",
-          ORDER_STATUS.PENDING_PAYMENT
+          ORDER_STATUS.PENDING_PAYMENT,
         );
         return { action: "payment_processing" };
       }
@@ -270,7 +314,7 @@ export async function processStripeWebhookEvent(event) {
       await markPendingPaymentState(
         session.metadata?.orderRef,
         "failed",
-        ORDER_STATUS.PAYMENT_FAILED
+        ORDER_STATUS.PAYMENT_FAILED,
       );
       return { action: "async_payment_failed" };
     }
@@ -289,7 +333,7 @@ export async function processStripeWebhookEvent(event) {
         await markPendingPaymentState(
           orderRefId,
           "failed",
-          ORDER_STATUS.PAYMENT_FAILED
+          ORDER_STATUS.PAYMENT_FAILED,
         );
       } else {
         const pendingSnapshot = await firestore
@@ -329,7 +373,7 @@ export async function verifyAndProcessStripeWebhook(rawBody, signature) {
   const event = stripe.webhooks.constructEvent(
     rawBody,
     signature,
-    process.env.STRIPE_WEBHOOK_SECRET
+    process.env.STRIPE_WEBHOOK_SECRET,
   );
   return processStripeWebhookEvent(event);
 }

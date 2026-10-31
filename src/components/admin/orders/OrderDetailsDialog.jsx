@@ -5,6 +5,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { useState } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
@@ -39,6 +41,27 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function OrderDetailsDialog({ order, open, onOpenChange }) {
+  const [emailNotice, setEmailNotice] = useState("");
+  const [retrying, setRetrying] = useState(false);
+  async function retryEmails() {
+    setRetrying(true);
+    try {
+      const response = await adminFetch(
+        `/api/admin/orders/${order.id}/retry-emails`,
+        { method: "POST" },
+      );
+      const data = await response.json();
+      setEmailNotice(
+        response.ok
+          ? "Email retry completed. Refresh orders to see the latest delivery status."
+          : data.error,
+      );
+    } catch {
+      setEmailNotice("Unable to retry emails.");
+    } finally {
+      setRetrying(false);
+    }
+  }
   const stripeMode = deriveStripeMode(order);
   const fullName = (details) => {
     if (!details) return "N/A";
@@ -65,7 +88,8 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                 <h3 className="font-semibold mb-2">Order Information</h3>
                 <div className="space-y-1 text-sm">
                   <p>
-                    <span className="font-medium">Order ID:</span> {order.id || "N/A"}
+                    <span className="font-medium">Order ID:</span>{" "}
+                    {order.id || "N/A"}
                   </p>
                   <p>
                     <span className="font-medium">Created:</span>{" "}
@@ -95,7 +119,9 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                   </p>
                   <p>
                     <span className="font-medium">Order Status:</span>{" "}
-                    {ORDER_STATUS_LABELS[order.orderStatus] || order.orderStatus || "N/A"}
+                    {ORDER_STATUS_LABELS[order.orderStatus] ||
+                      order.orderStatus ||
+                      "N/A"}
                   </p>
                   <p>
                     <span className="font-medium">Order emails:</span>{" "}
@@ -108,7 +134,9 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                             : "text-muted-foreground"
                       }
                     >
-                      {(order.emailDelivery?.status || "not recorded").toUpperCase()}
+                      {(
+                        order.emailDelivery?.status || "not recorded"
+                      ).toUpperCase()}
                     </span>
                   </p>
                   {order.emailDelivery?.lastError ? (
@@ -116,6 +144,27 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                       Email error: {order.emailDelivery.lastError}
                     </p>
                   ) : null}
+                  {["customer", "admin"].map((role) => (
+                    <p key={role}>
+                      {role === "customer" ? "Customer email" : "Admin email"}:{" "}
+                      {order.emailDelivery?.[role]?.status || "not recorded"}
+                    </p>
+                  ))}
+                  <p className="text-xs">
+                    Accepted/sent means submitted to Resend. Delivered means
+                    accepted by the recipient mail server.
+                  </p>
+                  {order.emailDelivery?.status === "failed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={retrying}
+                      onClick={retryEmails}
+                    >
+                      {retrying ? "Retrying…" : "Retry unsent emails"}
+                    </Button>
+                  )}
+                  {emailNotice && <p role="status">{emailNotice}</p>}
                   <p>
                     <span className="font-medium">Subtotal:</span>{" "}
                     {formatCurrencyEUR(order.amountSubtotal ?? order.subtotal)}
@@ -170,9 +219,11 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                   </p>
                   <div className="mt-2">
                     <span className="font-medium">Address:</span>
-                    {formatAddressLines(order.shippingDetails).map((line, i) => (
-                      <p key={i}>{line}</p>
-                    ))}
+                    {formatAddressLines(order.shippingDetails).map(
+                      (line, i) => (
+                        <p key={i}>{line}</p>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -197,20 +248,24 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                         </div>
                       ) : null}
                       <div className="flex-1">
-                        <h4 className="font-medium">{item.name || item.productId}</h4>
+                        <h4 className="font-medium">
+                          {item.name || item.productId}
+                        </h4>
                         <div className="mt-1 text-sm">
                           <span className="font-medium">Options:</span>{" "}
-                          {item.material || "N/A"} · {item.sizeRaw || item.size || item.sizeKey}
+                          {item.material || "N/A"} ·{" "}
+                          {item.sizeRaw || item.size || item.sizeKey}
                         </div>
                         <div className="text-sm">
-                          <span className="font-medium">Quantity:</span> {item.quantity}
+                          <span className="font-medium">Quantity:</span>{" "}
+                          {item.quantity}
                         </div>
                         <div className="text-sm">
                           <span className="font-medium">Line total:</span>{" "}
                           {formatCurrencyEUR(
                             item.lineTotalIncShipping ??
                               Number(item.unitPriceIncShipping || item.price) *
-                                Number(item.quantity || 1)
+                                Number(item.quantity || 1),
                           )}
                         </div>
                       </div>
@@ -223,6 +278,30 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
             {order.invoice ? (
               <div className="text-sm">
                 <h3 className="font-semibold mb-2">Invoice / Receipt</h3>
+                {order.invoice.hostedInvoiceUrl && (
+                  <p>
+                    <a
+                      className="underline"
+                      href={order.invoice.hostedInvoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Stripe invoice
+                    </a>
+                  </p>
+                )}
+                {order.invoice.invoicePdf && (
+                  <p>
+                    <a
+                      className="underline"
+                      href={order.invoice.invoicePdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download Stripe invoice PDF
+                    </a>
+                  </p>
+                )}
                 {order.invoice.hasHtml ? (
                   <div className="mb-3 flex flex-wrap gap-2">
                     <Button asChild size="sm" variant="outline">
@@ -235,7 +314,9 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                       </a>
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <a href={`/api/admin/orders/${order.id}/invoice?download=1`}>
+                      <a
+                        href={`/api/admin/orders/${order.id}/invoice?download=1`}
+                      >
                         Download HTML
                       </a>
                     </Button>
@@ -254,7 +335,8 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                   </p>
                 ) : null}
                 <p className="text-muted-foreground mt-2">
-                  HTML invoice stored in Firestore on {formatTimestamp(order.invoice.createdAt)}
+                  HTML invoice stored in Firestore on{" "}
+                  {formatTimestamp(order.invoice.createdAt)}
                 </p>
               </div>
             ) : null}
@@ -265,7 +347,8 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                 <div className="text-sm space-y-2">
                   {order.statusHistory.map((entry, index) => (
                     <p key={index}>
-                      {entry.at}: {ORDER_STATUS_LABELS[entry.status] || entry.status}
+                      {entry.at}:{" "}
+                      {ORDER_STATUS_LABELS[entry.status] || entry.status}
                       {entry.note ? ` — ${entry.note}` : ""}
                     </p>
                   ))}

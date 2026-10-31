@@ -1,105 +1,69 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import MobxStore from "@/mobx";
-import styles from "@/components/storefront.module.css";
-import ProductCard from "@/components/ProductCard"; // Make sure to import ProductCard
-import { ChevronLeft } from "lucide-react";
+import { useParams } from "next/navigation";
+import { observer } from "mobx-react-lite";
 import Link from "next/link";
-import Image from "next/image";
-import springImage from "../../../../assets/spring.png";
-import summerImage from "../../../../assets/summer.png";
-import autumnImage from "../../../../assets/autumn.png";
-import winterImage from "../../../../assets/winter.png";
+import MobxStore from "@/mobx";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { categoryLabel } from "@/lib/catalog";
+import ProductCard from "@/components/ProductCard";
+import { CategoriesSection } from "@/app/page";
+import styles from "@/components/storefront.module.css";
 
-const getImageByCategory = (category) => {
-  switch (category.toLowerCase()) {
-    case "spring":
-      return springImage;
-    case "summer":
-      return summerImage;
-    case "autumn":
-      return autumnImage;
-    case "winter":
-      return winterImage;
-    default:
-      return springImage;
-  }
-};
-
-const CategoryPage = ({ params }) => {
-  const { category } = params;
+const CategoryPage = observer(() => {
+  const { category } = useParams();
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const fetchCategoryProducts = async () => {
-      const productsList = await MobxStore.fetchProductsByCategory(category);
-      setProducts(productsList);
+    let active = true;
+    setLoading(true);
+    MobxStore.fetchProductsByCategory(category)
+      .then((rows) => {
+        if (active) setProducts(rows);
+      })
+      .catch(() => {
+        if (active) setProducts([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
     };
-
-    fetchCategoryProducts();
   }, [category]);
-
-  // Define all categories
-  const allCategories = [
-    { id: "spring", name: "Spring" },
-    { id: "summer", name: "Summer" },
-    { id: "autumn", name: "Autumn" },
-    { id: "winter", name: "Winter" },
-  ];
-
-  // Filter out current category to show other collections
-  const otherCollections = allCategories.filter(
-    (cat) => cat.id !== category.toLowerCase()
+  const entry = MobxStore.categories.find(
+    (item) =>
+      item.id === category ||
+      item.name.toLowerCase() === category.toLowerCase(),
   );
-
   return (
-    <div className={styles.page}>
-      <Link href={`/shop`} className={styles.back}>
-        <ChevronLeft size={32} /> BACK
+    <main className={styles.page}>
+      <Link href="/shop" className={styles.back}>
+        {t("Back")}
       </Link>
       <h1 className={styles.sectionTitle}>
-        {category.charAt(0).toUpperCase() + category.slice(1)} Collection
+        {categoryLabel(entry || { name: category }, t)} {t("Collection")}
       </h1>
-
-      {/* Products Grid */}
-      <div className={styles.productGrid}>
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-
-      {/* Other Collections Section */}
-      <div className={styles.otherCollections}>
-        <h2 className={styles.sectionTitle}>
-          Explore Other Collections
-        </h2>
-        <div className={styles.otherGrid}>
-          {otherCollections.map((collection) => (
-            <Link
-              key={collection.id}
-              href={`/shop/${collection.id}`}
-              className={styles.categoryCard}
-            >
-              <div className={styles.categoryImage}>
-                <Image
-                  src={getImageByCategory(collection.name)}
-                  alt={collection.name}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className={styles.categoryOverlay}>
-                  <h3>
-                    {collection.name} Collection
-                  </h3>
-                </div>
-              </div>
-            </Link>
+      {loading ? (
+        <p role="status">{t("Loading...")}</p>
+      ) : products.length ? (
+        <div className={styles.productGrid}>
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
-      </div>
-    </div>
+      ) : (
+        <p>{t("No products found")}</p>
+      )}
+      <h2 className={styles.sectionTitle}>{t("Explore Other Collections")}</h2>
+      <CategoriesSection
+        isFromShop
+        categories={MobxStore.categories.filter(
+          (item) => item.id !== entry?.id,
+        )}
+      />
+    </main>
   );
-};
-
+});
 export default CategoryPage;

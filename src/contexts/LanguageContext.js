@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { extendedTranslations } from "@/data/importantInfoTranslations";
+import { translateStorefront } from "@/data/storefrontTranslations";
 
 const LanguageContext = createContext();
 
@@ -29,7 +30,7 @@ const translations = {
     autumn: "Autumn",
     winter: "Winter",
 
-    // Home page (hero tagline is hardcoded EN on both locales — see page.js)
+    // Home page
     introduction: "INTRODUCTION",
     introText1:
       "Passionate, bursting with creativity and with an eye for detail. That's how I would describe myself. With my professional drones, I am always looking for new ways to explore the world and capture it on film. This gives me the chance to create unique images from a perspective like you have never seen the world before.",
@@ -238,8 +239,12 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem("language", newLanguage);
   };
 
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const t = (key) => {
-    return translations[language]?.[key] || key;
+    return translations[language]?.[key] || translateStorefront(key, language);
   };
 
   if (isLoading) {

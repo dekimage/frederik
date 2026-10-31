@@ -5,7 +5,8 @@ export async function GET(request, { params }) {
   const authResult = await requireAdmin(request);
   if (authResult.response) return authResult.response;
 
-  const order = await firestore.collection("orders").doc(params.id).get();
+  const { id } = await params;
+  const order = await firestore.collection("orders").doc(id).get();
   if (!order.exists) {
     return Response.json({ error: "Order not found" }, { status: 404 });
   }
@@ -14,7 +15,7 @@ export async function GET(request, { params }) {
   if (!html) {
     return Response.json(
       { error: "This order has no stored HTML invoice." },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -24,7 +25,7 @@ export async function GET(request, { params }) {
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `${disposition}; filename="invoice-${params.id}.html"`,
+      "Content-Disposition": `${disposition}; filename="invoice-${id}.html"`,
       "Cache-Control": "private, no-store",
       "Content-Security-Policy":
         "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; font-src https: data:; frame-ancestors 'self'",

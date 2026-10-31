@@ -1,4 +1,5 @@
 "use client";
+import { validateImageUpload } from "@/lib/imageUpload";
 
 import { useState } from "react";
 import { adminFetch } from "@/lib/adminFetch";
@@ -29,6 +30,13 @@ export default function AddImageDialog({ open, onClose, onSuccess }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      try {
+        validateImageUpload(file);
+      } catch (error) {
+        alert(error.message);
+        e.target.value = "";
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -109,7 +117,7 @@ export default function AddImageDialog({ open, onClose, onSuccess }) {
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground">
-              JPEG, PNG, WebP, AVIF, or GIF. Maximum 10 MB.
+              JPEG, PNG, WebP, AVIF, or GIF. Maximum 4 MB.
             </p>
           </div>
 

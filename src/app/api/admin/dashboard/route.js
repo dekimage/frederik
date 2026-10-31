@@ -16,27 +16,41 @@ export async function GET(request) {
         .map((doc) => ({ id: doc.id, ...doc.data() }))
         .filter((order) => !order.archivedAt);
       const liveOrders = activeOrders.filter(
-        (order) => deriveStripeMode(order) === STRIPE_MODE.LIVE
+        (order) => deriveStripeMode(order) === STRIPE_MODE.LIVE,
       );
       const testOrders = activeOrders.filter(
-        (order) => deriveStripeMode(order) === STRIPE_MODE.TEST
+        (order) => deriveStripeMode(order) === STRIPE_MODE.TEST,
       );
 
       const livePaidRevenue = liveOrders
-        .filter((order) => order.paymentStatus === "paid")
-        .reduce((sum, order) => sum + Number(order.amountTotal || 0), 0);
+        .filter((order) =>
+          ["paid", "partially_refunded"].includes(order.paymentStatus),
+        )
+        .reduce(
+          (sum, order) =>
+            sum +
+            Number(order.amountTotal || 0) -
+            Number(order.amountRefunded || 0),
+          0,
+        );
 
       const pendingFulfillment = liveOrders.filter(
         (order) =>
-          order.paymentStatus === "paid" &&
+          ["paid", "partially_refunded"].includes(order.paymentStatus) &&
           !order.isFulfilled &&
           !["cancelled", "refunded", "payment_failed", "expired"].includes(
-            order.orderStatus
-          )
+            order.orderStatus,
+          ),
       ).length;
 
       const emailFailures = activeOrders.filter(
-        (order) => order.emailDelivery?.status === "failed"
+        (order) =>
+          order.emailDelivery?.status === "failed" ||
+          ["customer", "admin"].some((role) =>
+            ["failed", "bounced", "complained"].includes(
+              order.emailDelivery?.[role]?.status,
+            ),
+          ),
       ).length;
 
       return Response.json({
@@ -44,7 +58,7 @@ export async function GET(request) {
           categories: categories.size,
           products: products.size,
           draftProducts: products.docs.filter(
-            (doc) => doc.data().published === false
+            (doc) => doc.data().published === false,
           ).length,
           images: images.size,
           activeOrders: activeOrders.length,
@@ -59,7 +73,7 @@ export async function GET(request) {
       console.error("Error loading admin dashboard:", error);
       return Response.json(
         { error: "Unable to load dashboard statistics." },
-        { status: 500 }
+        { status: 500 },
       );
     }
   });

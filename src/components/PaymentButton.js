@@ -1,3 +1,4 @@
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
 import { startClientCheckout } from "@/lib/payments/startClientCheckout";
 import { ArrowRight } from "lucide-react";
 import styles from "@/app/checkout/checkout.module.css";
@@ -11,8 +12,12 @@ const PaymentButton = ({
   billingDetails,
   shippingDetails,
   disabled = false,
-  pending, setPending, setError, paymentLock,
+  pending,
+  setPending,
+  setError,
+  paymentLock,
 }) => {
+  const { t: tr } = useStorefrontLanguage();
   const handlePayment = async () => {
     if (disabled || paymentLock.current) return;
     paymentLock.current = true;
@@ -20,11 +25,22 @@ const PaymentButton = ({
     setError("");
     try {
       const stripe = await stripePromise;
-      await startClientCheckout(stripe, { cartItems, billingDetails, shippingDetails });
+      await startClientCheckout(stripe, {
+        cartItems,
+        billingDetails,
+        shippingDetails,
+      });
     } catch (error) {
-      setError(error instanceof TypeError
-        ? "Could not connect to payment. Check your connection and try again. Your details are retained."
-        : error.message || "Unable to open payment. Please try again. Your details are retained.");
+      setError(
+        error instanceof TypeError
+          ? tr(
+              "Could not connect to payment. Check your connection and try again. Your details are retained.",
+            )
+          : error.message ||
+              tr(
+                "Unable to open payment. Please try again. Your details are retained.",
+              ),
+      );
     } finally {
       paymentLock.current = false;
       setPending(false);
@@ -32,8 +48,20 @@ const PaymentButton = ({
   };
 
   return (
-    <Button className={styles.primaryAction} onClick={handlePayment} disabled={disabled || pending} aria-busy={pending}>
-      {pending ? "Opening secure payment…" : <>Continue to payment <ArrowRight size={18} aria-hidden="true" /></>}
+    <Button
+      className={styles.primaryAction}
+      onClick={handlePayment}
+      disabled={disabled || pending}
+      aria-busy={pending}
+    >
+      {pending ? (
+        tr("Opening secure payment\u2026")
+      ) : (
+        <>
+          {tr("Continue to payment")}
+          <ArrowRight size={18} aria-hidden="true" />
+        </>
+      )}
     </Button>
   );
 };

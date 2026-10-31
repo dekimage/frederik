@@ -29,7 +29,10 @@ export const STRIPE_MODE = {
 };
 
 export function deriveStripeMode(order = {}) {
-  if (order.stripeMode === STRIPE_MODE.LIVE || order.stripeMode === STRIPE_MODE.TEST) {
+  if (
+    order.stripeMode === STRIPE_MODE.LIVE ||
+    order.stripeMode === STRIPE_MODE.TEST
+  ) {
     return order.stripeMode;
   }
   if (typeof order.stripeLivemode === "boolean") {
@@ -45,7 +48,11 @@ export function deriveStripeMode(order = {}) {
 export function normalizeAddressFormValues(values = {}) {
   const firstName = (values.firstName || "").trim();
   const lastName = (values.lastName || "").trim();
-  const country = (values.country || "").toString().trim().toUpperCase().slice(0, 2);
+  const country = (values.country || "")
+    .toString()
+    .trim()
+    .toUpperCase()
+    .slice(0, 2);
   const streetAddress1 = (values.streetAddress1 || "").trim();
   const streetAddress2 = (values.streetAddress2 || "").trim();
   const city = (values.city || "").trim();
@@ -103,7 +110,10 @@ export function formatAddressLines(details = {}) {
 
   const cityLine = [city, state, postalCode].filter(Boolean).join(", ");
 
-  return [line1, line2, cityLine, country].filter(Boolean);
+  const name =
+    details.name ||
+    [details.firstName, details.lastName].filter(Boolean).join(" ");
+  return [name, line1, line2, cityLine, country].filter(Boolean);
 }
 
 export function escapeHtml(value) {
@@ -148,7 +158,8 @@ export function orderEmailMatches(order, email) {
 export function deriveOrderStatusFromFulfillment(orderStatus, isFulfilled) {
   if (orderStatus === ORDER_STATUS.REFUNDED) return ORDER_STATUS.REFUNDED;
   if (orderStatus === ORDER_STATUS.CANCELLED) return ORDER_STATUS.CANCELLED;
-  if (orderStatus === ORDER_STATUS.PAYMENT_FAILED) return ORDER_STATUS.PAYMENT_FAILED;
+  if (orderStatus === ORDER_STATUS.PAYMENT_FAILED)
+    return ORDER_STATUS.PAYMENT_FAILED;
   if (isFulfilled) return ORDER_STATUS.SHIPPED;
   if (
     orderStatus === ORDER_STATUS.SHIPPED ||
@@ -187,6 +198,8 @@ export function sanitizeOrderForCustomer(order) {
     invoice: order.invoice
       ? {
           receiptUrl: order.invoice.receiptUrl,
+          hostedInvoiceUrl: order.invoice.hostedInvoiceUrl,
+          invoicePdf: order.invoice.invoicePdf,
           createdAt: order.invoice.createdAt,
         }
       : null,

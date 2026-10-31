@@ -11,167 +11,108 @@ import { ORDER_STATUS } from "@/lib/orderUtils";
 import { getStripePaymentMethodTypes } from "@/lib/stripePaymentMethods";
 
 import {
-
   buildStripeEvent,
-
   buildTestAddress,
-
   cleanupTestArtifacts,
-
   createTestRunId,
-
   getOrderBySessionId,
-
   getPendingOrder,
-
   getStripeTestClient,
-
   createFailedPaymentIntentForPending,
-
   simulateDeclinedCheckoutPayment,
-
   simulateSuccessfulCheckoutPayment,
-
   resolveTestCartLine,
-
   sleep,
-
 } from "../helpers/paymentTestContext.js";
 
 import {
-
   logResult,
-
   logSection,
-
   logStep,
-
   logTestEnd,
-
   logTestStart,
-
   logWarning,
-
 } from "../helpers/paymentTestLogger.js";
 
-
-
 const hasRequiredEnv =
-
   process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") &&
-
   process.env.STRIPE_WEBHOOK_SECRET &&
-
   process.env.FIREBASE_PROJECT_ID;
-
-
 
 const describeIfReady = hasRequiredEnv ? describe : describe.skip;
 
-
-
 describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
-
   const artifacts = [];
 
-
-
   afterEach(async () => {
-
     while (artifacts.length > 0) {
-
       const item = artifacts.pop();
 
       await cleanupTestArtifacts(item);
-
     }
-
   });
 
-
-
   beforeAll(() => {
-
     if (!hasRequiredEnv) {
-
       console.warn(
-
-        "Skipping payment integration tests — set sk_test_ Stripe keys and Firebase env vars."
-
+        "Skipping payment integration tests — set sk_test_ Stripe keys and Firebase env vars.",
       );
 
       return;
-
     }
-
-
 
     logSection("Payment integration suite — environment");
 
     logStep("Uses real Stripe test API (sk_test_*) and real Firestore");
 
-    logStep("Each test gets a unique testRunId; afterEach cleans Stripe + Firestore artifacts");
+    logStep(
+      "Each test gets a unique testRunId; afterEach cleans Stripe + Firestore artifacts",
+    );
 
-    logStep("Card payments are simulated via pm_card_visa — no browser redirect");
-
-    logWarning(
-
-      "iDEAL is only checked as a payment_method_types config for NL — no iDEAL bank redirect is completed in these tests"
-
+    logStep(
+      "Card payments are simulated via pm_card_visa — no browser redirect",
     );
 
     logWarning(
+      "iDEAL is only checked as a payment_method_types config for NL — no iDEAL bank redirect is completed in these tests",
+    );
 
-      "Enabling iDEAL in Stripe Dashboard is still required for real customers to see it at checkout"
-
+    logWarning(
+      "Enabling iDEAL in Stripe Dashboard is still required for real customers to see it at checkout",
     );
 
     logStep("Set PAYMENT_TEST_QUIET=1 to suppress detailed logs");
-
   });
 
-
-
   function trackArtifact(meta) {
-
     artifacts.push(meta);
 
     return meta;
-
   }
 
-
-
   async function startCheckout({
-
     country = "NL",
 
     testRunId = createTestRunId("checkout"),
-
   } = {}) {
-
     const address = buildTestAddress(country, testRunId);
 
     const cartItems = [await resolveTestCartLine(country)];
 
+    logStep(
+      "Creating checkout (pendingOrders + Stripe Customer + Checkout Session)",
+      {
+        testRunId,
 
+        country,
 
-    logStep("Creating checkout (pendingOrders + Stripe Customer + Checkout Session)", {
+        email: address.email,
 
-      testRunId,
-
-      country,
-
-      email: address.email,
-
-      cartItems,
-
-    });
-
-
+        cartItems,
+      },
+    );
 
     const checkout = await createCheckoutSession({
-
       cartItems,
 
       billingDetails: address,
@@ -179,25 +120,17 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
       shippingDetails: address,
 
       testRunId,
-
     });
 
-
-
     trackArtifact({
-
       testRunId,
 
       stripeCustomerId: checkout.stripeCustomerId,
 
       sessionIds: [checkout.sessionId],
-
     });
 
-
-
     logStep("Checkout created", {
-
       pendingOrderId: checkout.pendingOrderId,
 
       sessionId: checkout.sessionId,
@@ -209,60 +142,42 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
       shippingCountry: checkout.shippingCountry,
 
       amountTotalCents: checkout.session?.amount_total,
-
     });
-
-
 
     return { ...checkout, testRunId, address, cartItems };
-
   }
 
-
-
   it("creates checkout session with NL iDEAL + card payment methods", async () => {
+    logTestStart(
+      "creates checkout session with NL iDEAL + card payment methods",
+      {
+        scenario:
+          "NL shipping address → createCheckoutSession → Stripe session should request card + ideal",
 
-    logTestStart("creates checkout session with NL iDEAL + card payment methods", {
+        asserts: [
+          "paymentMethodTypes includes ideal and card",
 
-      scenario:
+          "pendingOrders doc exists with PENDING_PAYMENT",
 
-        "NL shipping address → createCheckoutSession → Stripe session should request card + ideal",
+          "stripeSessionId starts with cs_test_",
 
-      asserts: [
+          "automatic_tax is off and amount_tax is 0 (Path KOR)",
+        ],
 
-        "paymentMethodTypes includes ideal and card",
+        notTested: [
+          "iDEAL bank redirect payment flow",
 
-        "pendingOrders doc exists with PENDING_PAYMENT",
+          "iDEAL visible on Stripe hosted checkout UI (Dashboard enablement)",
 
-        "stripeSessionId starts with cs_test_",
-
-        "automatic_tax is off and amount_tax is 0 (Path KOR)",
-
-      ],
-
-      notTested: [
-
-        "iDEAL bank redirect payment flow",
-
-        "iDEAL visible on Stripe hosted checkout UI (Dashboard enablement)",
-
-        "completing payment with iDEAL",
-
-      ],
-
-    });
-
-
+          "completing payment with iDEAL",
+        ],
+      },
+    );
 
     const { paymentMethodTypes, shippingCountry, pendingOrderId, session } =
-
       await startCheckout({ country: "NL" });
 
-
-
     logStep("Stripe session payment_method_types returned", paymentMethodTypes);
-
-
 
     expect(shippingCountry).toBe("NL");
 
@@ -276,12 +191,9 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(session?.total_details?.amount_tax ?? 0).toBe(0);
 
-
-
     const pending = await getPendingOrder(pendingOrderId);
 
     logStep("Firestore pendingOrders snapshot", {
-
       id: pendingOrderId,
 
       orderStatus: pending?.orderStatus,
@@ -291,10 +203,7 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
       stripeSessionId: pending?.stripeSessionId,
 
       testRunId: pending?.testRunId,
-
     });
-
-
 
     expect(pending).toBeTruthy();
 
@@ -302,60 +211,38 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(pending.stripeSessionId).toMatch(/^cs_test_/);
 
-
-
     logTestEnd("creates checkout session with NL iDEAL + card payment methods");
-
   });
 
-
-
   it("creates checkout session with card-only for non-NL shipping", async () => {
+    logTestStart(
+      "creates checkout session with card-only for non-NL shipping",
+      {
+        scenario: "DE shipping address → payment methods should be card only",
 
-    logTestStart("creates checkout session with card-only for non-NL shipping", {
-
-      scenario: "DE shipping address → payment methods should be card only",
-
-      asserts: ["paymentMethodTypes equals [card]"],
-
-    });
-
-
+        asserts: ["paymentMethodTypes equals [card]"],
+      },
+    );
 
     const { paymentMethodTypes, shippingCountry } = await startCheckout({
-
       country: "DE",
-
     });
 
-
-
     logStep("Non-NL payment methods", paymentMethodTypes);
-
-
 
     expect(shippingCountry).toBe("DE");
 
     expect(paymentMethodTypes).toEqual(["card"]);
 
-
-
     logTestEnd("creates checkout session with card-only for non-NL shipping");
-
   });
 
-
-
   it("completes card payment and syncs paid order to Firestore", async () => {
-
     logTestStart("completes card payment and syncs paid order to Firestore", {
-
       scenario:
-
         "Create checkout → simulate card pay (pm_card_visa) → fire checkout.session.completed webhook → order in orders collection",
 
       asserts: [
-
         "order paymentStatus paid, orderStatus PROCESSING",
 
         "pendingOrders doc removed",
@@ -363,51 +250,36 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
         "invoice HTML contains order id",
 
         "sendOrderPaidEmails called (mocked)",
-
       ],
 
       notTested: ["actual email delivery", "iDEAL payment"],
-
     });
-
-
 
     const { sessionId, pendingOrderId } = await startCheckout();
 
-    logStep("Simulating successful card payment", { sessionId, paymentMethod: "pm_card_visa" });
-
-
+    logStep("Simulating successful card payment", {
+      sessionId,
+      paymentMethod: "pm_card_visa",
+    });
 
     const { completedSession: paidSession } =
-
       await simulateSuccessfulCheckoutPayment(sessionId);
 
     logStep("Simulated paid session", {
-
       payment_status: paidSession.payment_status,
 
       payment_intent: paidSession.payment_intent,
-
     });
 
-
-
     expect(paidSession.payment_status).toBe("paid");
-
-
 
     logStep("Processing checkout.session.completed webhook");
 
     const result = await processStripeWebhookEvent(
-
-      buildStripeEvent("checkout.session.completed", paidSession)
-
+      buildStripeEvent("checkout.session.completed", paidSession),
     );
 
-
-
     logStep("Webhook result", {
-
       duplicate: result.duplicate,
 
       orderId: result.order?.id,
@@ -415,10 +287,7 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
       paymentStatus: result.order?.paymentStatus,
 
       orderStatus: result.order?.orderStatus,
-
     });
-
-
 
     expect(result.duplicate).toBe(false);
 
@@ -428,29 +297,24 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(result.order.invoice?.html).toContain(result.order.id);
 
-
-
     const pendingAfter = await getPendingOrder(pendingOrderId);
 
-    logStep("pendingOrders after webhook", { pendingOrderId, exists: Boolean(pendingAfter) });
+    logStep("pendingOrders after webhook", {
+      pendingOrderId,
+      exists: Boolean(pendingAfter),
+    });
 
     expect(pendingAfter).toBeNull();
-
-
 
     const stored = await getOrderBySessionId(sessionId);
 
     logStep("orders collection lookup by stripeSessionId", {
-
       orderId: stored?.id,
 
       lineItemCount: stored?.validatedLineItems?.length,
 
       testRunId: stored?.testRunId,
-
     });
-
-
 
     expect(stored?.stripeSessionId).toBe(sessionId);
 
@@ -458,33 +322,28 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(vi.mocked(sendOrderPaidEmails)).toHaveBeenCalled();
 
-
-
     logTestEnd("completes card payment and syncs paid order to Firestore");
-
   });
 
-
-
   it("is idempotent when checkout.session.completed webhook is replayed", async () => {
+    logTestStart(
+      "is idempotent when checkout.session.completed webhook is replayed",
+      {
+        scenario:
+          "Same checkout.session.completed event processed twice → second is duplicate",
 
-    logTestStart("is idempotent when checkout.session.completed webhook is replayed", {
-
-      scenario: "Same checkout.session.completed event processed twice → second is duplicate",
-
-      asserts: ["first.duplicate false", "second.duplicate true", "same order id"],
-
-    });
-
-
+        asserts: [
+          "first.duplicate false",
+          "second.duplicate true",
+          "same order id",
+        ],
+      },
+    );
 
     const { sessionId } = await startCheckout();
 
     const { completedSession: paidSession } =
-
       await simulateSuccessfulCheckoutPayment(sessionId);
-
-
 
     const event = buildStripeEvent("checkout.session.completed", paidSession);
 
@@ -496,19 +355,13 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     const second = await processStripeWebhookEvent(event);
 
-
-
     logStep("Idempotency check", {
-
       firstDuplicate: first.duplicate,
 
       secondDuplicate: second.duplicate,
 
       orderId: first.order?.id,
-
     });
-
-
 
     expect(first.duplicate).toBe(false);
 
@@ -516,34 +369,24 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(first.order.id).toBe(second.order.id);
 
-
-
-    logTestEnd("is idempotent when checkout.session.completed webhook is replayed");
-
+    logTestEnd(
+      "is idempotent when checkout.session.completed webhook is replayed",
+    );
   });
 
-
-
   it("waits for async payment success before fulfilling an order", async () => {
-
     logTestStart("waits for async payment success before fulfilling an order", {
-
       scenario:
         "Unpaid checkout.session.completed keeps pending order → async success fulfills it",
 
       asserts: [
-
         "unpaid completion does not create an order",
 
         "pending order remains",
 
         "async success creates the paid order",
-
       ],
-
     });
-
-
 
     const { sessionId, pendingOrderId } = await startCheckout();
 
@@ -551,15 +394,9 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     const unpaidSession = await stripe.checkout.sessions.retrieve(sessionId);
 
-
-
     const processing = await processStripeWebhookEvent(
-
-      buildStripeEvent("checkout.session.completed", unpaidSession)
-
+      buildStripeEvent("checkout.session.completed", unpaidSession),
     );
-
-
 
     expect(processing.action).toBe("payment_processing");
 
@@ -567,19 +404,12 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(await getPendingOrder(pendingOrderId)).not.toBeNull();
 
-
-
     const { completedSession: paidSession } =
-
       await simulateSuccessfulCheckoutPayment(sessionId);
 
     const completed = await processStripeWebhookEvent(
-
-      buildStripeEvent("checkout.session.async_payment_succeeded", paidSession)
-
+      buildStripeEvent("checkout.session.async_payment_succeeded", paidSession),
     );
-
-
 
     expect(completed.duplicate).toBe(false);
 
@@ -587,137 +417,103 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     expect(await getPendingOrder(pendingOrderId)).toBeNull();
 
-
-
     logTestEnd("waits for async payment success before fulfilling an order");
-
   });
 
-
-
   it("marks pending checkout failed on payment_intent.payment_failed", async () => {
+    logTestStart(
+      "marks pending checkout failed on payment_intent.payment_failed",
+      {
+        scenario:
+          "Create checkout → attach payment intent → fire payment_intent.payment_failed webhook",
 
-    logTestStart("marks pending checkout failed on payment_intent.payment_failed", {
+        asserts: [
+          "pendingOrders still exists",
 
-      scenario:
+          "paymentStatus failed",
 
-        "Create checkout → attach payment intent → fire payment_intent.payment_failed webhook",
-
-      asserts: [
-
-        "pendingOrders still exists",
-
-        "paymentStatus failed",
-
-        "orderStatus PAYMENT_FAILED",
-
-      ],
-
-    });
-
-
+          "orderStatus PAYMENT_FAILED",
+        ],
+      },
+    );
 
     const { sessionId, pendingOrderId } = await startCheckout();
 
-    const paymentIntentId = await createFailedPaymentIntentForPending(sessionId);
+    const paymentIntentId =
+      await createFailedPaymentIntentForPending(sessionId);
 
-    logStep("Created payment intent linked to pending order", { paymentIntentId });
-
-
+    logStep("Created payment intent linked to pending order", {
+      paymentIntentId,
+    });
 
     await processStripeWebhookEvent(
-
       buildStripeEvent("payment_intent.payment_failed", {
-
         id: paymentIntentId,
 
         object: "payment_intent",
-
-      })
-
+      }),
     );
-
-
 
     const pending = await getPendingOrder(pendingOrderId);
 
     logStep("pendingOrders after payment_failed", {
-
       pendingOrderId,
 
       paymentStatus: pending?.paymentStatus,
 
       orderStatus: pending?.orderStatus,
-
     });
-
-
 
     expect(pending.paymentStatus).toBe("failed");
 
     expect(pending.orderStatus).toBe(ORDER_STATUS.PAYMENT_FAILED);
 
-
-
-    logTestEnd("marks pending checkout failed on payment_intent.payment_failed");
-
+    logTestEnd(
+      "marks pending checkout failed on payment_intent.payment_failed",
+    );
   });
 
-
-
   it("declines card payment with Stripe test decline payment method", async () => {
+    logTestStart(
+      "declines card payment with Stripe test decline payment method",
+      {
+        scenario: "Attempt pm_card_chargeDeclined on checkout session amount",
 
-    logTestStart("declines card payment with Stripe test decline payment method", {
+        asserts: ["outcome.declined is true"],
 
-      scenario: "Attempt pm_card_chargeDeclined on checkout session amount",
-
-      asserts: ["outcome.declined is true"],
-
-      notTested: ["Firestore state after decline (only Stripe API error path)"],
-
-    });
-
-
+        notTested: [
+          "Firestore state after decline (only Stripe API error path)",
+        ],
+      },
+    );
 
     const { sessionId } = await startCheckout();
 
-    logStep("Simulating declined card", { sessionId, paymentMethod: "pm_card_chargeDeclined" });
+    logStep("Simulating declined card", {
+      sessionId,
+      paymentMethod: "pm_card_chargeDeclined",
+    });
 
     const outcome = await simulateDeclinedCheckoutPayment(sessionId);
-
-
 
     logResult("decline outcome", { declined: outcome.declined });
 
     expect(outcome.declined).toBe(true);
 
-
-
     logTestEnd("declines card payment with Stripe test decline payment method");
-
   });
 
-
-
   it("cleans up pending order on checkout.session.expired", async () => {
-
     logTestStart("cleans up pending order on checkout.session.expired", {
-
       scenario:
-
         "Create checkout → expire session via Stripe API → fire checkout.session.expired webhook",
 
       asserts: ["pendingOrders doc deleted"],
-
     });
-
-
 
     const { sessionId, pendingOrderId } = await startCheckout();
 
     const stripe = getStripeTestClient();
-
-
 
     logStep("Expiring Stripe checkout session", { sessionId });
 
@@ -727,222 +523,226 @@ describeIfReady("Payment integration (Stripe test mode + Firestore)", () => {
 
     logStep("Expired session status", { status: expiredSession.status });
 
-
-
     await processStripeWebhookEvent(
-
-      buildStripeEvent("checkout.session.expired", expiredSession)
-
+      buildStripeEvent("checkout.session.expired", expiredSession),
     );
-
-
 
     const pending = await getPendingOrder(pendingOrderId);
 
-    logStep("pendingOrders after expired webhook", { pendingOrderId, exists: Boolean(pending) });
+    logStep("pendingOrders after expired webhook", {
+      pendingOrderId,
+      exists: Boolean(pending),
+    });
 
     expect(pending).toBeNull();
 
-
-
     logTestEnd("cleans up pending order on checkout.session.expired");
-
   });
 
-
-
   it("marks order refunded after charge.refunded webhook", async () => {
-
     logTestStart("marks order refunded after charge.refunded webhook", {
-
       scenario:
-
         "Pay order → webhook complete → Stripe refund → charge.refunded webhook → order REFUNDED",
 
       asserts: ["paymentStatus refunded", "orderStatus REFUNDED"],
-
     });
-
-
 
     const { sessionId } = await startCheckout();
 
     const { completedSession: paidSession, paymentIntentId } =
-
       await simulateSuccessfulCheckoutPayment(sessionId);
 
-
-
     await processStripeWebhookEvent(
-
-      buildStripeEvent("checkout.session.completed", paidSession)
-
+      buildStripeEvent("checkout.session.completed", paidSession),
     );
 
     logStep("Order paid; creating Stripe refund", { paymentIntentId });
 
-
-
     const stripe = getStripeTestClient();
 
     const refund = await stripe.refunds.create({
-
       payment_intent: paymentIntentId,
-
     });
 
     logStep("Refund created", { refundId: refund.id, status: refund.status });
 
-    expect(refund.status === "succeeded" || refund.status === "pending").toBe(true);
-
-
+    expect(refund.status === "succeeded" || refund.status === "pending").toBe(
+      true,
+    );
 
     await sleep(1500);
 
-
-
     const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
-
       expand: ["latest_charge"],
-
     });
 
     const charge =
-
       typeof pi.latest_charge === "string"
-
         ? await stripe.charges.retrieve(pi.latest_charge)
-
         : pi.latest_charge;
-
-
 
     logStep("Processing charge.refunded webhook", { chargeId: charge.id });
 
-    await processStripeWebhookEvent(buildStripeEvent("charge.refunded", charge));
-
-
+    await processStripeWebhookEvent(
+      buildStripeEvent("charge.refunded", charge),
+    );
 
     const order = await getOrderBySessionId(sessionId);
 
     logStep("Order after refund webhook", {
-
       orderId: order?.id,
 
       paymentStatus: order?.paymentStatus,
 
       orderStatus: order?.orderStatus,
-
     });
-
-
 
     expect(order.paymentStatus).toBe("refunded");
 
     expect(order.orderStatus).toBe(ORDER_STATUS.REFUNDED);
 
-
-
     logTestEnd("marks order refunded after charge.refunded webhook");
-
   });
 
-
-
   it("flags dispute on charge.dispute.created webhook", async () => {
-
     logTestStart("flags dispute on charge.dispute.created webhook", {
-
-      scenario: "Pay order → webhook complete → synthetic charge.dispute.created → disputeStatus open",
+      scenario:
+        "Pay order → webhook complete → synthetic charge.dispute.created → disputeStatus open",
 
       asserts: ["disputeStatus open"],
 
-      notTested: ["real Stripe dispute creation (uses synthetic webhook payload)"],
-
+      notTested: [
+        "real Stripe dispute creation (uses synthetic webhook payload)",
+      ],
     });
-
-
 
     const { sessionId } = await startCheckout();
 
     const { completedSession: paidSession, paymentIntentId } =
-
       await simulateSuccessfulCheckoutPayment(sessionId);
 
-
-
     await processStripeWebhookEvent(
-
-      buildStripeEvent("checkout.session.completed", paidSession)
-
+      buildStripeEvent("checkout.session.completed", paidSession),
     );
 
-
-
     const disputePayload = {
-
       id: `dp_test_${Date.now()}`,
 
       object: "dispute",
 
       payment_intent: paymentIntentId,
-
     };
 
     logStep("Processing charge.dispute.created webhook", disputePayload);
 
-
-
     await processStripeWebhookEvent(
-
-      buildStripeEvent("charge.dispute.created", disputePayload)
-
+      buildStripeEvent("charge.dispute.created", disputePayload),
     );
-
-
 
     const order = await getOrderBySessionId(sessionId);
 
     logStep("Order after dispute webhook", {
-
       orderId: order?.id,
 
       disputeStatus: order?.disputeStatus,
-
     });
-
-
 
     expect(order.disputeStatus).toBe("open");
 
-
-
     logTestEnd("flags dispute on charge.dispute.created webhook");
-
   });
 
+  // These cases exercise real Firestore concurrency using Stripe test-mode objects.
+  describe.skipIf(!hasRequiredEnv)("payment recovery regressions", () => {
+    it("requests a Stripe paid invoice with order metadata when enabled", async () => {
+      const previous = process.env.STRIPE_INVOICE_CREATION_ENABLED;
+      process.env.STRIPE_INVOICE_CREATION_ENABLED = "true";
+      try {
+        const { sessionId, pendingOrderId } = await startCheckout();
+        const session =
+          await getStripeTestClient().checkout.sessions.retrieve(sessionId);
+        expect(session.invoice_creation.enabled).toBe(true);
+        expect(session.invoice_creation.invoice_data.metadata.orderRef).toBe(
+          pendingOrderId,
+        );
+      } finally {
+        process.env.STRIPE_INVOICE_CREATION_ENABLED = previous;
+      }
+    });
+    it("creates only one order when Stripe events arrive together", async () => {
+      const { sessionId } = await startCheckout();
+      const { completedSession } =
+        await simulateSuccessfulCheckoutPayment(sessionId);
+      const event = buildStripeEvent(
+        "checkout.session.completed",
+        completedSession,
+      );
+      const results = await Promise.allSettled([
+        processStripeWebhookEvent(event),
+        processStripeWebhookEvent(event),
+      ]);
+      expect(
+        results.filter((x) => x.status === "fulfilled").length,
+      ).toBeGreaterThan(0);
+      const { firestore } = await import("@/app/firebaseAdmin");
+      const orders = await firestore
+        .collection("orders")
+        .where("stripeSessionId", "==", sessionId)
+        .get();
+      expect(orders.size).toBe(1);
+    });
+
+    it("rebuilds a missing invoice on retry after the pending record was removed", async () => {
+      const { sessionId } = await startCheckout();
+      const { completedSession } =
+        await simulateSuccessfulCheckoutPayment(sessionId);
+      const event = buildStripeEvent(
+        "checkout.session.completed",
+        completedSession,
+      );
+      const first = await processStripeWebhookEvent(event);
+      const { firestore, FieldValue } = await import("@/app/firebaseAdmin");
+      await firestore
+        .collection("orders")
+        .doc(first.order.id)
+        .update({ invoice: FieldValue.delete() });
+      const retry = await processStripeWebhookEvent(event);
+      expect(retry.duplicate).toBe(true);
+      expect(retry.order.invoice.html).toContain(first.order.id);
+      expect(retry.order.validatedLineItems.length).toBeGreaterThan(0);
+    });
+
+    it("keeps fulfillment status on partial refunds", async () => {
+      const { sessionId } = await startCheckout();
+      const { completedSession, paymentIntentId } =
+        await simulateSuccessfulCheckoutPayment(sessionId);
+      await processStripeWebhookEvent(
+        buildStripeEvent("checkout.session.completed", completedSession),
+      );
+      await processStripeWebhookEvent(
+        buildStripeEvent("charge.refunded", {
+          payment_intent: paymentIntentId,
+          refunded: false,
+          amount: 10000,
+          amount_refunded: 1000,
+        }),
+      );
+      const order = await getOrderBySessionId(sessionId);
+      expect(order.paymentStatus).toBe("partially_refunded");
+      expect(order.amountRefunded).toBe(10);
+      expect(order.orderStatus).toBe(ORDER_STATUS.PROCESSING);
+    });
+  });
 });
 
-
-
 describe("Payment integration prerequisites", () => {
-
   it("documents required env vars when tests are skipped", () => {
-
     if (hasRequiredEnv) {
-
       expect(process.env.STRIPE_SECRET_KEY.startsWith("sk_test_")).toBe(true);
 
       return;
-
     }
 
-
-
     expect(hasRequiredEnv).toBe(false);
-
   });
-
 });
-
-

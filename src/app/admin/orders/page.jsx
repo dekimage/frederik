@@ -34,16 +34,34 @@ function OrdersPageContent() {
     orderStatus: "all",
     isFulfilled: "all",
     archiveStatus: "active",
-    search: "",
+    search:
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("orderId") || ""
+        : "",
   });
 
   const fetchOrders = async () => {
     setError("");
     try {
-      const response = await adminFetch(`/api/admin/orders?limit=500&archive=all`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to fetch orders");
-      setOrders(data.orders || []);
+      const allOrders = [];
+      let batch = 1;
+      let total = Infinity;
+      while (allOrders.length < total) {
+        const response = await adminFetch(
+          `/api/admin/orders?limit=500&archive=all&page=${batch}`,
+        );
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.error || "Failed to fetch orders");
+        const rows = data.orders || [];
+        allOrders.push(...rows);
+        total = data.total || 0;
+        if (!rows.length) break;
+        batch += 1;
+      }
+      setOrders([
+        ...new Map(allOrders.map((order) => [order.id, order])).values(),
+      ]);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setError(error.message || "Unable to load orders.");
@@ -95,7 +113,8 @@ function OrdersPageContent() {
         body: JSON.stringify({ isArchived: false }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Failed to restore order");
+      if (!response.ok)
+        throw new Error(data.error || "Failed to restore order");
       setNotice("Order restored.");
       fetchOrders();
     } catch (error) {
@@ -106,7 +125,7 @@ function OrdersPageContent() {
   const handleArchiveTestOrders = async () => {
     if (
       !window.confirm(
-        "Archive every active TEST order? They will be hidden from Active orders but remain recoverable under Archived."
+        "Archive every active TEST order? They will be hidden from Active orders but remain recoverable under Archived.",
       )
     ) {
       return;
@@ -120,11 +139,12 @@ function OrdersPageContent() {
         method: "POST",
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Unable to archive test orders.");
+      if (!response.ok)
+        throw new Error(data.error || "Unable to archive test orders.");
       setNotice(
         data.archived
           ? `${data.archived} TEST order(s) archived. No order data was deleted.`
-          : "There are no active TEST orders to archive."
+          : "There are no active TEST orders to archive.",
       );
       fetchOrders();
     } catch (error) {
@@ -142,7 +162,8 @@ function OrdersPageContent() {
       filters.stripeMode === "all" ||
       deriveStripeMode(order) === filters.stripeMode;
     const matchesOrderStatus =
-      filters.orderStatus === "all" || order.orderStatus === filters.orderStatus;
+      filters.orderStatus === "all" ||
+      order.orderStatus === filters.orderStatus;
     const matchesFulfillment =
       filters.isFulfilled === "all" ||
       order.isFulfilled === (filters.isFulfilled === "true");
@@ -171,26 +192,35 @@ function OrdersPageContent() {
   });
 
   const itemsPerPage = 100;
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredOrders.length / itemsPerPage),
+  );
   const paginatedOrders = filteredOrders.slice(
     (page - 1) * itemsPerPage,
-    page * itemsPerPage
+    page * itemsPerPage,
   );
 
   const columns = createColumns(
     handleFulfillmentChange,
     handleOrderStatusChange,
-    handleRestore
+    handleRestore,
   );
 
   return (
     <div className="container mx-auto py-10">
       <div className="mb-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold">Orders</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Orders</h1>
+            <p className="text-sm text-muted-foreground">
+              Stripe controls payments and refunds. Order status tracks manual
+              fulfillment; status changes do not send emails.
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
-              <a href="/api/admin/orders/export">
+              <a href="/api/admin/orders/export" download>
                 <DownloadIcon className="mr-2 h-4 w-4" />
                 Export active CSV
               </a>
@@ -229,6 +259,9 @@ function OrdersPageContent() {
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
               <SelectItem value="refunded">Refunded</SelectItem>
+              <SelectItem value="partially_refunded">
+                Partially refunded
+              </SelectItem>
             </SelectContent>
           </Select>
 

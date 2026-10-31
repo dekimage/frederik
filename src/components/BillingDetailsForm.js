@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
 import { useState, useEffect, useRef } from "react";
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from "formik";
 import { addressSchema, emptyAddress } from "@/lib/checkoutDraft";
@@ -13,10 +14,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 // Keep validation feedback visible when submitting from the sticky action bar.
 function FocusAddressErrors({ formId }) {
-  const { submitCount, isSubmitting, isValidating, errors } = useFormikContext();
+  const { submitCount, isSubmitting, isValidating, errors } =
+    useFormikContext();
   const handledSubmit = useRef(0);
   useEffect(() => {
-    if (!submitCount || isSubmitting || isValidating || handledSubmit.current === submitCount) return;
+    if (
+      !submitCount ||
+      isSubmitting ||
+      isValidating ||
+      handledSubmit.current === submitCount
+    )
+      return;
     handledSubmit.current = submitCount;
     const firstError = Object.keys(errors)[0];
     if (firstError) document.getElementById(`${formId}-${firstError}`)?.focus();
@@ -26,13 +34,27 @@ function FocusAddressErrors({ formId }) {
 
 function TrackAddressDraft({ onChange }) {
   const { values } = useFormikContext();
-  useEffect(() => { onChange(values); }, [values, onChange]);
+  useEffect(() => {
+    onChange(values);
+  }, [values, onChange]);
   return null;
 }
 
 const BillingDetailsForm = observer(
-  ({ formTitle, isShipping = false, onSubmit, initialValues = emptyAddress, onChange, completed = false, nextStep, paymentPending = false }) => {
-    const [selectedCountry, setSelectedCountry] = useState(initialValues.country || "");
+  ({
+    formTitle,
+    isShipping = false,
+    onSubmit,
+    initialValues = emptyAddress,
+    onChange,
+    completed = false,
+    nextStep,
+    paymentPending = false,
+  }) => {
+    const { t: tr, language } = useStorefrontLanguage();
+    const [selectedCountry, setSelectedCountry] = useState(
+      initialValues.country || "",
+    );
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -50,14 +72,14 @@ const BillingDetailsForm = observer(
     useEffect(() => {
       const catalogCodes = listCountries();
       const countryOptions = catalogCodes.map((cca2) => ({
-        label: `${getCountryLabel(cca2)} (${cca2})`,
+        label: `${getCountryLabel(cca2, language)} (${cca2})`,
         value: cca2,
       }));
       countryOptions.sort((a, b) => a.label.localeCompare(b.label));
       setCountries(countryOptions);
       setLoading(false);
       setError(null);
-    }, []);
+    }, [language]);
 
     /*
     // --- Worldwide list (paused; do not delete) ---
@@ -104,13 +126,27 @@ const BillingDetailsForm = observer(
             <FocusAddressErrors formId={formId} />
             <TrackAddressDraft onChange={onChange} />
             <div className={styles.formIntro}>
-              <div className={styles.sectionHeading}><h2>{formTitle}</h2><span>{isShipping ? "01" : "02"}</span></div>
-              <p>{isShipping ? "Where should we send your prints?" : "Enter the address for your invoice."} Fields marked * are required.</p>
+              <div className={styles.sectionHeading}>
+                <h2>{formTitle}</h2>
+                <span>{isShipping ? "01" : "02"}</span>
+              </div>
+              <p>
+                {isShipping
+                  ? tr("Where should we send your prints?")
+                  : tr("Enter the address for your invoice.")}{" "}
+                {tr("Fields marked * are required.")}{" "}
+              </p>
             </div>
             {submitCount > 0 && Object.keys(errors).length > 0 && (
               <div className={styles.formErrors} role="alert">
-                <strong>Please complete the required details.</strong>
-                <ul>{Object.entries(errors).map(([field, message]) => <li key={field}><a href={`#${formId}-${field}`}>{message}</a></li>)}</ul>
+                <strong> {tr("Please complete the required details.")} </strong>
+                <ul>
+                  {Object.entries(errors).map(([field, message]) => (
+                    <li key={field}>
+                      <a href={`#${formId}-${field}`}>{tr(message)}</a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
@@ -120,18 +156,22 @@ const BillingDetailsForm = observer(
                 htmlFor={`${formId}-firstName`}
                 className="text-sm font-medium text-gray-300"
               >
-                First Name *
+                {" "}
+                {tr("First Name *")}{" "}
               </label>
               <Field
                 disabled={paymentPending}
                 name="firstName"
                 id={`${formId}-firstName`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} given-name`}
-                aria-describedby={errors.firstName ? `${formId}-firstName-error` : undefined}
+                aria-describedby={
+                  errors.firstName ? `${formId}-firstName-error` : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.firstName}
                 className="p-3 rounded-lg bg-gray-800 border border-gray-600 text-white focus:border-blue-500 focus:outline-none transition-colors"
               />
-              <ErrorMessage
+
+              <TranslatedErrorMessage
                 name="firstName"
                 id={`${formId}-firstName-error`}
                 component="div"
@@ -145,18 +185,22 @@ const BillingDetailsForm = observer(
                 htmlFor={`${formId}-lastName`}
                 className="text-sm font-medium text-gray-300"
               >
-                Last Name *
+                {" "}
+                {tr("Last Name *")}{" "}
               </label>
               <Field
                 disabled={paymentPending}
                 name="lastName"
                 id={`${formId}-lastName`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} family-name`}
-                aria-describedby={errors.lastName ? `${formId}-lastName-error` : undefined}
+                aria-describedby={
+                  errors.lastName ? `${formId}-lastName-error` : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.lastName}
                 className="p-3 rounded-lg bg-gray-800 border border-gray-600 text-white focus:border-blue-500 focus:outline-none transition-colors"
               />
-              <ErrorMessage
+
+              <TranslatedErrorMessage
                 name="lastName"
                 id={`${formId}-lastName-error`}
                 component="div"
@@ -166,21 +210,26 @@ const BillingDetailsForm = observer(
 
             {/* Country/Region */}
             <div className="flex flex-col gap-2">
-              <label htmlFor={`${formId}-country`}>Country/Region *</label>
+              <label htmlFor={`${formId}-country`}>
+                {" "}
+                {tr("Country/Region *")}{" "}
+              </label>
               <p className="text-xs text-gray-500 leading-relaxed">
                 {t("shippingCountrySelectHint")}
               </p>
               {loading ? (
-                <div className="text-white">Loading countries...</div>
+                <div className="text-white"> {tr("Loading countries...")} </div>
               ) : (
                 <Field
                   disabled={paymentPending}
-                as="select"
+                  as="select"
                   name="country"
-                id={`${formId}-country`}
-                autoComplete={`${isShipping ? "shipping" : "billing"} country`}
-                aria-describedby={errors.country ? `${formId}-country-error` : undefined}
-                aria-invalid={submitCount > 0 && !!errors.country}
+                  id={`${formId}-country`}
+                  autoComplete={`${isShipping ? "shipping" : "billing"} country`}
+                  aria-describedby={
+                    errors.country ? `${formId}-country-error` : undefined
+                  }
+                  aria-invalid={submitCount > 0 && !!errors.country}
                   className="p-2 rounded bg-gray-800 text-white"
                   onChange={(e) => {
                     const v = e.target.value;
@@ -188,7 +237,7 @@ const BillingDetailsForm = observer(
                     setSelectedCountry(v);
                   }}
                 >
-                  <option value="">Select a country</option>
+                  <option value=""> {tr("Select a country")} </option>
                   {countries.map((country) => (
                     <option key={country.value} value={country.value}>
                       {country.label}
@@ -196,28 +245,37 @@ const BillingDetailsForm = observer(
                   ))}
                 </Field>
               )}
-              <ErrorMessage
+              <TranslatedErrorMessage
                 name="country"
                 id={`${formId}-country-error`}
                 component="div"
                 className="text-red-500"
               />
-              {error && <div className="text-yellow-500">{error}</div>}
+
+              {error && <div className="text-yellow-500">{tr(error)}</div>}
             </div>
 
             {/* Street Address */}
             <div className="flex flex-col">
-              <label htmlFor={`${formId}-streetAddress1`}>Street Address *</label>
+              <label htmlFor={`${formId}-streetAddress1`}>
+                {" "}
+                {tr("Street Address *")}{" "}
+              </label>
               <Field
                 disabled={paymentPending}
                 name="streetAddress1"
                 id={`${formId}-streetAddress1`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} address-line1`}
-                aria-describedby={errors.streetAddress1 ? `${formId}-streetAddress1-error` : undefined}
+                aria-describedby={
+                  errors.streetAddress1
+                    ? `${formId}-streetAddress1-error`
+                    : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.streetAddress1}
                 className="p-2 rounded bg-gray-800 text-white"
               />
-              <ErrorMessage
+
+              <TranslatedErrorMessage
                 name="streetAddress1"
                 id={`${formId}-streetAddress1-error`}
                 component="div"
@@ -228,14 +286,19 @@ const BillingDetailsForm = observer(
             {/* Street Address 2 */}
             <div className="flex flex-col">
               <label htmlFor={`${formId}-streetAddress2`}>
-                Apartment, suite, unit, etc. (Optional)
+                {" "}
+                {tr("Apartment, suite, unit, etc. (Optional)")}{" "}
               </label>
               <Field
                 disabled={paymentPending}
                 name="streetAddress2"
                 id={`${formId}-streetAddress2`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} address-line2`}
-                aria-describedby={errors.streetAddress2 ? `${formId}-streetAddress2-error` : undefined}
+                aria-describedby={
+                  errors.streetAddress2
+                    ? `${formId}-streetAddress2-error`
+                    : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.streetAddress2}
                 className="p-2 rounded bg-gray-800 text-white"
               />
@@ -243,17 +306,20 @@ const BillingDetailsForm = observer(
 
             {/* City */}
             <div className="flex flex-col">
-              <label htmlFor={`${formId}-city`}>Town/City *</label>
+              <label htmlFor={`${formId}-city`}> {tr("Town/City *")} </label>
               <Field
                 disabled={paymentPending}
                 name="city"
                 id={`${formId}-city`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} address-level2`}
-                aria-describedby={errors.city ? `${formId}-city-error` : undefined}
+                aria-describedby={
+                  errors.city ? `${formId}-city-error` : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.city}
                 className="p-2 rounded bg-gray-800 text-white"
               />
-              <ErrorMessage
+
+              <TranslatedErrorMessage
                 name="city"
                 id={`${formId}-city-error`}
                 component="div"
@@ -263,17 +329,23 @@ const BillingDetailsForm = observer(
 
             {/* Postal / ZIP */}
             <div className="flex flex-col">
-              <label htmlFor={`${formId}-postalCode`}>Postal / ZIP code *</label>
+              <label htmlFor={`${formId}-postalCode`}>
+                {" "}
+                {tr("Postal / ZIP code *")}{" "}
+              </label>
               <Field
                 disabled={paymentPending}
                 name="postalCode"
                 id={`${formId}-postalCode`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} postal-code`}
-                aria-describedby={errors.postalCode ? `${formId}-postalCode-error` : undefined}
+                aria-describedby={
+                  errors.postalCode ? `${formId}-postalCode-error` : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.postalCode}
                 className="p-2 rounded bg-gray-800 text-white"
               />
-              <ErrorMessage
+
+              <TranslatedErrorMessage
                 name="postalCode"
                 id={`${formId}-postalCode-error`}
                 component="div"
@@ -284,25 +356,27 @@ const BillingDetailsForm = observer(
             {/* US State Dropdown */}
             {selectedCountry === "US" && (
               <div className="flex flex-col">
-                <label htmlFor={`${formId}-state`}>State *</label>
+                <label htmlFor={`${formId}-state`}> {tr("State *")} </label>
                 <Field
                   disabled={paymentPending}
-                as="select"
+                  as="select"
                   name="state"
-                id={`${formId}-state`}
-                autoComplete={`${isShipping ? "shipping" : "billing"} address-level1`}
-                aria-describedby={errors.state ? `${formId}-state-error` : undefined}
-                aria-invalid={submitCount > 0 && !!errors.state}
+                  id={`${formId}-state`}
+                  autoComplete={`${isShipping ? "shipping" : "billing"} address-level1`}
+                  aria-describedby={
+                    errors.state ? `${formId}-state-error` : undefined
+                  }
+                  aria-invalid={submitCount > 0 && !!errors.state}
                   className="p-2 rounded bg-gray-800 text-white"
                 >
-                  <option value="">Select a state</option>
+                  <option value=""> {tr("Select a state")} </option>
                   {usStates.map((state) => (
                     <option key={state} value={state}>
                       {state}
                     </option>
                   ))}
                 </Field>
-                <ErrorMessage
+                <TranslatedErrorMessage
                   name="state"
                   id={`${formId}-state-error`}
                   component="div"
@@ -314,19 +388,23 @@ const BillingDetailsForm = observer(
             {/* Email */}
             <div className="flex flex-col">
               <label htmlFor={`${formId}-email`}>
-                Email *{!isShipping ? " (billing)" : ""}
+                {" "}
+                {tr("Email *")} {!isShipping ? tr(" (billing)") : ""}
               </label>
               <Field
                 disabled={paymentPending}
                 name="email"
                 id={`${formId}-email`}
                 autoComplete={`${isShipping ? "shipping" : "billing"} email`}
-                aria-describedby={errors.email ? `${formId}-email-error` : undefined}
+                aria-describedby={
+                  errors.email ? `${formId}-email-error` : undefined
+                }
                 aria-invalid={submitCount > 0 && !!errors.email}
                 type="email"
                 className="p-2 rounded bg-gray-800 text-white"
               />
-              <ErrorMessage
+
+              <TranslatedErrorMessage
                 name="email"
                 id={`${formId}-email-error`}
                 component="div"
@@ -335,24 +413,44 @@ const BillingDetailsForm = observer(
             </div>
 
             <div className={styles.formFooter}>
-            <Button
-              type="submit"
-              className={styles.primaryAction}
-              disabled={isSubmitting || completed || paymentPending}
-            >
-              {completed
-                ? <><CheckCircle2 size={18} aria-hidden="true" /> Details saved</>
-                : <>{isShipping ? "Save shipping details" : "Save billing details"} <ArrowRight size={18} aria-hidden="true" /></>}
-            </Button>
-            <p role="status">{completed
-              ? nextStep
-              : "Save this address to continue. Payment comes next."}</p>
+              <Button
+                type="submit"
+                className={styles.primaryAction}
+                disabled={isSubmitting || completed || paymentPending}
+              >
+                {completed ? (
+                  <>
+                    <CheckCircle2 size={18} aria-hidden="true" />{" "}
+                    {tr("Details saved")}{" "}
+                  </>
+                ) : (
+                  <>
+                    {isShipping
+                      ? tr("Save shipping details")
+                      : tr("Save billing details")}{" "}
+                    <ArrowRight size={18} aria-hidden="true" />
+                  </>
+                )}
+              </Button>
+              <p role="status">
+                {completed
+                  ? nextStep
+                  : tr("Save this address to continue. Payment comes next.")}
+              </p>
             </div>
           </Form>
         )}
       </Formik>
     );
-  }
+  },
 );
 
 export default BillingDetailsForm;
+function TranslatedErrorMessage({ name, component, ...props }) {
+  const { t } = useLanguage();
+  return (
+    <ErrorMessage name={name}>
+      {(message) => <div {...props}>{t(message)}</div>}
+    </ErrorMessage>
+  );
+}

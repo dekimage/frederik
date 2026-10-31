@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Heavy server-only SDKs — keep out of webpack bundle (avoids phantom vendor-chunks).
-    serverComponentsExternalPackages: ["firebase-admin", "cloudinary"],
-  },
+  outputFileTracingRoot: __dirname,
+  serverExternalPackages: ["firebase-admin", "cloudinary"],
   images: {
-    domains: [
+    qualities: [75, 90, 100],
+    remotePatterns: [
       "localhost",
       "media.discordapp.net",
       "assets.openai.com",
@@ -17,7 +16,10 @@ const nextConfig = {
       "storage.googleapis.com",
       "img.youtube.com",
       "res.cloudinary.com",
-    ],
+    ].map((hostname) => ({
+      protocol: hostname === "localhost" ? "http" : "https",
+      hostname,
+    })),
   },
 };
 

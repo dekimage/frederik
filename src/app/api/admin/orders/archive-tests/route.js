@@ -23,7 +23,7 @@ export async function POST(request) {
     const batch = firestore.batch();
     for (const doc of selected) {
       batch.update(doc.ref, {
-        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        archivedAt: FieldValue.serverTimestamp(),
         archivedBy: authResult.admin.email,
         archiveReason: "admin:test-order-cleanup",
       });
@@ -38,7 +38,7 @@ export async function POST(request) {
     console.error("Test-order archive failed:", error);
     return Response.json(
       { error: "Unable to archive test orders." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

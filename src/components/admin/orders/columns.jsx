@@ -35,19 +35,26 @@ function OrderActions({
           <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
             ARCHIVED
           </span>
-          <Button variant="outline" size="sm" onClick={() => onRestore(order.id)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRestore(order.id)}
+          >
             Restore
           </Button>
         </>
       ) : (
         <>
           <Switch
+            aria-label="Mark order shipped"
+            disabled={["refunded", "failed"].includes(order.paymentStatus)}
             checked={order.isFulfilled || false}
             onCheckedChange={(checked) => {
               onFulfillmentChange(order.id, checked);
             }}
           />
           <Select
+            disabled={["refunded", "failed"].includes(order.paymentStatus)}
             value={order.orderStatus || ORDER_STATUS.PROCESSING}
             onValueChange={(value) => onOrderStatusChange(order.id, value)}
           >
@@ -55,11 +62,32 @@ function OrderActions({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(ORDER_STATUS).map((status) => (
-                <SelectItem key={status} value={status}>
-                  {ORDER_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
+              {[
+                ...new Set([
+                  order.orderStatus,
+                  ORDER_STATUS.PROCESSING,
+                  ORDER_STATUS.SHIPPED,
+                  ORDER_STATUS.DELIVERED,
+                  ORDER_STATUS.CANCELLED,
+                ]),
+              ]
+                .filter(Boolean)
+                .map((status) => (
+                  <SelectItem
+                    key={status}
+                    value={status}
+                    disabled={
+                      ![
+                        ORDER_STATUS.PROCESSING,
+                        ORDER_STATUS.SHIPPED,
+                        ORDER_STATUS.DELIVERED,
+                        ORDER_STATUS.CANCELLED,
+                      ].includes(status)
+                    }
+                  >
+                    {ORDER_STATUS_LABELS[status]}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </>
@@ -87,7 +115,7 @@ const formatDate = (dateString) => {
 export const createColumns = (
   onFulfillmentChange,
   onOrderStatusChange,
-  onRestore
+  onRestore,
 ) => [
   {
     accessorKey: "id",
@@ -118,7 +146,9 @@ export const createColumns = (
             ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"
             : "bg-muted text-muted-foreground";
       return (
-        <span className={`px-2 py-1 rounded-full text-xs font-bold ${className}`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-bold ${className}`}
+        >
           {mode.toUpperCase()}
         </span>
       );
@@ -142,7 +172,9 @@ export const createColumns = (
       };
 
       return (
-        <span className={`px-2 py-1 rounded-full text-xs ${colors[status] || colors.pending}`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${colors[status] || colors.pending}`}
+        >
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
       );

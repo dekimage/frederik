@@ -1,15 +1,10 @@
 import { Suspense } from "react";
 import SuccessClient from "./SuccessClient";
+import StorefrontLoading from "@/components/StorefrontLoading";
 
 export default function SuccessPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="text-center text-white h-screen flex justify-center items-center">
-          Loading…
-        </div>
-      }
-    >
+    <Suspense fallback={<StorefrontLoading />}>
       <SuccessClient />
     </Suspense>
   );

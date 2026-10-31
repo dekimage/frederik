@@ -1,4 +1,4 @@
-import { firestore, admin } from "@/app/firebaseAdmin";
+import { firestore, FieldValue } from "@/app/firebaseAdmin";
 import {
   uploadImageBuffer,
   CLOUDINARY_FOLDER_IMAGES,
@@ -27,15 +27,18 @@ export async function POST(request) {
       validateImageUpload(file);
 
       const buffer = Buffer.from(await file.arrayBuffer());
-      const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(buffer, {
-        folder: CLOUDINARY_FOLDER_IMAGES,
-      });
+      const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(
+        buffer,
+        {
+          folder: CLOUDINARY_FOLDER_IMAGES,
+        },
+      );
 
       const docRef = await firestore.collection("images").add({
         ...imageData,
         url: imageUrl,
         cloudinaryPublicId,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       });
 
       return Response.json({
@@ -48,7 +51,7 @@ export async function POST(request) {
       console.error("Upload error:", error);
       return Response.json(
         { error: error.message },
-        { status: error.status || 500 }
+        { status: error.status || 500 },
       );
     }
   });

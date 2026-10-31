@@ -15,11 +15,11 @@ export const MATERIAL_LABELS = {
 };
 
 /** Reference market for PDP/cart list prices (print column). Set `NEXT_PUBLIC_PDP_PRICE_COUNTRY` to override. */
-export const PDP_REFERENCE_COUNTRY = (
-  process.env.NEXT_PUBLIC_PDP_PRICE_COUNTRY || "NL"
-).toString()
-  .toUpperCase()
-  .slice(0, 2) || "NL";
+export const PDP_REFERENCE_COUNTRY =
+  (process.env.NEXT_PUBLIC_PDP_PRICE_COUNTRY || "NL")
+    .toString()
+    .toUpperCase()
+    .slice(0, 2) || "NL";
 
 export function getPricingMeta() {
   return data.meta;
@@ -41,9 +41,9 @@ export function isSupportedShippingCountry(countryCode) {
   return listCountries().includes(code);
 }
 
-export function getCountryLabel(iso) {
+export function getCountryLabel(iso, language = "en") {
   try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(iso) || iso;
+    return new Intl.DisplayNames([language], { type: "region" }).of(iso) || iso;
   } catch {
     return iso;
   }
@@ -58,7 +58,7 @@ export function listSizesForMaterial(material) {
       byKey.set(r.sizeKey, { sizeKey: r.sizeKey, sizeRaw: r.sizeRaw });
   }
   return [...byKey.values()].sort((a, b) =>
-    a.sizeRaw.localeCompare(b.sizeRaw, undefined, { numeric: true })
+    a.sizeRaw.localeCompare(b.sizeRaw, undefined, { numeric: true }),
   );
 }
 
@@ -147,7 +147,18 @@ export function quoteOrderForShippingCountry(lines, shippingCountryCode) {
   };
 }
 
-export function materialLabel(material) {
+export function materialLabel(material, language = "en") {
+  if (language === "nl")
+    return (
+      {
+        photoprint: "Fotoafdruk, zonder lijst",
+        canvas: "Foto op canvas, zonder lijst",
+        aluminium: "Foto op aluminium, zonder lijst",
+        plexiglass: "Foto op plexiglas, zonder lijst",
+        forex: "Foto op forex PVC, zonder lijst",
+        wood: "Foto op hout, zonder lijst",
+      }[material] || material
+    );
   return MATERIAL_LABELS[material] || material;
 }
 
@@ -176,17 +187,14 @@ export function summarizeCartSpreadsheetTotals(lines) {
     ) {
       const row = getQuote(line.countryCode, line.material, line.sizeKey);
       if (row && row.available) {
-        if (!Number.isFinite(shippingEa))
-          shippingEa = Number(row.shippingCost);
-        if (!Number.isFinite(posterEa))
-          posterEa = Number(row.priceExShipping);
+        if (!Number.isFinite(shippingEa)) shippingEa = Number(row.shippingCost);
+        if (!Number.isFinite(posterEa)) posterEa = Number(row.priceExShipping);
       }
     }
     if (Number.isFinite(posterEa)) posterSubtotal += posterEa * qty;
     if (Number.isFinite(shippingEa)) shippingSubtotal += shippingEa * qty;
     const unitInc = Number(line.price);
-    if (Number.isFinite(unitInc))
-      merchandiseWithShippingTotal += unitInc * qty;
+    if (Number.isFinite(unitInc)) merchandiseWithShippingTotal += unitInc * qty;
   }
 
   const sumParts = posterSubtotal + shippingSubtotal;
@@ -223,10 +231,8 @@ export function getCartLineEconomics(line) {
   ) {
     const row = getQuote(line.countryCode, line.material, line.sizeKey);
     if (row && row.available) {
-      if (!Number.isFinite(shippingEa))
-        shippingEa = Number(row.shippingCost);
-      if (!Number.isFinite(posterEa))
-        posterEa = Number(row.priceExShipping);
+      if (!Number.isFinite(shippingEa)) shippingEa = Number(row.shippingCost);
+      if (!Number.isFinite(posterEa)) posterEa = Number(row.priceExShipping);
     }
   }
   const totalEa = Number(line.price);

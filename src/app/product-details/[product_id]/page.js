@@ -1,4 +1,6 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
+import { useParams } from "next/navigation";
 
 import styles from "@/components/product-detail.module.css";
 import { useState, useEffect } from "react";
@@ -18,27 +20,38 @@ import Link from "next/link";
 import RemotePhotoImage from "@/components/RemotePhotoImage";
 import ProductPrintOptions from "@/components/ProductPrintOptions";
 
-const ProductDetailsPage = observer(({ params }) => {
-  const { product_id } = params;
+const ProductDetailsPage = observer(() => {
+  const { t: tr } = useStorefrontLanguage();
+  const { product_id } = useParams();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const router = useRouter();
 
   useEffect(() => {
     const fetchProduct = async () => {
+      setLoading(true);
+      setProduct(null);
       const productData = await MobxStore.getProductById(product_id);
-      if (productData) {
-        setProduct(productData);
-      }
+      setProduct(productData);
+      setLoading(false);
     };
     fetchProduct();
   }, [product_id]);
 
-  if (!product) {
+  if (!loading && !product)
+    return (
+      <main className="min-h-screen pt-40 text-center">
+        <h1>{tr("Product not available")}</h1>
+        <p>{tr("This print is not currently available.")}</p>
+        <Link href="/shop">{tr("Back")}</Link>
+      </main>
+    );
+  if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        Loading...
+        {tr("Loading...")}
       </div>
     );
   }
@@ -46,29 +59,28 @@ const ProductDetailsPage = observer(({ params }) => {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <button
-          onClick={() => router.back()}
-          className={styles.back}
-        >
+        <button onClick={() => router.back()} className={styles.back}>
           <ChevronLeft size={24} className="mr-2" />
-          <span className="text-lg">Back</span>
+          <span className="text-lg">{tr("Back")}</span>
         </button>
         <div className={styles.layout}>
           <div className={styles.gallery}>
             <div className={styles.imageFrame}>
-              <button type="button" className={styles.imageButton} onClick={() => setIsFullScreen(true)}>
-              <RemotePhotoImage
-                src={product.image}
-                alt={product.name}
-                width={500}
-                height={500}
-                className="hover:opacity-90 transition-opacity"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
+              <button
+                type="button"
+                className={styles.imageButton}
+                onClick={() => setIsFullScreen(true)}
+              >
+                <RemotePhotoImage
+                  src={product.image}
+                  alt={product.name}
+                  width={500}
+                  height={500}
+                  className="hover:opacity-90 transition-opacity"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
               </button>
-              <p>
-                Click to enlarge
-              </p>
+              <p>{tr("Click to enlarge")}</p>
             </div>
           </div>
           <div className={styles.details}>
@@ -78,12 +90,10 @@ const ProductDetailsPage = observer(({ params }) => {
 
             <ProductPrintOptions productId={product_id} product={product} />
 
-            <Link
-              href="/cart"
-              className={styles.cartLink}
-            >
+            <Link href="/cart" className={styles.cartLink}>
               <ShoppingCart className="mr-2 h-4 w-4" />
-              View Shopping Cart
+              {tr("View Shopping Cart")}
+
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </div>
@@ -91,10 +101,8 @@ const ProductDetailsPage = observer(({ params }) => {
 
         {/* Product Description - Full Width Section */}
         <div className={styles.description}>
-          <h2>Product Description</h2>
-          <p>
-            {product.description}
-          </p>
+          <h2>{tr("Product Description")}</h2>
+          <p>{product.description}</p>
         </div>
       </div>
 
@@ -104,6 +112,7 @@ const ProductDetailsPage = observer(({ params }) => {
             className="absolute inset-0"
             onClick={() => setIsFullScreen(false)}
           />
+
           <div className="relative z-10 w-[90vw] h-[90vh]">
             <div className="absolute inset-0">
               <RemotePhotoImage
@@ -119,6 +128,7 @@ const ProductDetailsPage = observer(({ params }) => {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={tr("Zoom out")}
                 onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.1))}
                 className="text-white hover:bg-white/20"
               >
@@ -127,6 +137,7 @@ const ProductDetailsPage = observer(({ params }) => {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={tr("Zoom in")}
                 onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.1))}
                 className="text-white hover:bg-white/20"
               >
@@ -135,6 +146,7 @@ const ProductDetailsPage = observer(({ params }) => {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={tr("Close image")}
                 onClick={() => setIsFullScreen(false)}
                 className="text-white hover:bg-white/20"
               >
@@ -144,8 +156,6 @@ const ProductDetailsPage = observer(({ params }) => {
           </div>
         </div>
       )}
-
-
     </div>
   );
 });

@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { db } from "./firebase";
 import { getPdpQuote } from "@/lib/pricingCatalog";
 import { isProductPublished } from "@/lib/productVisibility";
+import { sortCatalog, categoryAliases } from "@/lib/catalog";
 import {
   clampLineQuantity,
   MAX_LINE_QUANTITY,
@@ -71,8 +72,10 @@ class Store {
     if (typeof window !== "undefined") {
       this.loadCartFromLocalStorage();
     }
-    this.initializeShopConfig();
-    this.fetchCategories();
+    if (typeof window !== "undefined") {
+      this.initializeShopConfig();
+      this.fetchCategories();
+    }
   }
 
   /** Unit print price for cart line (PDP reference market). */
@@ -91,7 +94,7 @@ class Store {
       .map((i) => {
         const catalogPrice = this.deriveUnitPrintPriceFromCatalog(
           i.material,
-          i.sizeKey
+          i.sizeKey,
         );
         const unit =
           Number.isFinite(catalogPrice) && catalogPrice > 0
@@ -119,10 +122,12 @@ class Store {
       const categoriesCollection = collection(db, "categories");
       const categoriesSnapshot = await getDocs(categoriesCollection);
       runInAction(() => {
-        this.categories = categoriesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        this.categories = sortCatalog(
+          categoriesSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })),
+        );
         this.categoriesLoading = false;
       });
     } catch (error) {
@@ -142,6 +147,7 @@ class Store {
         return null;
       }
       const merged = { id: productId, ...productSnap.data() };
+      if (!isProductPublished(merged)) return null;
       runInAction(() => {
         this.cachedProducts[productId] = merged;
       });
@@ -178,6 +184,11 @@ class Store {
     const productsList = productsSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
       .filter(isProductPublished)
+      .sort(
+        (a, b) =>
+          (Number(a.index) || 0) - (Number(b.index) || 0) ||
+          String(a.id).localeCompare(String(b.id)),
+      )
       .slice(0, 10);
 
     runInAction(() => {
@@ -195,7 +206,12 @@ class Store {
     const productsSnapshot = await getDocs(productsQuery);
     const productsList = productsSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter(isProductPublished);
+      .filter(isProductPublished)
+      .sort(
+        (a, b) =>
+          (Number(a.index) || 0) - (Number(b.index) || 0) ||
+          String(a.id).localeCompare(String(b.id)),
+      );
 
     runInAction(() => {
       this.cacheProducts(productsList); // Cache products
@@ -206,15 +222,26 @@ class Store {
   }
 
   async fetchProductsByCategory(category) {
+    await this.fetchCategories();
+    const entry = this.categories.find(
+      (item) =>
+        item.id === category ||
+        item.name.toLowerCase() === category.toLowerCase(),
+    );
     const productQuery = query(
       collection(db, "products"),
-      where("category", "==", category)
+      where("category", "in", categoryAliases(entry, category)),
     );
 
     const productsSnapshot = await getDocs(productQuery);
     const productsList = productsSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter(isProductPublished);
+      .filter(isProductPublished)
+      .sort(
+        (a, b) =>
+          (Number(a.index) || 0) - (Number(b.index) || 0) ||
+          String(a.id).localeCompare(String(b.id)),
+      );
 
     runInAction(() => {
       this.cacheProducts(productsList); // Cache products
@@ -227,13 +254,18 @@ class Store {
   async fetchBestSellers() {
     const bestSellerQuery = query(
       collection(db, "products"),
-      where("bestseller", "==", true)
+      where("bestseller", "==", true),
     );
 
     const bestSellersSnapshot = await getDocs(bestSellerQuery);
     const bestSellersList = bestSellersSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter(isProductPublished);
+      .filter(isProductPublished)
+      .sort(
+        (a, b) =>
+          (Number(a.index) || 0) - (Number(b.index) || 0) ||
+          String(a.id).localeCompare(String(b.id)),
+      );
 
     runInAction(() => {
       this.cacheProducts(bestSellersList); // Cache products
@@ -306,15 +338,15 @@ class Store {
       (cartItem) =>
         cartItem.productId === item.productId &&
         cartItem.sizeKey === sizeKey &&
-        cartItem.material === item.material
+        cartItem.material === item.material,
     );
 
     const otherTotal = sumCartQuantities(
-      this.cartItems.filter((cartItem) => cartItem !== existingItem)
+      this.cartItems.filter((cartItem) => cartItem !== existingItem),
     );
     const maxForLine = Math.min(
       MAX_LINE_QUANTITY,
-      MAX_ORDER_TOTAL_QUANTITY - otherTotal
+      MAX_ORDER_TOTAL_QUANTITY - otherTotal,
     );
 
     if (maxForLine < 1) {
@@ -326,7 +358,7 @@ class Store {
 
     if (existingItem) {
       existingItem.quantity = clampLineQuantity(
-        existingItem.quantity + requestedQty
+        existingItem.quantity + requestedQty,
       );
       if (existingItem.quantity > maxForLine) {
         existingItem.quantity = maxForLine;
@@ -352,16 +384,16 @@ class Store {
       (cartItem) =>
         cartItem.productId === productId &&
         cartItem.sizeKey === sizeKey &&
-        cartItem.material === material
+        cartItem.material === material,
     );
 
     if (item) {
       const otherTotal = sumCartQuantities(
-        this.cartItems.filter((cartItem) => cartItem !== item)
+        this.cartItems.filter((cartItem) => cartItem !== item),
       );
       const maxForLine = Math.min(
         MAX_LINE_QUANTITY,
-        MAX_ORDER_TOTAL_QUANTITY - otherTotal
+        MAX_ORDER_TOTAL_QUANTITY - otherTotal,
       );
       item.quantity = clampLineQuantity(Math.min(newQuantity, maxForLine));
       this.saveCartToLocalStorage();
@@ -375,7 +407,7 @@ class Store {
           item.productId === productId &&
           item.sizeKey === sizeKey &&
           item.material === material
-        )
+        ),
     );
     this.saveCartToLocalStorage();
   }
@@ -416,7 +448,9 @@ class Store {
     return this.cartItems.reduce((total, item) => total + item.quantity, 0);
   }
   async fetchProductDetails() {
-    const productIds = [...new Set(this.cartItems.map((item) => item.productId))];
+    const productIds = [
+      ...new Set(this.cartItems.map((item) => item.productId)),
+    ];
 
     if (productIds.length === 0) {
       return;
@@ -429,7 +463,7 @@ class Store {
         if (!productSnap.exists()) return null;
         const product = { id, ...productSnap.data() };
         return isProductPublished(product) ? product : null;
-      })
+      }),
     );
 
     runInAction(() => {

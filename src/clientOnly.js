@@ -7,9 +7,9 @@ export const ClientOnly = ({ children }) => {
 
   useEffect(() => {
     setClientReady(true);
-  });
+  }, []);
 
-  return clientReady ? <>children</> : null;
+  return clientReady ? <>{children}</> : null;
 };
 
 // usage =>? <ClientOnly>Client only content</ClientOnly>

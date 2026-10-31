@@ -1,4 +1,4 @@
-import { firestore, admin } from "@/app/firebaseAdmin";
+import { firestore, FieldValue } from "@/app/firebaseAdmin";
 import {
   uploadImageBuffer,
   CLOUDINARY_FOLDER_PRODUCTS,
@@ -20,43 +20,46 @@ export async function GET(request) {
 
 export async function POST(request) {
   return withAdminRoute(request, async () => {
-  try {
-    const data = await request.formData();
-    const file = data.get("file");
-    const productDataString = data.get("productData");
+    try {
+      const data = await request.formData();
+      const file = data.get("file");
+      const productDataString = data.get("productData");
 
-    validateImageUpload(file);
+      validateImageUpload(file);
 
-    const productData = JSON.parse(productDataString);
-    delete productData.price;
-    productData.published = productData.published === true;
+      const productData = JSON.parse(productDataString);
+      delete productData.price;
+      productData.published = productData.published === true;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(buffer, {
-      folder: CLOUDINARY_FOLDER_PRODUCTS,
-    });
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const { url: imageUrl, cloudinaryPublicId } = await uploadImageBuffer(
+        buffer,
+        {
+          folder: CLOUDINARY_FOLDER_PRODUCTS,
+        },
+      );
 
-    const docRef = await firestore.collection("products").add({
-      ...productData,
-      image: imageUrl,
-      cloudinaryPublicId,
-      sharedGalleryImage: false,
-      published: productData.published,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+      const docRef = await firestore.collection("products").add({
+        ...productData,
+        image: imageUrl,
+        cloudinaryPublicId,
+        sharedGalleryImage: false,
+        published: productData.published,
+        createdAt: FieldValue.serverTimestamp(),
+      });
 
-    return Response.json({
-      id: docRef.id,
-      ...productData,
-      image: imageUrl,
-      cloudinaryPublicId,
-    });
-  } catch (error) {
-    console.error("Product creation error:", error);
-    return Response.json(
-      { error: error.message },
-      { status: error.status || 500 }
-    );
-  }
+      return Response.json({
+        id: docRef.id,
+        ...productData,
+        image: imageUrl,
+        cloudinaryPublicId,
+      });
+    } catch (error) {
+      console.error("Product creation error:", error);
+      return Response.json(
+        { error: error.message },
+        { status: error.status || 500 },
+      );
+    }
   });
 }

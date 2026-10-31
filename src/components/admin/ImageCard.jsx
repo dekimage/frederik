@@ -1,4 +1,5 @@
 "use client";
+import { validateImageUpload } from "@/lib/imageUpload";
 
 import { useState } from "react";
 import { adminFetch } from "@/lib/adminFetch";
@@ -30,6 +31,13 @@ export default function ImageCard({ image, onUpdate }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      try {
+        validateImageUpload(file);
+      } catch (error) {
+        alert(error.message);
+        e.target.value = "";
+        return;
+      }
       setNewImageFile(file);
       // Create preview
       const reader = new FileReader();
@@ -222,7 +230,9 @@ export default function ImageCard({ image, onUpdate }) {
           ) : (
             <>
               <h3 className="font-semibold">{image.name}</h3>
-              <p className="text-sm text-muted-foreground">{image.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {image.description}
+              </p>
               <p className="text-sm text-muted-foreground">
                 Category: {image.category || "Not set"}
               </p>

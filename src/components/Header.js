@@ -1,255 +1,145 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { ShoppingCart, ChevronDown } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { observer } from "mobx-react-lite";
-import MobxStore from "../mobx";
+import MobxStore from "@/mobx";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { categoryLabel } from "@/lib/catalog";
 import logoImg from "../../public/logo2.png";
 
 const Header = observer(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const { language, changeLanguage, t } = useLanguage();
-  const languageRef = useRef(null);
-
   useEffect(() => {
     MobxStore.fetchCategories();
   }, []);
-
-  // Handle click outside language dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (languageRef.current && !languageRef.current.contains(event.target)) {
-        setIsLanguageOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const toggleLanguage = () => {
-    setIsLanguageOpen(!isLanguageOpen);
-  };
-
-  const handleLanguageChange = (newLanguage) => {
-    changeLanguage(newLanguage);
-    setIsLanguageOpen(false);
-  };
-
-  const getLanguageFlag = (lang) => {
-    switch (lang) {
-      case "en":
-        return "/en.png";
-      case "nl":
-        return "/nl.png";
-      default:
-        return "/en.png";
-    }
-  };
-
+  const languages = (
+    <div
+      className="flex items-center justify-center gap-2 font-sans"
+      aria-label={t("Language")}
+    >
+      {[
+        ["en", "English"],
+        ["nl", "Nederlands"],
+      ].map(([code, label]) => (
+        <button
+          key={code}
+          type="button"
+          lang={code}
+          aria-pressed={language === code}
+          onClick={() => changeLanguage(code)}
+          className={`rounded border px-2 py-2 text-sm ${language === code ? "border-white bg-white text-black" : "border-gray-600 text-white"}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  const close = () => setIsMenuOpen(false);
   return (
-    <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-between px-6 z-50">
-      {/* Logo — image: public/logo2.png (replace file when branding updates). */}
-      <Link href="/">
-        <div className="flex items-center">
-          <Image
-            width={1000}
-            height={1000}
-            src={logoImg}
-            alt="WOLFSKIN Photography"
-            className="w-auto h-16 sm:h-20 md:h-22 lg:h-24"
-            priority
-          />
-        </div>
+    <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-between gap-2 px-3 sm:px-6 z-50">
+      <Link
+        href="/"
+        onClick={close}
+        className="min-w-0 flex-1 max-w-[260px] sm:max-w-[340px]"
+        aria-label="WOLFSKIN Photography"
+      >
+        <Image
+          src={logoImg}
+          alt="WOLFSKIN Photography"
+          className="block w-full h-auto max-h-16 sm:max-h-20 lg:max-h-24 object-contain object-left"
+          priority
+        />
       </Link>
-
-      {/* Cart, language, and menu — always visible in the top bar */}
-      <div className="flex items-center space-x-2 sm:space-x-4">
-        {/* Cart Icon with Count */}
-        <Link href="/cart" className="relative">
-          <div className="p-3 hover:bg-gray-800 rounded-full transition-colors">
-            <ShoppingCart className="w-6 h-6 text-white" />
-            {MobxStore.cartItemsCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
-                {MobxStore.cartItemsCount > 99
-                  ? "99+"
-                  : MobxStore.cartItemsCount}
-              </span>
-            )}
-          </div>
-        </Link>
-
-        {/* Language Switcher */}
-        <div className="relative" ref={languageRef}>
-          <div
-            className="px-2 sm:px-3 py-2 sm:py-3 hover:bg-gray-800 rounded-full transition-colors cursor-pointer flex items-center gap-2"
-            onClick={toggleLanguage}
-            title={language === "en" ? "English / Dutch" : "English / Dutch"}
-          >
-            <Image
-              src={getLanguageFlag(language)}
-              alt={`${language.toUpperCase()} flag`}
-              width={20}
-              height={15}
-              className="rounded-sm shrink-0"
-            />
-            <span className="uppercase text-[10px] sm:text-xs font-semibold tracking-wide font-sans text-white">
-              {language === "en" ? "EN" : "NL"}
+      <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+        <Link
+          href="/cart"
+          onClick={close}
+          aria-label={t("Shopping cart")}
+          className="relative p-3 rounded-full hover:bg-gray-800"
+        >
+          <ShoppingCart className="h-6 w-6" />
+          {MobxStore.cartItemsCount > 0 && (
+            <span className="absolute right-0 top-0 rounded-full bg-red-500 px-1 text-xs">
+              {MobxStore.cartItemsCount > 99 ? "99+" : MobxStore.cartItemsCount}
             </span>
-            <ChevronDown className="w-4 h-4 text-white shrink-0" />
-          </div>
-
-          {/* Language Dropdown */}
-          {isLanguageOpen && (
-            <div className="absolute right-0 mt-2 w-[5.5rem] bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 font-sans text-sm">
-              <div
-                className="px-3 py-2 hover:bg-gray-800 cursor-pointer flex items-center justify-center space-x-2 transition-colors"
-                onClick={() => handleLanguageChange("en")}
-              >
-                <Image
-                  src="/en.png"
-                  alt="EN flag"
-                  width={20}
-                  height={15}
-                  className="rounded-sm"
-                />
-                <span className="text-sm font-medium">EN</span>
-              </div>
-              <div
-                className="px-3 py-2 hover:bg-gray-800 cursor-pointer flex items-center justify-center space-x-2 transition-colors"
-                onClick={() => handleLanguageChange("nl")}
-              >
-                <Image
-                  src="/nl.png"
-                  alt="NL flag"
-                  width={20}
-                  height={15}
-                  className="rounded-sm"
-                />
-                <span className="text-sm font-medium">NL</span>
-              </div>
-            </div>
           )}
-        </div>
-
-        {/* Hamburger Menu */}
-        <div
-          className="p-3 hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
-          onClick={toggleMenu}
+        </Link>
+        <div className="hidden md:block">{languages}</div>
+        <button
+          type="button"
+          aria-label={t(isMenuOpen ? "Close menu" : "Menu")}
+          aria-expanded={isMenuOpen}
+          aria-controls="storefront-menu"
+          onClick={() => setIsMenuOpen((open) => !open)}
+          className="p-3 rounded-full hover:bg-gray-800"
         >
           {isMenuOpen ? (
-            <FaTimes className="w-6 h-6 text-white" />
+            <FaTimes className="h-6 w-6" />
           ) : (
-            <FaBars className="w-6 h-6 text-white" />
+            <FaBars className="h-6 w-6" />
           )}
-        </div>
+        </button>
       </div>
-
-      {/* Fullscreen Menu */}
-      <div
-        className={`border-b border-t border-white absolute top-full left-0 w-full bg-black text-white flex flex-col transition-all duration-500 ease-in-out overflow-hidden ${
-          isMenuOpen ? "max-h-screen" : "max-h-0"
-        }`}
-      >
-        {/* Navigation Menu */}
-        <div className="flex items-center justify-center flex-1">
-          <ul className="space-y-4 text-center text-md py-8 w-[220px] font-ethnocentric text-sm tracking-wide">
-            {/* Home and About */}
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/">{t("home")}</Link>
+      {isMenuOpen && (
+        <nav
+          id="storefront-menu"
+          className="absolute left-0 top-full w-full max-h-[calc(100dvh-5rem)] overflow-y-auto border-y border-white bg-black py-6"
+        >
+          <div className="mb-5 md:hidden">{languages}</div>
+          <ul className="mx-auto w-fit space-y-4 text-center font-ethnocentric text-sm">
+            {[
+              ["/", "home"],
+              ["/about", "about"],
+              ["/important-information", "importantInformationNav"],
+            ].map(([href, label]) => (
+              <li key={href}>
+                <Link onClick={close} href={href}>
+                  {t(label)}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <hr className="border-gray-600" />
             </li>
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/about">{t("about")}</Link>
-            </li>
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/important-information">
-                {t("importantInformationNav")}
-              </Link>
-            </li>
-
-            {/* Separator Line */}
-            <hr className="border-t border-white my-2" />
-
-            {/* Categories */}
             {MobxStore.categoriesLoading ? (
-              <li>Loading categories...</li>
+              <li>{t("Loading categories...")}</li>
             ) : (
               MobxStore.categories.map((category) => (
-                <li
-                  key={category.id}
-                  onClick={toggleMenu}
-                  className="uppercase hover:text-gray-400 transition-colors duration-300"
-                >
-                  <Link href={`/category/${category.name.toLowerCase()}`}>
-                    {t(category.name.toLowerCase())}
+                <li key={category.id}>
+                  <Link
+                    onClick={close}
+                    href={`/category/${encodeURIComponent(category.id)}`}
+                  >
+                    {categoryLabel(category, t)}
                   </Link>
                 </li>
               ))
             )}
-
-            {/* Separator Line */}
-            <hr className="border-t border-white my-2" />
-
-            {/* Shop and Cart */}
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/shop">{t("shop")}</Link>
+            <li>
+              <hr className="border-gray-600" />
             </li>
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/cart">{t("cart")}</Link>
-            </li>
-
-            {/* Separator Line */}
-            <hr className="border-t border-white my-2" />
-
-            {/* Legal Links */}
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/privacy-policy">{t("privacyPolicy")}</Link>
-            </li>
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/copyright-statement">{t("copyright")}</Link>
-            </li>
-            <li
-              onClick={toggleMenu}
-              className="uppercase hover:text-gray-400 transition-colors duration-300"
-            >
-              <Link href="/cookies-policy">{t("cookies")}</Link>
-            </li>
+            {[
+              ["/shop", "shop"],
+              ["/cart", "cart"],
+              ["/track-order", "trackOrder"],
+              ["/privacy-policy", "privacyPolicy"],
+              ["/copyright-statement", "copyright"],
+              ["/cookies-policy", "cookies"],
+            ].map(([href, label]) => (
+              <li key={href}>
+                <Link onClick={close} href={href}>
+                  {t(label)}
+                </Link>
+              </li>
+            ))}
           </ul>
-        </div>
-      </div>
+        </nav>
+      )}
     </header>
   );
 });
-
 export default Header;

@@ -1,4 +1,4 @@
-import { firestore, admin } from "@/app/firebaseAdmin";
+import { firestore, FieldValue } from "@/app/firebaseAdmin";
 import {
   cleanupReplacedImageAsset,
   deleteStoredImageFromDoc,
@@ -10,20 +10,49 @@ const IMAGE_KEYS = { urlField: "url", publicIdField: "cloudinaryPublicId" };
 export async function PUT(request, context) {
   return withAdminRoute(request, async () => {
     try {
-      const { id } = context.params;
+      const { id } = await context.params;
       const data = await request.json();
       const docRef = firestore.collection("images").doc(id);
       const prevSnap = await docRef.get();
       const previous = prevSnap.data() || {};
 
+      if (data.url && data.url !== previous.url) {
+        const referenceQueries = [
+          firestore
+            .collection("products")
+            .where("image", "==", previous.url || "__missing__")
+            .get(),
+        ];
+        if (previous.cloudinaryPublicId) {
+          referenceQueries.push(
+            firestore
+              .collection("products")
+              .where("cloudinaryPublicId", "==", previous.cloudinaryPublicId)
+              .get(),
+          );
+        }
+        const references = await Promise.all(referenceQueries);
+        if (references.some((result) => !result.empty)) {
+          return Response.json(
+            {
+              error:
+                "This image is used by products. Change those product images before replacing it.",
+            },
+            { status: 409 },
+          );
+        }
+      }
+
       await docRef.update({
         ...data,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
-      await cleanupReplacedImageAsset(previous, data, IMAGE_KEYS).catch((err) => {
-        console.error("Asset cleanup after image doc update:", err);
-      });
+      await cleanupReplacedImageAsset(previous, data, IMAGE_KEYS).catch(
+        (err) => {
+          console.error("Asset cleanup after image doc update:", err);
+        },
+      );
 
       return Response.json({ success: true });
     } catch (error) {
@@ -35,7 +64,7 @@ export async function PUT(request, context) {
 export async function DELETE(request, context) {
   return withAdminRoute(request, async () => {
     try {
-      const { id } = context.params;
+      const { id } = await context.params;
       const docSnap = await firestore.collection("images").doc(id).get();
       if (!docSnap.exists) {
         return Response.json({ error: "Image not found" }, { status: 404 });
@@ -53,14 +82,14 @@ export async function DELETE(request, context) {
             .get();
 
       const activeReferences = linkedProducts.docs.filter(
-        (product) => product.data().sharedGalleryImage
+        (product) => product.data().sharedGalleryImage,
       );
       if (activeReferences.length > 0) {
         return Response.json(
           {
             error: `This image is used by ${activeReferences.length} product(s). Change those product images before deleting it.`,
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
 

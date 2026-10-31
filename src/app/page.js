@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
 import React, { useState, useEffect, useRef } from "react";
 import styles from "@/components/storefront.module.css";
 import springImage from "../../assets/spring.png";
@@ -24,15 +25,10 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase";
-
-export const categories = [
-  { id: "spring", name: "Spring" },
-  { id: "summer", name: "Summer" },
-  { id: "autumn", name: "Autumn" },
-  { id: "winter", name: "Winter" },
-];
+import { categoryLabel } from "@/lib/catalog";
 
 export const TitleDescription = ({ title, description, seeMore, button }) => {
+  const { t: tr } = useStorefrontLanguage();
   return (
     <div className="flex items-center justify-between mb-4 w-full">
       <div className="space-y-1 mr-4">
@@ -43,7 +39,8 @@ export const TitleDescription = ({ title, description, seeMore, button }) => {
       {seeMore && (
         <Link href={`/slug/${seeMore}`}>
           <div className="flex items-center cursor-pointer opacity-70 text-sm font-bold hover:border-b-2">
-            See all <ChevronRight size={16} />
+            {tr("See all")}
+            <ChevronRight size={16} />
           </div>
         </Link>
       )}
@@ -60,6 +57,7 @@ const ImageSkeleton = ({ className }) => (
 );
 
 export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
+  const { t: tr } = useStorefrontLanguage();
   const [aboutImage, setAboutImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
@@ -91,7 +89,8 @@ export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
       <div className="space-y-4">
         {showBack && (
           <Link href={`/`} className="flex items-center mb-8">
-            <ChevronLeft size={32} /> Back
+            <ChevronLeft size={32} />
+            {tr("Back")}
           </Link>
         )}
         <h2 className="font-ethnocentric text-3xl md:text-5xl tracking-wide text-center md:text-left">
@@ -157,6 +156,7 @@ const getImageByCategory = (category) => {
 };
 
 export const CategoriesSection = ({ categories, isFromShop = false }) => {
+  const { t: tr } = useStorefrontLanguage();
   const categoryRefs = useRef([]);
   const { t } = useLanguage();
 
@@ -169,24 +169,27 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
           }
         });
       },
-      { threshold: 0.1 } // Adjust the threshold if needed
+      { threshold: 0.1 }, // Adjust the threshold if needed
     );
 
-    categoryRefs.current.forEach((ref) => {
+    const observedRefs = [...categoryRefs.current];
+    observedRefs.forEach((ref) => {
       if (ref) observer.observe(ref);
     });
 
     return () => {
-      categoryRefs.current.forEach((ref) => {
+      observedRefs.forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
-  }, []);
+  }, [categories]);
   return (
     <section className="w-full">
       {/* Content */}
       <div className="relative z-10 bg-black bg-opacity-50 py-8">
-        <LargeTitle title={isFromShop ? "Shop by Category" : t("categories")} />
+        <LargeTitle
+          title={isFromShop ? tr("Shop by Category") : t("categories")}
+        />
 
         <div className="grid grid-cols-2 gap-4 sm:p-8">
           {categories.map((category, index) => (
@@ -195,7 +198,7 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
               href={
                 isFromShop
                   ? `/shop/${category.id}`
-                  : `/category/${category.name.toLowerCase()}`
+                  : `/category/${encodeURIComponent(category.id)}`
               }
             >
               <div
@@ -205,7 +208,11 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
                 {/* Category Image with Hover Scale */}
                 <div className="w-full h-full transition-transform duration-500 group-hover:scale-150">
                   <RemotePhotoImage
-                    src={category.image || getImageByCategory(category.name)}
+                    src={
+                      category.image ||
+                      getImageByCategory(category.name) ||
+                      "/home-hero-wolfskin.jpg"
+                    }
                     alt={category.name}
                     fill
                     className="object-cover"
@@ -216,7 +223,7 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
                 {/* Overlay and Text */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-transform duration-500">
                   <h3 className="font-ethnocentric text-xl md:text-2xl text-white transition-transform duration-500 group-hover:scale-150">
-                    {t(category.name.toLowerCase())}
+                    {categoryLabel(category, t)}
                   </h3>
                 </div>
               </div>
@@ -249,7 +256,8 @@ export const ReelsSection = () => {
 
         setReels(reelsData);
       } catch (err) {
-        setError(err.message);
+        console.error("Unable to load reels:", err);
+        setError("Unable to load videos. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -269,7 +277,9 @@ export const ReelsSection = () => {
           <div className="font-ethnocentric text-3xl md:text-4xl text-center my-8 tracking-wide">
             {t("reels")}
           </div>
-          <div className="text-center text-red-500">Error: {error}</div>
+          <div className="text-center text-red-500">
+            {t("Error:")} {t(error)}
+          </div>
         </div>
       </section>
     );
@@ -370,6 +380,7 @@ const LOCAL_HERO_FALLBACK = "/home-hero-wolfskin.jpg";
 const HERO_TAGLINE_EN = "Capturing moments, creating memories";
 
 const HomePage = observer(() => {
+  const { t: tr } = useStorefrontLanguage();
   const [heroImage, setHeroImage] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -419,7 +430,7 @@ const HomePage = observer(() => {
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center px-4">
           <div className="text-center max-w-4xl">
             <p className="font-ethnocentric text-lg sm:text-xl md:text-2xl text-white tracking-wide drop-shadow-lg">
-              {HERO_TAGLINE_EN}
+              {tr(HERO_TAGLINE_EN)}
             </p>
           </div>
         </div>
@@ -427,7 +438,9 @@ const HomePage = observer(() => {
       <div className="flex flex-col justify-center items-center px-4 sm:px-32">
         <AboutSection showBack={false} showWebsiteInfo />
         {MobxStore.categoriesLoading ? (
-          <p className="font-sans text-gray-400">Loading categories...</p>
+          <p className="font-sans text-gray-400">
+            {tr("Loading categories...")}
+          </p>
         ) : (
           <CategoriesSection categories={MobxStore.categories} />
         )}

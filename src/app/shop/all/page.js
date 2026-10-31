@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -8,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import { ChevronLeft } from "lucide-react";
 
 const AllProductsPage = () => {
+  const { t: tr } = useStorefrontLanguage();
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -22,9 +24,10 @@ const AllProductsPage = () => {
   return (
     <div className={styles.page}>
       <Link href={`/shop`} className={styles.back}>
-        <ChevronLeft size={32} /> BACK
+        <ChevronLeft size={32} />
+        {tr("BACK")}
       </Link>
-      <h1 className={styles.sectionTitle}>All Products</h1>
+      <h1 className={styles.sectionTitle}>{tr("All Products")}</h1>
 
       <div className={styles.productGrid}>
         {products.map((product) => (

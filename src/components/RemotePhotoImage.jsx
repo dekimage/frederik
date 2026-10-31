@@ -18,7 +18,8 @@ export default function RemotePhotoImage({
   const resolvedSrc =
     typeof src === "string" ? cloudinaryMaxQualityDeliveryUrl(src) : src;
   const isCloudinary =
-    typeof resolvedSrc === "string" && resolvedSrc.includes(CLOUDINARY_CDN_HOST);
+    typeof resolvedSrc === "string" &&
+    resolvedSrc.includes(CLOUDINARY_CDN_HOST);
 
   return (
     <Image
@@ -26,7 +27,7 @@ export default function RemotePhotoImage({
       src={resolvedSrc}
       alt={alt}
       unoptimized={unoptimized ?? isCloudinary}
-      quality={isCloudinary ? 100 : quality}
+      quality={isCloudinary ? 100 : (quality ?? 90)}
     />
   );
 }

@@ -1,18 +1,23 @@
-import { firestore, admin } from "@/app/firebaseAdmin";
+import { firestore, FieldValue } from "@/app/firebaseAdmin";
 import { requireAdmin } from "@/lib/adminAuth";
 import {
   ORDER_STATUS,
   deriveOrderStatusFromFulfillment,
 } from "@/lib/orderUtils";
 
-const ALLOWED_ORDER_STATUSES = new Set(Object.values(ORDER_STATUS));
+const ALLOWED_ORDER_STATUSES = new Set([
+  ORDER_STATUS.PROCESSING,
+  ORDER_STATUS.SHIPPED,
+  ORDER_STATUS.DELIVERED,
+  ORDER_STATUS.CANCELLED,
+]);
 
 export async function PUT(request, { params }) {
   const authResult = await requireAdmin(request);
   if (authResult.response) return authResult.response;
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { isFulfilled, orderStatus, isArchived } = body;
 
@@ -23,6 +28,15 @@ export async function PUT(request, { params }) {
     }
 
     const current = doc.data();
+    if (
+      (orderStatus || typeof isFulfilled === "boolean") &&
+      ["refunded", "failed"].includes(current.paymentStatus)
+    ) {
+      return Response.json(
+        { error: "This order's payment state is controlled by Stripe." },
+        { status: 409 },
+      );
+    }
     const updates = { updatedAt: new Date() };
     const historyEntry = {
       at: new Date().toISOString(),
@@ -34,10 +48,12 @@ export async function PUT(request, { params }) {
       updates.isFulfilled = isFulfilled;
       updates.orderStatus = deriveOrderStatusFromFulfillment(
         current.orderStatus,
-        isFulfilled
+        isFulfilled,
       );
       historyEntry.status = updates.orderStatus;
-      historyEntry.note = isFulfilled ? "Marked fulfilled" : "Marked unfulfilled";
+      historyEntry.note = isFulfilled
+        ? "Marked fulfilled"
+        : "Marked unfulfilled";
       hasStatusUpdate = true;
     }
 
@@ -47,7 +63,10 @@ export async function PUT(request, { params }) {
 
     if (orderStatus) {
       updates.orderStatus = orderStatus;
-      if (orderStatus === ORDER_STATUS.SHIPPED || orderStatus === ORDER_STATUS.DELIVERED) {
+      if (
+        orderStatus === ORDER_STATUS.SHIPPED ||
+        orderStatus === ORDER_STATUS.DELIVERED
+      ) {
         updates.isFulfilled = true;
       }
       historyEntry.status = orderStatus;
@@ -57,18 +76,21 @@ export async function PUT(request, { params }) {
 
     if (typeof isArchived === "boolean") {
       if (isArchived) {
-        updates.archivedAt = admin.firestore.FieldValue.serverTimestamp();
+        updates.archivedAt = FieldValue.serverTimestamp();
         updates.archivedBy = authResult.admin.email;
         updates.archiveReason = "admin:manual";
       } else {
-        updates.archivedAt = admin.firestore.FieldValue.delete();
-        updates.archivedBy = admin.firestore.FieldValue.delete();
-        updates.archiveReason = admin.firestore.FieldValue.delete();
+        updates.archivedAt = FieldValue.delete();
+        updates.archivedBy = FieldValue.delete();
+        updates.archiveReason = FieldValue.delete();
       }
     }
 
     if (!hasStatusUpdate && typeof isArchived !== "boolean") {
-      return Response.json({ error: "No valid order update supplied" }, { status: 400 });
+      return Response.json(
+        { error: "No valid order update supplied" },
+        { status: 400 },
+      );
     }
 
     if (hasStatusUpdate) {
@@ -89,7 +111,7 @@ export async function GET(request, { params }) {
   if (authResult.response) return authResult.response;
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const doc = await firestore.collection("orders").doc(id).get();
 
     if (!doc.exists) {

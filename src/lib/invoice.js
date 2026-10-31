@@ -1,5 +1,9 @@
 import { KOR_INVOICE_NOTICE } from "@/lib/korVat";
-import { formatAddressHtml, formatCurrencyEUR } from "@/lib/orderUtils";
+import {
+  escapeHtml,
+  formatAddressHtml,
+  formatCurrencyEUR,
+} from "@/lib/orderUtils";
 
 export function buildInvoiceHtml({
   orderId,
@@ -16,12 +20,12 @@ export function buildInvoiceHtml({
     .map(
       (item) => `
       <tr>
-        <td>${item.name || "Item"}</td>
-        <td>${item.material || ""} · ${item.sizeRaw || item.sizeKey || ""}</td>
+        <td>${escapeHtml(item.name || "Item")}</td>
+        <td>${escapeHtml(item.material || "")} · ${escapeHtml(item.sizeRaw || item.sizeKey || "")}</td>
         <td style="text-align:center;">${item.quantity || 1}</td>
         <td style="text-align:right;">${formatCurrencyEUR(item.unitPriceIncShipping)}</td>
         <td style="text-align:right;">${formatCurrencyEUR(item.lineTotalIncShipping)}</td>
-      </tr>`
+      </tr>`,
     )
     .join("");
 

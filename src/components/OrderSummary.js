@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage as useStorefrontLanguage } from "@/contexts/LanguageContext";
 import Link from "next/link";
 import styles from "@/app/checkout/checkout.module.css";
 import {
@@ -11,6 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatCurrencyEUR } from "@/lib/orderUtils";
 
 const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
+  const { t: tr, language } = useStorefrontLanguage();
   const { t } = useLanguage();
 
   const lines = (cartItems || []).map((item) => ({
@@ -21,24 +23,20 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
 
   const printSubtotalFromCart = (cartItems || []).reduce(
     (acc, item) => acc + Number(item.price) * item.quantity,
-    0
+    0,
   );
 
   const cc = (shippingCountryCode || "").toString().trim().toUpperCase();
   const hasCountry = cc.length === 2;
-  const quoted = hasCountry
-    ? quoteOrderForShippingCountry(lines, cc)
-    : null;
+  const quoted = hasCountry ? quoteOrderForShippingCountry(lines, cc) : null;
 
   const posterSubtotal =
     quoted && quoted.ok ? quoted.printSum : printSubtotalFromCart;
-  const shippingSubtotal =
-    quoted && quoted.ok ? quoted.shippingSum : null;
+  const shippingSubtotal = quoted && quoted.ok ? quoted.shippingSum : null;
   const merchandiseWithShipping =
     quoted && quoted.ok ? quoted.totalSum : printSubtotalFromCart;
 
-  const unsupportedCountry =
-    hasCountry && !isSupportedShippingCountry(cc);
+  const unsupportedCountry = hasCountry && !isSupportedShippingCountry(cc);
   const variantUnavailable =
     quoted &&
     hasCountry &&
@@ -47,8 +45,14 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
     quoted.unavailable.length > 0;
 
   return (
-    <section className={styles.orderSummary} aria-labelledby="order-summary-heading">
-      <div className={styles.summaryHeading}><h2 id="order-summary-heading">Your order</h2><Link href="/cart">Edit cart</Link></div>
+    <section
+      className={styles.orderSummary}
+      aria-labelledby="order-summary-heading"
+    >
+      <div className={styles.summaryHeading}>
+        <h2 id="order-summary-heading"> {tr("Your order")} </h2>
+        <Link href="/cart"> {tr("Edit cart")} </Link>
+      </div>
       <div className="space-y-4">
         {(cartItems || []).map((item) => (
           <div
@@ -56,8 +60,8 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
             className="flex justify-between py-2 text-gray-300 gap-4"
           >
             <span>
-              {item.name} ({materialLabel(item.material)} · {item.size}) ×{" "}
-              {item.quantity}
+              {item.name} ({materialLabel(item.material, language)} ·{" "}
+              {item.size}) × {item.quantity}
             </span>
             <span className="font-medium shrink-0">
               {formatCurrencyEUR(Number(item.price) * item.quantity)}
@@ -69,12 +73,14 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
         </p>
         <div className="border-t border-gray-700 my-4"></div>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
-          Totals for payment
+          {" "}
+          {tr("Totals for payment")}{" "}
         </h3>
         <div className="space-y-2 text-sm text-gray-300 mb-4 tabular-nums">
           <div className="flex justify-between gap-4">
             <span className="text-left shrink leading-snug">
-              Prints
+              {" "}
+              {tr("Prints")}{" "}
             </span>
             <span>{formatCurrencyEUR(posterSubtotal)}</span>
           </div>
@@ -82,7 +88,8 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
             <>
               <div className="flex justify-between gap-4">
                 <span className="text-left shrink">
-                  Delivery ({getCountryLabel(cc)})
+                  {" "}
+                  {tr("Delivery (")} {getCountryLabel(cc, language)})
                 </span>
                 <span>{formatCurrencyEUR(Number(shippingSubtotal))}</span>
               </div>
@@ -99,11 +106,13 @@ const OrderSummary = ({ cartItems, shippingCountryCode = "" }) => {
         </div>
 
         <div className="flex justify-between text-xl font-semibold py-4 border-t border-gray-700">
-          <span>{quoted?.ok ? "Total" : "Print subtotal"}</span>
+          <span>{quoted?.ok ? "Total" : tr("Print subtotal")}</span>
           <span>{formatCurrencyEUR(merchandiseWithShipping)}</span>
         </div>
         <p className="text-xs text-gray-400 -mt-2 pb-2 font-sans">
-          {quoted?.ok ? t("checkoutTotalIsFinal") : "Delivery is calculated after you select your country."}
+          {quoted?.ok
+            ? t("checkoutTotalIsFinal")
+            : tr("Delivery is calculated after you select your country.")}
         </p>
         <p className="text-xs text-gray-400 pb-2 font-sans">
           {t("shippingCoverageOrderSummaryStripeNote")}

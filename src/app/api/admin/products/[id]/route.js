@@ -1,16 +1,19 @@
-import { firestore, admin } from "@/app/firebaseAdmin";
+import { firestore, FieldValue } from "@/app/firebaseAdmin";
 import {
   cleanupReplacedImageAsset,
   deleteStoredImageFromDoc,
 } from "@/lib/cloudinaryMedia";
 import { withAdminRoute } from "@/lib/withAdminRoute";
 
-const PRODUCT_IMAGE_KEYS = { urlField: "image", publicIdField: "cloudinaryPublicId" };
+const PRODUCT_IMAGE_KEYS = {
+  urlField: "image",
+  publicIdField: "cloudinaryPublicId",
+};
 
 export async function DELETE(request, context) {
   return withAdminRoute(request, async () => {
     try {
-      const { id } = context.params;
+      const { id } = await context.params;
       const doc = await firestore.collection("products").doc(id).get();
       const productData = doc.data();
       await deleteStoredImageFromDoc(productData, PRODUCT_IMAGE_KEYS);
@@ -26,7 +29,7 @@ export async function DELETE(request, context) {
 export async function PUT(request, context) {
   return withAdminRoute(request, async () => {
     try {
-      const { id } = context.params;
+      const { id } = await context.params;
       const data = await request.json();
       delete data.price;
       if ("published" in data) data.published = data.published === true;
@@ -39,14 +42,14 @@ export async function PUT(request, context) {
 
       await docRef.update({
         ...data,
-        price: admin.firestore.FieldValue.delete(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        price: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
       await cleanupReplacedImageAsset(previous, data, PRODUCT_IMAGE_KEYS).catch(
         (err) => {
           console.error("Asset cleanup after product update:", err);
-        }
+        },
       );
 
       return Response.json({ success: true });

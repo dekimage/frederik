@@ -11,14 +11,12 @@ import {
   toStripeAddress,
 } from "@/lib/orderUtils";
 import { isProductPublished } from "@/lib/productVisibility";
+import { KOR_INVOICE_NOTICE } from "@/lib/korVat";
 import {
   getStripeCheckoutLocale,
   getStripePaymentMethodTypes,
 } from "@/lib/stripePaymentMethods";
-import {
-  clampLineQuantity,
-  validateOrderQuantities,
-} from "@/lib/cartLimits";
+import { clampLineQuantity, validateOrderQuantities } from "@/lib/cartLimits";
 
 const PENDING_ORDER_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -51,21 +49,21 @@ export async function createCheckoutSession({
   const normalizedBilling = normalizeAddressFormValues(
     billingDetails?.email || billingDetails?.firstName
       ? billingDetails
-      : shippingDetails
+      : shippingDetails,
   );
 
   const shippingCountry = normalizedShipping.country;
   if (!shippingCountry || shippingCountry.length !== 2) {
     throw new CheckoutSessionError(
       "Shipping country is required (ISO alpha-2).",
-      400
+      400,
     );
   }
 
   if (!isSupportedShippingCountry(shippingCountry)) {
     throw new CheckoutSessionError(
       "We only ship to countries on our official price list.",
-      400
+      400,
     );
   }
 
@@ -76,7 +74,7 @@ export async function createCheckoutSession({
   if (!normalizedShipping.postalCode) {
     throw new CheckoutSessionError(
       "Postal / ZIP code is required for shipping.",
-      400
+      400,
     );
   }
 
@@ -92,7 +90,7 @@ export async function createCheckoutSession({
     if (!material || !sizeKey) {
       throw new CheckoutSessionError(
         "Each cart line must include material and sizeKey.",
-        400
+        400,
       );
     }
 
@@ -100,14 +98,17 @@ export async function createCheckoutSession({
     const productDoc = await productRef.get();
 
     if (!productDoc.exists) {
-      throw new CheckoutSessionError(`Product ${productId} does not exist.`, 400);
+      throw new CheckoutSessionError(
+        `Product ${productId} does not exist.`,
+        400,
+      );
     }
 
     const productData = productDoc.data();
     if (!isProductPublished(productData)) {
       throw new CheckoutSessionError(
         `Product ${productId} is not currently available.`,
-        400
+        400,
       );
     }
     const row = getQuote(shippingCountry, material, sizeKey);
@@ -115,9 +116,9 @@ export async function createCheckoutSession({
     if (!row || !row.available) {
       throw new CheckoutSessionError(
         `Print option not available for ${shippingCountry}: ${materialLabel(
-          material
+          material,
         )} · ${sizeKey}`,
-        400
+        400,
       );
     }
 
@@ -173,7 +174,9 @@ export async function createCheckoutSession({
     pendingPayload.testRunId = testRunId;
   }
 
-  const orderRef = await firestore.collection("pendingOrders").add(pendingPayload);
+  const orderRef = await firestore
+    .collection("pendingOrders")
+    .add(pendingPayload);
 
   const customer = await stripe.customers.create({
     email: normalizedBilling.email || normalizedShipping.email,
@@ -195,6 +198,18 @@ export async function createCheckoutSession({
     locale: checkoutLocale,
     line_items: stripeLineItems,
     mode: "payment",
+    // Stripe bills post-payment invoice creation separately. Opt in explicitly.
+    invoice_creation: {
+      enabled: process.env.STRIPE_INVOICE_CREATION_ENABLED !== "false",
+      ...(process.env.STRIPE_INVOICE_CREATION_ENABLED !== "false"
+        ? {
+            invoice_data: {
+              footer: KOR_INVOICE_NOTICE,
+              metadata: { orderRef: orderRef.id },
+            },
+          }
+        : {}),
+    },
     success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_URL}/cart?cancelled=1`,
     metadata: {
