@@ -23,7 +23,8 @@ export async function GET(request) {
   if (authResult.response) return authResult.response;
 
   try {
-    const requestedMode = new URL(request.url).searchParams.get("mode") || "all";
+    const requestedMode =
+      new URL(request.url).searchParams.get("mode") || "all";
     const snapshot = await firestore.collection("orders").get();
     const orders = snapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
@@ -35,7 +36,7 @@ export async function GET(request) {
       .sort(
         (a, b) =>
           (asDate(b.createdAt)?.getTime() || 0) -
-          (asDate(a.createdAt)?.getTime() || 0)
+          (asDate(a.createdAt)?.getTime() || 0),
       );
 
     const headers = [
@@ -52,7 +53,6 @@ export async function GET(request) {
       "Currency",
       "Stripe session ID",
       "Stripe payment intent ID",
-      "Email delivery",
     ];
 
     const rows = orders.map((order) => {
@@ -74,7 +74,6 @@ export async function GET(request) {
         String(order.currency || "eur").toUpperCase(),
         order.stripeSessionId || "",
         order.stripePaymentIntentId || "",
-        order.emailDelivery?.status || "",
       ];
     });
 
@@ -92,6 +91,9 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Order CSV export failed:", error);
-    return Response.json({ error: "Unable to export orders." }, { status: 500 });
+    return Response.json(
+      { error: "Unable to export orders." },
+      { status: 500 },
+    );
   }
 }

@@ -248,7 +248,6 @@ export default function AdminDashboard() {
               ["Live paid revenue", formatCurrencyEUR(stats?.livePaidRevenue || 0)],
               ["Live orders", stats?.liveOrders ?? "—"],
               ["Pending fulfillment", stats?.pendingFulfillment ?? "—"],
-              ["Email failures", stats?.emailFailures ?? "—"],
               ["Active TEST orders", stats?.testOrders ?? "—"],
               ["All active orders", stats?.activeOrders ?? "—"],
               [

@@ -68,13 +68,15 @@ Do not act on payout or tax banners just to make iDEAL appear. Stripe account ve
    - Stripe payment says succeeded/paid.
    - Stripe's webhook delivery for the relevant event returns HTTP 200.
    - Firestore no longer has the corresponding `pendingOrders` record.
-   - Firestore has one `orders` record with the Stripe session/payment IDs, `paymentStatus: paid`, `orderStatus: processing`, correct amount, invoice, and `emailDelivery.status: sent`.
+   - Firestore has one `orders` record with the Stripe session/payment IDs, `paymentStatus: paid`, `orderStatus: processing`, correct amount, and invoice.
    - The order appears to an authorized user at `/admin/orders` and its details are readable.
    - Resend's Emails page shows both the customer confirmation and admin notification as delivered.
    - Both inboxes received the correct order ID, items, addresses, total, tracking link, and Stripe receipt link.
    - `/track-order` finds the order using its order ID and customer email.
 
 If iDEAL is absent, inspect the newly created Checkout Session in Stripe. Its payment-method list must contain both `card` and `ideal`. If it contains only `card`, the current build was not deployed or checkout did not receive `shippingDetails.country = NL`.
+
+Order-email delivery and failure reports are checked directly in Resend's Emails page. The shop does not require a Resend webhook or display email delivery tracking in admin.
 
 ## 4. Stripe live setup — MUST DO after Stripe unlocks the account
 
@@ -117,7 +119,7 @@ Do not go live if any of these is true:
 - Any webhook uses a secret from the wrong Stripe mode or account.
 - Webhook attempts are not HTTP 200 after a successful payment.
 - The paid order is missing, duplicated, or has the wrong amount in Firestore.
-- `emailDelivery.status` is not `sent`, or either email is not delivered by Resend.
+- Either order email is missing or shows a delivery problem in Resend's Emails page.
 - The production site still contains a test publishable key.
 
 ## Separate security upgrade before final public handoff

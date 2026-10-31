@@ -13,20 +13,33 @@ const env = {
   FIREBASE_CLIENT_EMAIL:
     "runtime-check@demo-runtime-check.iam.gserviceaccount.com",
   FIREBASE_PRIVATE_KEY: privateKey.export({ type: "pkcs8", format: "pem" }),
-  RESEND_WEBHOOK_SECRET: "",
 };
 const checks = [
   { route: "api/admin/orders", method: "GET", expected: 401 },
-  { route: "api/resend/webhook", method: "POST", expected: 503 },
+  {
+    route: "api/checkout-session",
+    method: "POST",
+    expected: 400,
+    body: { cartItems: [] },
+  },
 ];
-for (const { route, method, expected } of checks) {
+for (const { route, method, expected, body } of checks) {
   const file = path.resolve(".next/server/app", route, "route.js");
+  const requestOptions = {
+    method,
+    ...(body
+      ? {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      : {}),
+  };
   const script = `
     (async () => {
       const mod = require(${JSON.stringify(file)});
       await mod.routeModule.ensureUserland();
       const response = await mod.routeModule.userland.${method}(
-        new Request("http://localhost/${route}", { method: "${method}" })
+        new Request("http://localhost/${route}", ${JSON.stringify(requestOptions)})
       );
       if (response.status !== ${expected}) throw new Error("Unexpected status: " + response.status);
       console.log("PASS ${route}: ${expected}");

@@ -139,11 +139,10 @@ describe("order email reliability and accounting documents", () => {
     state.document = {
       emailDelivery: {
         customer: { firstAttemptAt: Date.now() - 24 * 60 * 60 * 1000 },
+        admin: { id: "already-sent" },
       },
     };
-    await expect(
-      sendOrderPaidEmails(order, { onlyRole: "customer" }),
-    ).rejects.toThrow("manual review");
+    await expect(sendOrderPaidEmails(order)).rejects.toThrow("manual review");
     expect(state.send).not.toHaveBeenCalled();
   });
 });

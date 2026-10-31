@@ -37,7 +37,7 @@ function getEmailConfig() {
   };
 }
 
-export async function sendOrderPaidEmails(order, { onlyRole } = {}) {
+export async function sendOrderPaidEmails(order) {
   const customerEmail =
     order.shippingDetails?.email ||
     order.billingDetails?.email ||
@@ -72,9 +72,9 @@ export async function sendOrderPaidEmails(order, { onlyRole } = {}) {
     },
   };
   const results = await Promise.allSettled(
-    Object.entries(requests)
-      .filter(([role]) => !onlyRole || role === onlyRole)
-      .map(([role, request]) => sendOnce(order.id, role, request)),
+    Object.entries(requests).map(([role, request]) =>
+      sendOnce(order.id, role, request),
+    ),
   );
   const failures = results.filter((result) => result.status === "rejected");
   if (failures.length)
@@ -83,6 +83,8 @@ export async function sendOrderPaidEmails(order, { onlyRole } = {}) {
 }
 
 async function sendOnce(orderId, role, request) {
+  // Internal send bookkeeping prevents duplicate confirmations on Stripe retries.
+  // Delivery/bounce reporting is managed exclusively in the Resend dashboard.
   const ref = firestore.collection("orders").doc(orderId);
   const claim = await firestore.runTransaction(async (tx) => {
     const doc = await tx.get(ref);
@@ -118,7 +120,7 @@ async function sendOnce(orderId, role, request) {
         [`emailDelivery.${role}`]: {
           ...previous,
           id: result.id,
-          status: previous.eventAt ? previous.status : "accepted",
+          status: "accepted",
           leaseUntil: 0,
           acceptedAt: new Date().toISOString(),
           lastError: null,

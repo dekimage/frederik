@@ -5,8 +5,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { useState } from "react";
-import { adminFetch } from "@/lib/adminFetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cloudinaryMaxQualityDeliveryUrl } from "@/lib/cloudinaryDeliveryUrl";
@@ -41,27 +39,6 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function OrderDetailsDialog({ order, open, onOpenChange }) {
-  const [emailNotice, setEmailNotice] = useState("");
-  const [retrying, setRetrying] = useState(false);
-  async function retryEmails() {
-    setRetrying(true);
-    try {
-      const response = await adminFetch(
-        `/api/admin/orders/${order.id}/retry-emails`,
-        { method: "POST" },
-      );
-      const data = await response.json();
-      setEmailNotice(
-        response.ok
-          ? "Email retry completed. Refresh orders to see the latest delivery status."
-          : data.error,
-      );
-    } catch {
-      setEmailNotice("Unable to retry emails.");
-    } finally {
-      setRetrying(false);
-    }
-  }
   const stripeMode = deriveStripeMode(order);
   const fullName = (details) => {
     if (!details) return "N/A";
@@ -123,48 +100,6 @@ export default function OrderDetailsDialog({ order, open, onOpenChange }) {
                       order.orderStatus ||
                       "N/A"}
                   </p>
-                  <p>
-                    <span className="font-medium">Order emails:</span>{" "}
-                    <span
-                      className={
-                        order.emailDelivery?.status === "sent"
-                          ? "font-medium text-green-700 dark:text-green-400"
-                          : order.emailDelivery?.status === "failed"
-                            ? "font-medium text-destructive"
-                            : "text-muted-foreground"
-                      }
-                    >
-                      {(
-                        order.emailDelivery?.status || "not recorded"
-                      ).toUpperCase()}
-                    </span>
-                  </p>
-                  {order.emailDelivery?.lastError ? (
-                    <p className="text-xs text-destructive">
-                      Email error: {order.emailDelivery.lastError}
-                    </p>
-                  ) : null}
-                  {["customer", "admin"].map((role) => (
-                    <p key={role}>
-                      {role === "customer" ? "Customer email" : "Admin email"}:{" "}
-                      {order.emailDelivery?.[role]?.status || "not recorded"}
-                    </p>
-                  ))}
-                  <p className="text-xs">
-                    Accepted/sent means submitted to Resend. Delivered means
-                    accepted by the recipient mail server.
-                  </p>
-                  {order.emailDelivery?.status === "failed" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={retrying}
-                      onClick={retryEmails}
-                    >
-                      {retrying ? "Retrying…" : "Retry unsent emails"}
-                    </Button>
-                  )}
-                  {emailNotice && <p role="status">{emailNotice}</p>}
                   <p>
                     <span className="font-medium">Subtotal:</span>{" "}
                     {formatCurrencyEUR(order.amountSubtotal ?? order.subtotal)}

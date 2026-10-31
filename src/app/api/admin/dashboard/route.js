@@ -43,16 +43,6 @@ export async function GET(request) {
           ),
       ).length;
 
-      const emailFailures = activeOrders.filter(
-        (order) =>
-          order.emailDelivery?.status === "failed" ||
-          ["customer", "admin"].some((role) =>
-            ["failed", "bounced", "complained"].includes(
-              order.emailDelivery?.[role]?.status,
-            ),
-          ),
-      ).length;
-
       return Response.json({
         stats: {
           categories: categories.size,
@@ -66,7 +56,6 @@ export async function GET(request) {
           testOrders: testOrders.length,
           livePaidRevenue,
           pendingFulfillment,
-          emailFailures,
         },
       });
     } catch (error) {
