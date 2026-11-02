@@ -180,7 +180,7 @@ export async function createCheckoutSession({
 
   const customer = await stripe.customers.create({
     email: normalizedBilling.email || normalizedShipping.email,
-    name: normalizedShipping.name || normalizedBilling.name,
+    name: normalizedBilling.name || normalizedShipping.name,
     address: toStripeAddress(normalizedBilling),
     shipping: {
       name: normalizedShipping.name,
