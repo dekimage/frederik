@@ -13,15 +13,11 @@ const fs = require("node:fs");
   const base = process.env.TEST_BASE_URL || "http://localhost:3100";
   try {
     await page.goto(base, { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    await page.getByRole("button", { name: "Language (EN)", exact: true }).click();
     await page
-      .getByRole("button", { name: "Nederlands", exact: true })
-      .filter({ visible: true })
+      .getByRole("menuitemradio", { name: "Nederlands", exact: true })
       .click();
     await page.waitForFunction(() => document.documentElement.lang === "nl");
-    await page
-      .getByRole("button", { name: "Menu sluiten", exact: true })
-      .click();
     for (const width of [320, 375, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       const dimensions = await page.locator("header").evaluate((header) => {
@@ -168,10 +164,9 @@ const fs = require("node:fs");
     console.log("PASS Dutch success and Stripe document links (mocked API)");
     await page.goto(`${base}/track-order`);
     await page.getByRole("heading", { name: "Volg je bestelling" }).waitFor();
-    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    await page.getByRole("button", { name: "Taal (NL)", exact: true }).click();
     await page
-      .getByRole("button", { name: "English", exact: true })
-      .filter({ visible: true })
+      .getByRole("menuitemradio", { name: "English", exact: true })
       .click();
     await page.waitForFunction(() => document.documentElement.lang === "en");
     await page.getByRole("heading", { name: "Track your order" }).waitFor();

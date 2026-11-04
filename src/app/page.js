@@ -84,16 +84,16 @@ export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
   }, []);
 
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8 items-center">
+    <section className="grid w-full grid-cols-1 items-center gap-6 py-8 md:grid-cols-2 lg:gap-8">
       {/* Left Side - About Text */}
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         {showBack && (
           <Link href={`/`} className="flex items-center mb-8">
             <ChevronLeft size={32} />
             {tr("Back")}
           </Link>
         )}
-        <h2 className="font-ethnocentric text-3xl md:text-5xl tracking-wide text-center md:text-left">
+        <h2 className="break-words text-center font-ethnocentric text-3xl tracking-wide md:text-left lg:text-4xl xl:text-5xl">
           {t("introduction")}
         </h2>
         <p className="font-sans text-lg leading-relaxed text-gray-100">
@@ -111,7 +111,7 @@ export const AboutSection = ({ showBack = true, showWebsiteInfo = false }) => {
 
         {showWebsiteInfo && (
           <div className="pt-10 space-y-4 border-t border-gray-800 mt-10">
-            <h3 className="font-ethnocentric text-3xl md:text-5xl tracking-wide text-center md:text-left">
+            <h3 className="break-words text-center font-ethnocentric text-2xl tracking-wide md:text-left lg:text-3xl xl:text-4xl">
               {t("homeWebsiteHeading")}
             </h3>
             <p className="font-sans text-base leading-relaxed text-gray-100">
@@ -235,6 +235,9 @@ export const CategoriesSection = ({ categories, isFromShop = false }) => {
   );
 };
 
+const reelsGrid =
+  "grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-8 xl:px-8";
+
 export const ReelsSection = () => {
   const [playing, setPlaying] = useState({});
   const [reels, setReels] = useState([]);
@@ -292,7 +295,7 @@ export const ReelsSection = () => {
           <div className="font-ethnocentric text-3xl md:text-4xl text-center my-8 tracking-wide">
             {t("reels")}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
+          <div className={reelsGrid}>
             {[1, 2, 3, 4, 5, 6].map((skeleton) => (
               <div
                 key={skeleton}
@@ -316,7 +319,7 @@ export const ReelsSection = () => {
           {t("reels")}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-8 sm:p-8">
+        <div className={reelsGrid}>
           {reels.map((reel) => (
             <div
               key={reel.id}
@@ -435,7 +438,7 @@ const HomePage = observer(() => {
           </div>
         </div>
       </div>
-      <div className="flex flex-col justify-center items-center px-4 sm:px-32">
+      <div className="flex flex-col items-center px-4 sm:px-6 lg:px-8 xl:px-32">
         <AboutSection showBack={false} showWebsiteInfo />
         {MobxStore.categoriesLoading ? (
           <p className="font-sans text-gray-400">

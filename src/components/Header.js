@@ -2,13 +2,36 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { ShoppingCart } from "lucide-react";
+import { ChevronDown, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { observer } from "mobx-react-lite";
 import MobxStore from "@/mobx";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { categoryLabel } from "@/lib/catalog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import logoImg from "../../public/logo2.png";
+
+const languageOptions = [
+  ["en", "English"],
+  ["nl", "Nederlands"],
+];
+
+const LanguageFlag = ({ code }) => (
+  <Image
+    src={`/${code}.png`}
+    alt=""
+    width={20}
+    height={15}
+    unoptimized
+    className="rounded-sm"
+  />
+);
 
 const Header = observer(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,28 +39,6 @@ const Header = observer(() => {
   useEffect(() => {
     MobxStore.fetchCategories();
   }, []);
-  const languages = (
-    <div
-      className="flex items-center justify-center gap-2 font-sans"
-      aria-label={t("Language")}
-    >
-      {[
-        ["en", "English"],
-        ["nl", "Nederlands"],
-      ].map(([code, label]) => (
-        <button
-          key={code}
-          type="button"
-          lang={code}
-          aria-pressed={language === code}
-          onClick={() => changeLanguage(code)}
-          className={`rounded border px-2 py-2 text-sm ${language === code ? "border-white bg-white text-black" : "border-gray-600 text-white"}`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
   const close = () => setIsMenuOpen(false);
   return (
     <header className="fixed border-b border-white top-0 left-0 w-full bg-black text-white h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-between gap-2 px-3 sm:px-6 z-50">
@@ -68,7 +69,35 @@ const Header = observer(() => {
             </span>
           )}
         </Link>
-        <div className="hidden md:block">{languages}</div>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger
+            aria-label={`${t("Language")} (${language.toUpperCase()})`}
+            className="flex min-h-11 items-center gap-1 rounded-full px-2 font-sans text-xs font-semibold uppercase tracking-wide hover:bg-gray-800 sm:gap-2 sm:px-3"
+          >
+            <LanguageFlag code={language} />
+            <span className="hidden sm:inline">{language}</span>
+            <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-24">
+            <DropdownMenuRadioGroup
+              value={language}
+              onValueChange={changeLanguage}
+            >
+              {languageOptions.map(([code, label]) => (
+                <DropdownMenuRadioItem
+                  key={code}
+                  value={code}
+                  lang={code}
+                  aria-label={label}
+                  className="min-h-11 cursor-pointer gap-2 uppercase"
+                >
+                  <LanguageFlag code={code} />
+                  {code}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <button
           type="button"
           aria-label={t(isMenuOpen ? "Close menu" : "Menu")}
@@ -89,7 +118,6 @@ const Header = observer(() => {
           id="storefront-menu"
           className="absolute left-0 top-full w-full max-h-[calc(100dvh-5rem)] overflow-y-auto border-y border-white bg-black py-6"
         >
-          <div className="mb-5 md:hidden">{languages}</div>
           <ul className="mx-auto w-fit space-y-4 text-center font-ethnocentric text-sm">
             {[
               ["/", "home"],
